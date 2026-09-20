@@ -190,6 +190,24 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const docRef = useRef(doc);
   docRef.current = doc;
 
+  /** Seleciona um item da lista de Dados E leva o canvas até onde ele aparece. */
+  const abrirItem = useCallback(
+    (s: Selection) => {
+      setSelection(s);
+      if (!s || s.kind !== 'item') return;
+      if (s.collection === 'projects' || s.collection === 'blog') {
+        setContainer({ on: 'item', collection: s.collection, itemId: s.itemId });
+        return;
+      }
+      // Galeria e sketches não têm página própria: vai para a página que os lista.
+      const pagina = docRef.current.state.pages.find((p) =>
+        p.sections.some((sec) => sec.blocks.some((b) => b.type === 'collection' && b.content.collection === s.collection)),
+      );
+      if (pagina) setContainer({ on: 'page', pageId: pagina.id });
+    },
+    [],
+  );
+
   const openContainer = useCallback((c: Container) => {
     setContainer(c);
     setSelection(c.on === 'item' ? { kind: 'item', collection: c.collection, itemId: c.itemId } : null);
@@ -816,7 +834,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           ) : leftTab === 'theme' ? (
             <ThemePanel doc={doc} onUploadImage={uploadImage} onUploadFavicon={uploadFavicon} resolveAsset={resolveAsset} />
           ) : leftTab === 'data' ? (
-            <DataPanel doc={doc} onSelect={setSelection} />
+            <DataPanel doc={doc} onSelect={abrirItem} />
           ) : (
             <LayersPanel doc={doc} page={page} item={item} lang={lang} selection={selection} onSelect={setSelection} />
           )}

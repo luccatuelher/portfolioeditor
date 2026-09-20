@@ -2,7 +2,7 @@ import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type D
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { pick } from '../renderer/text';
-import type { GalleryItem, SketchItem, Visibility } from '../schema/v4';
+import type { Visibility } from '../schema/v4';
 import type { CollectionName, Selection } from './paths';
 import type { DocApi } from './useDocument';
 
@@ -22,13 +22,19 @@ function VisSelect({ value, onChange }: { value: Visibility; onChange: (v: Visib
   );
 }
 
-function SortableImgRow({ doc, collection, item, label, onSelect }: { doc: DocApi; collection: 'gallery' | 'sketches'; item: GalleryItem | SketchItem; label: string; onSelect: (s: Selection) => void }): React.ReactElement {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+/**
+ * Linha de item de coleção: arrastar para reordenar, abrir para editar, mudar
+ * a visibilidade. Vale para as QUATRO coleções — antes só galeria e sketches
+ * tinham alça, e projetos/notas só davam para reordenar pelo canvas.
+ */
+function SortableRow({ doc, collection, id, label, visibility, onSelect, extra }: { doc: DocApi; collection: CollectionName; id: string; label: string; visibility: Visibility; onSelect: (s: Selection) => void; extra?: React.ReactNode }): React.ReactElement {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   return (
     <tr ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
       <td><span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar">⠿</span></td>
-      <td><button type="button" className="data-name" onClick={() => onSelect({ kind: 'item', collection, itemId: item.id })}>{label || item.id}</button></td>
-      <td><VisSelect value={item.visibility} onChange={(v) => doc.setItemVisibility(collection, item.id, v)} /></td>
+      <td><button type="button" className="data-name" onClick={() => onSelect({ kind: 'item', collection, itemId: id })}>{label || id}</button></td>
+      {extra ? <td>{extra}</td> : null}
+      <td><VisSelect value={visibility} onChange={(v) => doc.setItemVisibility(collection, id, v)} /></td>
     </tr>
   );
 }
@@ -38,10 +44,7 @@ export function DataPanel({ doc, onSelect }: { doc: DocApi; onSelect: (s: Select
   const c = doc.state.collections;
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const sel = (collection: CollectionName, id: string): void => onSelect({ kind: 'item', collection, itemId: id });
-  const nameBtn = (collection: CollectionName, id: string, label: string): React.ReactElement => (
-    <button type="button" className="data-name" onClick={() => sel(collection, id)}>{label || id}</button>
-  );
-  const onDragEnd = (collection: 'gallery' | 'sketches', ids: string[]) => (e: DragEndEvent): void => {
+  const onDragEnd = (collection: CollectionName, ids: string[]) => (e: DragEndEvent): void => {
     const { active, over } = e;
     if (!over || active.id === over.id) return;
     doc.reorderItems(collection, ids.indexOf(String(active.id)), ids.indexOf(String(over.id)));
@@ -50,33 +53,43 @@ export function DataPanel({ doc, onSelect }: { doc: DocApi; onSelect: (s: Select
   return (
     <div className="panel data-panel">
       <div className="panel-h">Projetos</div>
-      <table className="data-table">
-        <colgroup><col /><col className="dc-feat" /><col className="dc-vis" /></colgroup>
-        <thead><tr><th>Título</th><th title="Destaque na Home">★</th><th>Visib.</th></tr></thead>
-        <tbody>
-          {c.projects.map((p) => (
-            <tr key={p.id}>
-              <td>{nameBtn('projects', p.id, pick(p.title, 'pt'))}</td>
-              <td><input type="checkbox" checked={p.featured} onChange={(e) => doc.updateItem('projects', p.id, (it) => void (it.featured = e.target.checked))} /></td>
-              <td><VisSelect value={p.visibility} onChange={(v) => doc.setItemVisibility('projects', p.id, v)} /></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('projects', c.projects.map((p) => p.id))}>
+        <table className="data-table">
+          <colgroup><col className="dc-grip" /><col /><col className="dc-feat" /><col className="dc-vis" /></colgroup>
+          <thead><tr><th /><th>Título</th><th title="Destaque na Home">★</th><th>Visib.</th></tr></thead>
+          <tbody>
+            <SortableContext items={c.projects.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+              {c.projects.map((p) => (
+                <SortableRow
+                  key={p.id}
+                  doc={doc}
+                  collection="projects"
+                  id={p.id}
+                  label={pick(p.title, 'pt')}
+                  visibility={p.visibility}
+                  onSelect={onSelect}
+                  extra={<input type="checkbox" checked={p.featured} title="Aparece na Home" onChange={(e) => doc.updateItem('projects', p.id, (it) => void (it.featured = e.target.checked))} />}
+                />
+              ))}
+            </SortableContext>
+          </tbody>
+        </table>
+      </DndContext>
       <button type="button" className="add-block-btn additem" onClick={() => sel('projects', doc.addItem('projects'))}>＋ Projeto</button>
 
       <div className="panel-h">Notas</div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('blog', c.blog.map((b) => b.id))}>
       <table className="data-table">
         <colgroup><col /><col className="dc-vis" /></colgroup>
         <tbody>
-          {c.blog.map((b) => (
-            <tr key={b.id}>
-              <td>{nameBtn('blog', b.id, pick(b.title, 'pt'))}</td>
-              <td><VisSelect value={b.visibility} onChange={(v) => doc.setItemVisibility('blog', b.id, v)} /></td>
-            </tr>
-          ))}
+          <SortableContext items={c.blog.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+            {c.blog.map((b) => (
+              <SortableRow key={b.id} doc={doc} collection="blog" id={b.id} label={pick(b.title, 'pt')} visibility={b.visibility} onSelect={onSelect} />
+            ))}
+          </SortableContext>
         </tbody>
       </table>
+      </DndContext>
       <button type="button" className="add-block-btn additem" onClick={() => sel('blog', doc.addItem('blog'))}>＋ Nota</button>
 
       <div className="panel-h">Galeria</div>
@@ -85,7 +98,7 @@ export function DataPanel({ doc, onSelect }: { doc: DocApi; onSelect: (s: Select
           <table className="data-table">
             <colgroup><col className="dc-grip" /><col /><col className="dc-vis" /></colgroup>
             <tbody>
-              {c.gallery.map((g) => <SortableImgRow key={g.id} doc={doc} collection="gallery" item={g} label={pick(g.caption, 'pt')} onSelect={onSelect} />)}
+              {c.gallery.map((g) => <SortableRow key={g.id} doc={doc} collection="gallery" id={g.id} label={pick(g.caption, 'pt')} visibility={g.visibility} onSelect={onSelect} />)}
             </tbody>
           </table>
         </SortableContext>
@@ -98,7 +111,7 @@ export function DataPanel({ doc, onSelect }: { doc: DocApi; onSelect: (s: Select
           <table className="data-table">
             <colgroup><col className="dc-grip" /><col /><col className="dc-vis" /></colgroup>
             <tbody>
-              {c.sketches.map((s) => <SortableImgRow key={s.id} doc={doc} collection="sketches" item={s} label={pick(s.image.alt, 'pt')} onSelect={onSelect} />)}
+              {c.sketches.map((s) => <SortableRow key={s.id} doc={doc} collection="sketches" id={s.id} label={pick(s.image.alt, 'pt')} visibility={s.visibility} onSelect={onSelect} />)}
             </tbody>
           </table>
         </SortableContext>
