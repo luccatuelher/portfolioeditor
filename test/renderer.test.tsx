@@ -6,7 +6,7 @@ import { RenderContext, type RenderContextValue } from '../src/renderer/context'
 import { SectionView } from '../src/renderer/blocks';
 import { dataUrlResolver } from '../src/renderer/dataUrlResolver';
 import { Site } from '../src/renderer/Site';
-import type { Block, Section } from '../src/schema/v4';
+import type { Block, PortfolioV4, Section } from '../src/schema/v4';
 import { loadFixture } from './helpers/fixtures';
 
 function renderRoute(fixture: string, route: string, lang: 'pt' | 'en' = 'pt'): string {
