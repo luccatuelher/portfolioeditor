@@ -198,7 +198,9 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 
 /* ------------------------------------------------------------- responsivo */
 @media (max-width: 900px) {
-  .container, .site-header { width: 92%; }
+  /* A largura vem da mesma fórmula do computador (a margem --edge encolhe junto
+     com a tela, em site-entry.css). Antes havia dois sistemas — 92% aqui e a
+     margem do tema acima de 900px — e a página ENCOLHIA ao passar de 900. */
   .site-header { grid-template-columns: 1fr; }
   .site-header-right { align-items: flex-start; }
   /* Tablet segue a grade do computador: uma coleção de 3 colunas continua com 3.
@@ -211,6 +213,12 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
   }
   .contact-layout { grid-template-columns: 1fr; gap: 40px; }
   .storyboard-grid > * { grid-column: span 6; }
+}
+/* Entre o celular e o tablet cheio: cards com TÍTULO em duas colunas. Três
+   colunas nessa faixa dão cards de ~160px, estreitos demais para o texto.
+   Imagens e galerias seguem a grade do computador, como no tablet. */
+@media (min-width: 601px) and (max-width: 819px) {
+  .collection-projects > *:not(.home-preview), .collection-blog > *:not(.home-preview) { grid-column: span 6; }
 }
 @media (max-width: 600px) {
   /* Cards com texto (projetos, notas) empilham: título e descrição precisam de largura. */

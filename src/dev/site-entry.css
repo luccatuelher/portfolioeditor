@@ -22,6 +22,13 @@ html { font-size: clamp(15px, calc(12.5px + 0.3vw), 21px); }
 .block-image-img[src] { background: none; }
 .embed-area { max-width: calc(85vh * 16 / 9); margin-inline: auto; }
 
+/* Entre 600 e 900px a margem cresce aos poucos até encontrar a do tema (10vw
+   por padrão) exatamente em 901px. Sem isso a página dava um salto de ~100px
+   — encolhia quando a janela crescia. */
+@media (min-width: 601px) and (max-width: 900px) {
+  .site { --edge: clamp(16px, calc(24px + (100vw - 600px) * 0.219), var(--safe, 10vw)); }
+}
+
 @media (max-width: 600px) {
   .site { --edge: 16px; --page-pad: 0px; }
   .section.width-wide, .section.width-full { margin-inline: 0; }

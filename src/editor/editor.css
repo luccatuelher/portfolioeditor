@@ -438,6 +438,9 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .pv-tablet .block.hide-tablet { display: none; }
 .pv-tablet .collection-grid > *:not(.home-preview), .pv-tablet .storyboard-grid > .storyboard-cell, .pv-tablet .site-header.hdr-layout-grid > .hdr-el { grid-column: var(--gc-t, span var(--span, 12)); }
 .pv-tablet .collection-grid > .home-preview, .pv-mobile .collection-grid > .home-preview { grid-column: 1 / -1; }
+/* A prévia de tablet tem 768px: nessa largura o site põe cards COM TÍTULO em
+   duas colunas (três dariam ~160px). O espelho tem de mostrar o mesmo. */
+.pv-tablet .collection-projects > *:not(.home-preview), .pv-tablet .collection-blog > *:not(.home-preview) { grid-column: span 6; }
 .pv-tablet .contact-layout, .pv-mobile .contact-layout { grid-template-columns: 1fr; gap: 2rem; }
 .pv-tablet .storyboard-grid > *, .pv-mobile .storyboard-grid > * { grid-column: span 6; }
 .pv-mobile .container, .pv-mobile .site-header { width: calc(100% - 32px); }

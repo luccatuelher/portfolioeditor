@@ -119,3 +119,21 @@ test('tablet segue a grade do computador e a prévia ocupa a linha inteira', asy
   }
 });
 });
+
+test.describe('larguras intermediárias', () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test('a prévia de tablet mostra o mesmo que o site em 768px: cards com título em duas colunas', async ({ page }) => {
+    await page.route(/youtube|vimeo|speakerdeck/, (r) => r.abort());
+    await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
+    await page.waitForSelector('.editor-canvas .project-card');
+    await page.locator('.tb-devices button').nth(1).click(); // tablet
+
+    const porFila = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll('.editor-canvas .project-card')];
+      const ys = cards.map((c) => Math.round(c.getBoundingClientRect().y));
+      return { total: cards.length, primeiraFila: ys.filter((y) => y === ys[0]).length };
+    });
+    expect(porFila.primeiraFila).toBe(Math.min(2, porFila.total));
+  });
+});
