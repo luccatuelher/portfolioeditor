@@ -463,3 +463,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   border-radius: 4px; cursor: pointer;
 }
 .tela-de-erro-acoes button:last-child { background: none; color: rgb(51, 49, 44); }
+
+/* aviso de tradução pendente (só no editor) */
+.edit-badge.traducao { background: var(--surface); color: var(--ink-soft); border: 1px solid var(--rule); }
+.block.falta-traducao { outline: 1px dashed var(--rule); outline-offset: 3px; }

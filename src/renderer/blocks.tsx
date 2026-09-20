@@ -527,6 +527,24 @@ function InlineEditable({ initial, plain, className, onCommit }: { initial: stri
   );
 }
 
+/**
+ * O texto deste bloco já existe no idioma em edição?
+ *
+ * No site, o que falta cai para o outro idioma e o visitante nem percebe — o
+ * que é bom. O problema é para o DONO: sem marca nenhuma, achar o que falta
+ * traduzir exigiria abrir bloco por bloco nos dois idiomas.
+ */
+function faltaTraduzir(block: Block, lang: 'pt' | 'en'): boolean {
+  const outro = lang === 'pt' ? 'en' : 'pt';
+  const vazio = (v?: { pt: string; en: string }): boolean => !!v && !v[lang].trim() && !!v[outro].trim();
+  if (block.type === 'heading') return vazio(block.content.text);
+  if (block.type === 'text') return vazio(block.content.html);
+  if (block.type === 'button') return vazio(block.content.label);
+  if (block.type === 'image') return vazio(block.content.image.alt);
+  if (block.type === 'contact') return vazio(block.content.heading) || vazio(block.content.body);
+  return false;
+}
+
 export function BlockView({ block, place, sobra, topo }: { block: Block; place?: Placement; sobra?: { tablet: number | null; mobile: number | null }; topo?: boolean }): React.ReactElement | null {
   const { lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan } = useRender();
   if (!editing && block.visibility !== 'public') return null;
@@ -547,6 +565,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
     // A linha só mantém o alinhamento na tela em que ela ainda cabe inteira.
     sobra && sobra.tablet !== null ? 't-row' : '',
     sobra && sobra.mobile !== null ? 'm-row' : '',
+    editing && faltaTraduzir(block, lang) ? 'falta-traducao' : '',
   ].filter(Boolean).join(' ');
 
   const wrap = (children: React.ReactNode): React.ReactElement => (
@@ -555,6 +574,11 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
       style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--cfree-t': sobra?.tablet ?? undefined, '--cfree-m': sobra?.mobile ?? undefined, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? `var(--${bgToken})` : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
       data-block-id={block.id}
     >
+      {editing && faltaTraduzir(block, lang) ? (
+        <span className="edit-badge traducao" title={`Sem texto em ${lang === 'pt' ? 'português' : 'inglês'} — o site mostra o outro idioma`}>
+          sem {lang.toUpperCase()}
+        </span>
+      ) : null}
       {editing ? (
         <>
           <span className="pe-drag-handle" draggable data-drag-block={block.id} title="Arraste para mover — solte na lateral de outro bloco para formar uma grade" aria-hidden="true">⠿</span>
