@@ -37,6 +37,7 @@ import { reorderArray } from '../core/array';
 import { AddBlockPopup, ElementsPalette } from './ElementsPalette';
 import { SECTION_PRESETS } from './sectionPresets';
 import { VersionsModal } from './VersionsModal';
+import { NdaPasswordModal } from './NdaPasswordModal';
 import { saveVersion } from './versions';
 import { CropModal } from './CropModal';
 import type { ImageCrop, ImageRef } from '../schema/v4';
@@ -915,6 +916,7 @@ const DEVICES = [
 
 function TopBar({ doc, lang, onLang, pageTitle, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (msg: string | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [pedirSenha, setPedirSenha] = useState(false);
 
   if (onBackupRef) onBackupRef.current = () => download();
   const download = (): void => {
@@ -942,14 +944,12 @@ function TopBar({ doc, lang, onLang, pageTitle, saveStatus, assets, onImport, on
     }
   };
 
-  const publishSite = async (): Promise<void> => {
+  // Quantos itens confidenciais existem (0 = nem pergunta a senha).
+  const itensNda = (['projects', 'blog', 'gallery', 'sketches'] as const)
+    .reduce((n, k) => n + doc.state.collections[k].filter((i) => i.visibility === 'nda').length, 0);
+
+  const publishSite = async (password?: string): Promise<void> => {
     const doc0 = doc.state;
-    const hasNda = (['projects', 'blog', 'gallery', 'sketches'] as const).some((k) => doc0.collections[k].some((i) => i.visibility === 'nda'));
-    let password: string | undefined;
-    if (hasNda) {
-      const p = prompt('Há itens NDA. Digite uma senha para protegê-los (ou deixe vazio para não publicá-los):') ?? '';
-      password = p.trim() || undefined;
-    }
     const migratedAssets: MigratedAsset[] = Object.entries(assets).map(([id, dataUrl]) => ({ id, dataUrl, mime: '' }));
     const payload = await buildPublishPayload({ data: doc0, assets: migratedAssets }, password);
     const pf = runPreflight(payload.publicData, { assetSizes: payload.assetSizes });
@@ -1003,7 +1003,14 @@ function TopBar({ doc, lang, onLang, pageTitle, saveStatus, assets, onImport, on
         <button type="button" className="tb-btn" onClick={onVersions} title="Histórico de versões salvas neste navegador">Versões</button>
         <button type="button" className="tb-btn" onClick={download} title="Baixar backup (doc + imagens)">Backup</button>
         <button type="button" className="tb-btn" onClick={() => fileRef.current?.click()} title="Importar backup">Importar</button>
-        <button type="button" className="tb-btn primary" onClick={() => void publishSite()} title="Gerar o site.html pronto para subir">Baixar site</button>
+        <button type="button" className="tb-btn primary" onClick={() => (itensNda ? setPedirSenha(true) : void publishSite())} title="Gerar o site.html pronto para subir">Baixar site</button>
+        {pedirSenha ? (
+          <NdaPasswordModal
+            quantidade={itensNda}
+            onCancel={() => setPedirSenha(false)}
+            onConfirm={(senha) => { setPedirSenha(false); void publishSite(senha); }}
+          />
+        ) : null}
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />
       </div>
     </header>
