@@ -64,8 +64,8 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
   return (
     <div data-page-id={page.id}>
       {temH1 ? null : <h1 className="sr-only">{h1}</h1>}
-      {page.sections.map((s) => (
-        <SectionView key={s.id} section={s} />
+      {page.sections.map((s, i) => (
+        <SectionView key={s.id} section={s} primeira={i === 0} />
       ))}
     </div>
   );

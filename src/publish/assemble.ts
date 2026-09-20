@@ -39,7 +39,10 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
     `<meta property="og:type" content="website">` +
     (firstImg ? `<meta property="og:image" content="${esc(firstImg)}">` : '') +
     (favicon ? `<link rel="icon" href="${esc(favicon)}"><link rel="apple-touch-icon" href="${esc(favicon)}">` : '') +
-    themeFontUrls(payload.publicData.theme.fonts).map((u) => `<link rel="stylesheet" href="${esc(u)}">`).join('') +
+    // Sem bloquear a pintura: entra como impressão e vira 'all' ao carregar.
+    themeFontUrls(payload.publicData.theme.fonts)
+      .map((u) => `<link rel="stylesheet" href="${esc(u)}" media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${esc(u)}"></noscript>`)
+      .join('') +
     analyticsTag;
 
   // Substituições SEMPRE por função: com string, "$&", "$'" etc. dentro dos dados

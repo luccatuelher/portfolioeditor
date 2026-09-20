@@ -11,18 +11,20 @@ import { sanitizeRich } from '../core/sanitizeHtml';
 import { layoutGrid, type Placement } from './gridLayout';
 
 // ----------------------------------------------------------------- primitivos
-function Img({ image, className }: { image: ImageRef; className?: string }): React.ReactElement | null {
+function Img({ image, className, eager }: { image: ImageRef; className?: string; eager?: boolean }): React.ReactElement | null {
   const { resolveAsset, lang, data } = useRender();
   const src = resolveAsset(image);
   if (!src) return null;
   const meta = image.assetId ? data.assets[image.assetId] : undefined;
   const dims = meta && meta.w > 0 && meta.h > 0 ? { width: meta.w, height: meta.h } : {};
   const c = image.crop;
-  if (!c) return <img className={className} loading="lazy" decoding="async" src={src} alt={pick(image.alt, lang)} {...dims} />;
+  // A imagem do topo carrega na frente (é a maior pintura da tela); o resto é preguiçoso.
+  const carga = eager ? ({ loading: 'eager', fetchPriority: 'high' } as const) : ({ loading: 'lazy', decoding: 'async' } as const);
+  if (!c) return <img className={className} {...carga} src={src} alt={pick(image.alt, lang)} {...dims} />;
   // Recorte: a caixa tem a proporção do trecho; a imagem inteira é ampliada/deslocada dentro dela.
   return (
     <span className={`${className ?? ''} img-crop`} style={{ aspectRatio: String(c.ar) }}>
-      <img loading="lazy" decoding="async" src={src} alt={pick(image.alt, lang)} style={cropImgStyle(c)} />
+      <img {...carga} src={src} alt={pick(image.alt, lang)} style={cropImgStyle(c)} />
     </span>
   );
 }
@@ -519,7 +521,7 @@ function InlineEditable({ initial, plain, className, onCommit }: { initial: stri
   );
 }
 
-export function BlockView({ block, place, mobileRow }: { block: Block; place?: Placement; mobileRow?: boolean }): React.ReactElement | null {
+export function BlockView({ block, place, mobileRow, topo }: { block: Block; place?: Placement; mobileRow?: boolean; topo?: boolean }): React.ReactElement | null {
   const { lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan } = useRender();
   if (!editing && block.visibility !== 'public') return null;
 
@@ -574,7 +576,7 @@ export function BlockView({ block, place, mobileRow }: { block: Block; place?: P
     case 'image':
       return wrap(
         <div className="block-image-inner" style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
-          <Img image={block.content.image} className="block-image-img" />
+          <Img image={block.content.image} className="block-image-img" eager={topo} />
           {editing && !block.content.image.assetId && !block.content.image.url ? (
             <button type="button" className="pe-img-placeholder" data-block-upload={block.id}>＋ Enviar imagem</button>
           ) : null}
@@ -660,7 +662,7 @@ export function BlockView({ block, place, mobileRow }: { block: Block; place?: P
 }
 
 // ------------------------------------------------------------------- seção
-export function SectionView({ section }: { section: Section }): React.ReactElement | null {
+export function SectionView({ section, primeira }: { section: Section; primeira?: boolean }): React.ReactElement | null {
   const { editing } = useRender();
   const width = section.style.width ?? 'normal';
   // Posição de cada bloco (linhas × colunas, com pilhas) — só dos que aparecem.
@@ -679,7 +681,7 @@ export function SectionView({ section }: { section: Section }): React.ReactEleme
     <section className={`section width-${width}`} data-section-id={section.id} style={styleVars({ '--sec-gap': rem(section.style.gap), '--sec-rowgap': rem(section.style.rowGap), '--sec-top': rem(section.style.spaceTop), '--sec-bottom': rem(section.style.spaceBottom) })}>
       <div className="section-grid">
         {shown.map((b, i) => (
-          <BlockView key={b.id} block={b} place={places[i]} mobileRow={places[i] ? linhasIguais.has(places[i]!.row) : false} />
+          <BlockView key={b.id} block={b} place={places[i]} mobileRow={places[i] ? linhasIguais.has(places[i]!.row) : false} topo={primeira && (places[i]?.row ?? '').startsWith('1 ')} />
         ))}
         {editing ? (
           <button type="button" className="canvas-add-block" data-add-block={section.id} style={{ gridRow: String(rows + 1) }}>
