@@ -563,7 +563,6 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect }: { doc: DocAp
         {tab === 'content' && (
           <>
             <ContentTab doc={doc} block={block} refBlock={selection.ref} onUploadImage={onUploadImage} />
-            {['divider', 'spacer', 'collection', 'contact', 'columns'].includes(block.type) ? null : <AlignRow doc={doc} block={block} refBlock={selection.ref} />}
           </>
         )}
         {tab === 'layout' && <LayoutTab doc={doc} block={block} refBlock={selection.ref} />}
@@ -718,7 +717,7 @@ function LayoutTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlo
     <>
       <Group id="size" title="Tamanho e alinhamento">
         <LarguraPorDispositivo doc={doc} block={block} refBlock={refBlock} />
-        <AlignRow doc={doc} block={block} refBlock={refBlock} />
+        {['divider', 'spacer'].includes(block.type) ? null : <AlignRow doc={doc} block={block} refBlock={refBlock} />}
         <RowAlignRow doc={doc} refBlock={refBlock} />
         <div className="insp-move">
           <button type="button" onClick={() => doc.moveBlock(refBlock, -1)}>↑ Subir</button>
@@ -757,6 +756,9 @@ function escapeText(s: string): string {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+/** Tipos cujo conteúdo é texto — só neles o estilo de texto do tema faz efeito. */
+const COM_TEXTO = ['heading', 'text', 'button', 'contact'];
+
 function StyleTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef }): React.ReactElement {
   const colorTokens = Object.keys(doc.state.theme.colors);
   const styleTokens = Object.keys(doc.state.theme.textStyles);
@@ -771,13 +773,15 @@ function StyleTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBloc
           options={[{ value: '', label: '— nenhuma —' }, ...colorTokens.map((t) => ({ value: t, label: COLOR_LABEL[t] ?? t }))]}
         />
       </Row>
-      <Row label="Estilo de texto (do tema)">
-        <SelectInput
-          value={ts}
-          onChange={(v) => doc.updateBlock(refBlock, (b) => void ((b.style ??= {}).textStyle = v || undefined))}
-          options={[{ value: '', label: '— padrão do bloco —' }, ...styleTokens.map((t) => ({ value: t, label: TEXT_STYLE_LABEL[t] ?? t }))]}
-        />
-      </Row>
+      {COM_TEXTO.includes(block.type) ? (
+        <Row label="Estilo de texto (do tema)">
+          <SelectInput
+            value={ts}
+            onChange={(v) => doc.updateBlock(refBlock, (b) => void ((b.style ??= {}).textStyle = v || undefined))}
+            options={[{ value: '', label: '— padrão do bloco —' }, ...styleTokens.map((t) => ({ value: t, label: TEXT_STYLE_LABEL[t] ?? t }))]}
+          />
+        </Row>
+      ) : null}
     </>
   );
 }
