@@ -63,3 +63,19 @@ test.describe('Guias, versões, contraste e analytics', () => {
     await expect(page.locator('.analytics-input')).toHaveValue(snippet);
   });
 });
+
+test('o endereço do site fica guardado e é campo próprio (não se mistura com o analytics)', async ({ page }) => {
+  await page.route(/youtube|vimeo|speakerdeck/, (r) => r.abort());
+  await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
+  await page.locator('.left-tabs button', { hasText: 'Tema' }).click();
+
+  await page.locator('.site-url-input').fill('https://luccatuelher.com');
+  await page.locator('.analytics-input').fill('<script defer src="https://plausible.io/js/script.js"></script>');
+
+  await page.locator('.left-tabs button', { hasText: 'Layers' }).click();
+  await page.locator('.left-tabs button', { hasText: 'Tema' }).click();
+
+  await expect(page.locator('.site-url-input')).toHaveValue('https://luccatuelher.com');
+  await expect(page.locator('.analytics-input')).toContainText('');
+  await expect(page.locator('.analytics-input')).toHaveValue(/plausible/);
+});

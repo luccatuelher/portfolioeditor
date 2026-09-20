@@ -162,7 +162,7 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
 
       <div className="panel-h">Endereço do site</div>
       <input
-        className="insp-input analytics-input"
+        className="insp-input site-url-input"
         type="url"
         spellCheck={false}
         value={doc.state.site.url ?? ''}
