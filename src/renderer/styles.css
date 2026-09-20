@@ -208,6 +208,10 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
      própria (--gc-t) e ignora a do computador. */
   .block { grid-column: var(--gc-t, var(--gc, span var(--span, 12))); }
   .block.hide-tablet { display: none; }
+  /* O alinhamento da linha usa a sobra DESTA tela; onde a linha não cabe mais,
+     ela quebra e o deslocamento sai de cena (senão empurra para o nada). */
+  .block.t-row { --cfree: var(--cfree-t, 0); }
+  .block:not(.t-row) { transform: none; }
   .collection-grid > *:not(.home-preview), .storyboard-grid > .storyboard-cell, .site-header.hdr-layout-grid > .hdr-el {
     grid-column: var(--gc-t, span var(--span, 12));
   }
@@ -236,6 +240,7 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
      arranjo muda no celular. Numa fila que continua igual — .m-row — ele fica:
      é o que faz os elementos irem de uma borda à outra em vez de amontoar. */
   .block:not(.m-row) { transform: none; }
+  .block.m-row { --cfree: var(--cfree-m, 0); }
   /* IMAGENS ficam iguais ao computador: mesma fila, mesmas larguras relativas,
      só que na escala da tela. A coluna de início não é herdada (era o que fazia
      elemento sumir para fora da grade). --span-m ainda manda. */

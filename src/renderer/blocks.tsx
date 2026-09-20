@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { embedSource } from '../embed/embedSource';
-import { spanVars } from './responsive';
+import { sobraDaLinha, spanVars } from './responsive';
 import { ErrorBoundary } from './ErrorBoundary';
 import type { Block, GalleryItem, HomePreview, ImageRef, ProjectItem, Section, SketchItem } from '../schema/v4';
 import { blockLabel, effectivePreview, projectBlocks } from './preview';
@@ -522,7 +522,7 @@ function InlineEditable({ initial, plain, className, onCommit }: { initial: stri
   );
 }
 
-export function BlockView({ block, place, mobileRow, topo }: { block: Block; place?: Placement; mobileRow?: boolean; topo?: boolean }): React.ReactElement | null {
+export function BlockView({ block, place, sobra, topo }: { block: Block; place?: Placement; sobra?: { tablet: number | null; mobile: number | null }; topo?: boolean }): React.ReactElement | null {
   const { lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan } = useRender();
   if (!editing && block.visibility !== 'public') return null;
 
@@ -539,13 +539,15 @@ export function BlockView({ block, place, mobileRow, topo }: { block: Block; pla
     block.style?.textStyle ? `has-ts ts-${block.style.textStyle}` : '',
     rm?.hidden ? 'hide-mobile' : '',
     rt?.hidden ? 'hide-tablet' : '',
-    mobileRow && !rm?.span ? 'm-row' : '',
+    // A linha só mantém o alinhamento na tela em que ela ainda cabe inteira.
+    sobra && sobra.tablet !== null ? 't-row' : '',
+    sobra && sobra.mobile !== null ? 'm-row' : '',
   ].filter(Boolean).join(' ');
 
   const wrap = (children: React.ReactNode): React.ReactElement => (
     <div
       className={cls}
-      style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? `var(--${bgToken})` : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
+      style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--cfree-t': sobra?.tablet ?? undefined, '--cfree-m': sobra?.mobile ?? undefined, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? `var(--${bgToken})` : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
       data-block-id={block.id}
     >
       {editing ? (
@@ -670,13 +672,16 @@ export function SectionView({ section, primeira }: { section: Section; primeira?
   const shown = section.blocks.filter((b) => editing || b.visibility === 'public');
   if (!editing && shown.length === 0) return null;
   const { places, rows } = layoutGrid(shown);
-  // Linhas que continuam idênticas no celular: todas as suas peças são imagens.
-  const linhasIguais = new Set<string>();
+  // A sobra de cada linha muda de tela para tela: no celular o texto ocupa a
+  // linha inteira e uma imagem pode ter largura própria. Sem recalcular, o
+  // deslocamento do alinhamento continuava usando os números do computador —
+  // e a linha saía torta justamente onde ela já tinha mudado de forma.
+  const sobraPorLinha = new Map<string, { tablet: number | null; mobile: number | null }>();
   for (const p of places) {
     const r = p?.row;
-    if (r === undefined || linhasIguais.has(r)) continue;
+    if (r === undefined || sobraPorLinha.has(r)) continue;
     const naLinha = shown.filter((_, i) => places[i]?.row === r);
-    if (naLinha.length > 1 && naLinha.every((bl) => bl.type === 'image')) linhasIguais.add(r);
+    sobraPorLinha.set(r, { tablet: sobraDaLinha(naLinha, 'tablet'), mobile: sobraDaLinha(naLinha, 'mobile') });
   }
   return (
     <section className={`section width-${width}`} data-section-id={section.id} style={styleVars({ '--sec-gap': rem(section.style.gap), '--sec-rowgap': rem(section.style.rowGap), '--sec-top': rem(section.style.spaceTop), '--sec-bottom': rem(section.style.spaceBottom) })}>
@@ -692,7 +697,7 @@ export function SectionView({ section, primeira }: { section: Section; primeira?
               </div>
             )}
           >
-            <BlockView block={b} place={places[i]} mobileRow={places[i] ? linhasIguais.has(places[i]!.row) : false} topo={primeira && (places[i]?.row ?? '').startsWith('1 ')} />
+            <BlockView block={b} place={places[i]} sobra={places[i] ? sobraPorLinha.get(places[i]!.row) : undefined} topo={primeira && (places[i]?.row ?? '').startsWith('1 ')} />
           </ErrorBoundary>
         ))}
         {editing ? (

@@ -109,3 +109,37 @@ export function spanVars(spans: DeviceSpans, kind: SpanKind = 'block'): Record<s
     '--gc-m': `span ${resolveSpan(spans, 'mobile', kind).span}`,
   };
 }
+
+/**
+ * Largura EFETIVA de um bloco em cada tela, na régua de 12 — a mesma que o CSS
+ * aplica.
+ *
+ * Existe porque imagem e texto seguem regras diferentes no celular: a imagem
+ * mantém a largura (cascata + piso), o texto vai para a linha inteira, salvo
+ * largura escolhida à mão. O cálculo do alinhamento da linha precisa saber
+ * disso — senão ele continua usando os números do computador numa tela onde a
+ * linha já mudou de forma.
+ */
+export function spanEfetivo(
+  bloco: { type: string; span: number; responsive?: { tablet?: { span?: number }; mobile?: { span?: number } } },
+  device: Device,
+): number {
+  const spans: DeviceSpans = { desktop: bloco.span, tablet: bloco.responsive?.tablet?.span, mobile: bloco.responsive?.mobile?.span };
+  if (device === 'desktop') return resolveSpan(spans, 'desktop', 'block').span;
+  if (device === 'tablet') return resolveSpan(spans, 'tablet', 'block').span;
+  // Celular: só a imagem herda a largura; o resto ocupa a linha inteira.
+  if (bloco.responsive?.mobile?.span) return resolveSpan(spans, 'mobile', 'block').span;
+  return bloco.type === 'image' ? resolveSpan(spans, 'mobile', 'block').span : COLS_TOTAL;
+}
+
+export const COLS_TOTAL = 12;
+
+/**
+ * Sobra da linha (colunas livres) num dispositivo, ou `null` quando a linha não
+ * cabe mais e vai quebrar — aí não há alinhamento de linha para aplicar, e
+ * insistir nele embaralha tudo.
+ */
+export function sobraDaLinha(blocos: Parameters<typeof spanEfetivo>[0][], device: Device): number | null {
+  const soma = blocos.reduce((n, b) => n + spanEfetivo(b, device), 0);
+  return soma <= COLS_TOTAL ? COLS_TOTAL - soma : null;
+}

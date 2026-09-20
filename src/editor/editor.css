@@ -435,6 +435,8 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .pv-mobile .site-header.hdr-layout-grid > .hdr-el, .pv-mobile .storyboard-grid > .storyboard-cell { grid-column: var(--gc-m, span 12); }
 /* tablet: largura própria quando existe, senão a do computador */
 .pv-tablet .block { grid-column: var(--gc-t, var(--gc, span var(--span, 12))); }
+.pv-tablet .block.t-row { --cfree: var(--cfree-t, 0); }
+.pv-tablet .block:not(.t-row) { transform: none; }
 .pv-tablet .block.hide-tablet { display: none; }
 .pv-tablet .collection-grid > *:not(.home-preview), .pv-tablet .storyboard-grid > .storyboard-cell, .pv-tablet .site-header.hdr-layout-grid > .hdr-el { grid-column: var(--gc-t, span var(--span, 12)); }
 .pv-tablet .collection-grid > .home-preview, .pv-mobile .collection-grid > .home-preview { grid-column: 1 / -1; }
@@ -453,6 +455,7 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .pv-mobile .block.block-image { grid-column: var(--gc-m, span var(--span, 12)); }
 .pv-mobile .block.hide-mobile { display: none; }
 .pv-mobile .block:not(.m-row) { transform: none; }
+.pv-mobile .block.m-row { --cfree: var(--cfree-m, 0); }
 /* Espelha o site: imagens mantêm a proporção horizontal da grade do desktop. */
 .pv-mobile .block.block-image { grid-column: var(--gc-m, span var(--span, 12)); }
 .pv-mobile .collection-gallery, .pv-mobile .collection-sketches { grid-template-columns: repeat(12, 1fr); }
