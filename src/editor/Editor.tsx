@@ -805,10 +805,28 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     [doc.state, container, lang, resolveAsset, selectedId, navigate, selection, editPreview, device],
   );
 
+  // Onde estou: com um projeto/nota aberto, a trilha mostra a página de origem
+  // e volta para ela num clique.
+  const itemAberto = container.on === 'item' ? doc.state.collections[container.collection].find((i) => i.id === container.itemId) : undefined;
+  const colecaoAberta = container.on === 'item' ? container.collection : undefined;
+  // A página de origem é a que LISTA a coleção — a Home também mostra projetos
+  // (os em destaque), então ela só vale como último recurso.
+  const listamColecao = colecaoAberta
+    ? doc.state.pages.filter((p) => p.sections.some((s) => s.blocks.some((b) => b.type === 'collection' && b.content.collection === colecaoAberta)))
+    : [];
+  const paginaDeOrigem = listamColecao.find((p) => p.id !== 'home') ?? listamColecao[0];
+  const trilha = itemAberto
+    ? {
+        pai: paginaDeOrigem ? pick(paginaDeOrigem.title, lang) : colecaoAberta === 'projects' ? 'Projetos' : 'Notas',
+        atual: pick(itemAberto.title, lang) || 'Sem título',
+        voltar: () => openContainer({ on: 'page', pageId: paginaDeOrigem?.id ?? 'home' }),
+      }
+    : undefined;
+
   const frame = siteFrame(doc.state, resolveAsset);
   return (
     <div className="editor" style={styleVars(themeToCssVars(doc.state.theme))}>
-      <TopBar doc={doc} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
+      <TopBar doc={doc} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
       {notice && showNotice ? (
         <div className="editor-notice" role="status">
           <span>{notice}</span>
@@ -932,7 +950,7 @@ const DEVICES = [
   { id: 'mobile', label: 'Celular (390px)', curto: 'Celular' },
 ] as const;
 
-function TopBar({ doc, lang, onLang, pageTitle, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (msg: string | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
+function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (msg: string | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pedirSenha, setPedirSenha] = useState(false);
 
@@ -994,7 +1012,15 @@ function TopBar({ doc, lang, onLang, pageTitle, saveStatus, assets, onImport, on
     <header className="editor-topbar">
       <div className="tb-left">
         <strong>Portfolio v4</strong>
-        <span className="tb-page">{pageTitle}</span>
+        {trilha ? (
+          <span className="tb-page">
+            <button type="button" className="tb-voltar" onClick={trilha.voltar} title="Voltar para a lista">← {trilha.pai}</button>
+            <span className="tb-sep">›</span>
+            {trilha.atual}
+          </span>
+        ) : (
+          <span className="tb-page">{pageTitle}</span>
+        )}
       </div>
       <div className="tb-center">
         <button type="button" disabled={!doc.canUndo} onClick={doc.undo} title="Desfazer (Ctrl+Z)">↶</button>

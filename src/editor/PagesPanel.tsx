@@ -2,6 +2,7 @@ import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type D
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { pick } from '../renderer/text';
+import { useTreeRename } from './TreeName';
 import type { Lang } from '../renderer/context';
 import type { BlogItem, Page, PortfolioV4, ProjectItem } from '../schema/v4';
 import type { Container, Selection } from './paths';
@@ -29,29 +30,47 @@ function itemsFor(doc: PortfolioV4, kind: ListKind): (ProjectItem | BlogItem)[] 
   return ps.filter((p) => p.visibility !== 'nda');
 }
 
-function ItemRow({ collection, item, lang, active, onOpen }: { collection: 'projects' | 'blog'; item: ProjectItem | BlogItem; lang: Lang; active: boolean; onOpen: () => void }): React.ReactElement {
+function ItemRow({ doc, collection, item, lang, active, onOpen }: { doc: DocApi; collection: 'projects' | 'blog'; item: ProjectItem | BlogItem; lang: Lang; active: boolean; onOpen: () => void }): React.ReactElement {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const nome = pick(item.title, lang);
+  const renome = useTreeRename(nome, (v) => doc.updateItem(collection, item.id, (it) => void (it.title[lang] = v), `rename:${item.id}`));
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} className={`tree-row blk nested ${active ? 'sel' : ''}`}>
       <span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar">⠿</span>
-      <button type="button" className="tree-main" onClick={onOpen}>
-        <span className="tree-icon">{collection === 'projects' ? '▧' : '▤'}</span>{pick(item.title, lang) || item.id}
-        {item.visibility !== 'public' ? <span className="badge">{item.visibility}</span> : null}
-      </button>
+      {renome.editando ? (
+        renome.campo
+      ) : (
+        <>
+          <button type="button" className="tree-main" onClick={onOpen} onDoubleClick={renome.abrir}>
+            <span className="tree-icon">{collection === 'projects' ? '▧' : '▤'}</span>{nome || item.id}
+            {item.visibility !== 'public' ? <span className="badge">{item.visibility}</span> : null}
+          </button>
+          {renome.botao}
+        </>
+      )}
     </div>
   );
 }
 
 function PageRow({ doc, page, lang, active, onOpen, children }: { doc: DocApi; page: Page; lang: Lang; active: boolean; onOpen: () => void; children?: React.ReactNode }): React.ReactElement {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
+  const nome = pick(page.title, lang);
+  const renome = useTreeRename(nome, (v) => doc.updatePage(page.id, (pg) => void (pg.title[lang] = v), `rename:${page.id}`));
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
       <div className={`tree-row pagerow ${active ? 'sel' : ''}`}>
         <span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar as páginas">⠿</span>
-        <button type="button" className="tree-main" onClick={onOpen}>
-          <span className="tree-icon">▤</span>{pick(page.title, lang) || page.id}
-          {page.visibility === 'nda' ? <span className="badge">NDA</span> : null}
-        </button>
+        {renome.editando ? (
+          renome.campo
+        ) : (
+          <>
+            <button type="button" className="tree-main" onClick={onOpen} onDoubleClick={renome.abrir}>
+              <span className="tree-icon">▤</span>{nome || page.id}
+              {page.visibility === 'nda' ? <span className="badge">NDA</span> : null}
+            </button>
+            {renome.botao}
+          </>
+        )}
         <button type="button" className="tree-dup" title="Duplicar página" aria-label={`Duplicar página ${pick(page.title, lang)}`} onClick={() => doc.duplicatePage(page.id)}>⧉</button>
         {page.id !== 'home' ? (
           <button type="button" className="tree-del" title="Excluir página" aria-label={`Excluir página ${pick(page.title, lang)}`} onClick={() => { if (confirm('Excluir esta página?')) doc.deletePage(page.id); }}>✕</button>
@@ -93,7 +112,7 @@ export function PagesPanel({ doc, container, lang, onOpen, onSelect }: { doc: Do
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
           <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             {items.map((it) => (
-              <ItemRow key={it.id} collection={coll} item={it} lang={lang} active={container.on === 'item' && container.itemId === it.id} onOpen={() => openItemC(coll, it.id)} />
+              <ItemRow doc={doc} key={it.id} collection={coll} item={it} lang={lang} active={container.on === 'item' && container.itemId === it.id} onOpen={() => openItemC(coll, it.id)} />
             ))}
           </SortableContext>
         </DndContext>

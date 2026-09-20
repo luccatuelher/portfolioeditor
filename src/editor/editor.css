@@ -565,3 +565,14 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .nda-forca span { color: #8a877f; text-transform: none; letter-spacing: 0; }
 .nda-modal-aviso { margin: 12px 16px 0; padding: 9px 11px; background: #fdf6e3; border: 1px solid #e7d8a8; border-radius: 6px; font-size: 0.72rem; line-height: 1.5; color: #6b5a24; }
 .nda-modal-acoes { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 16px 0; }
+
+/* trilha na barra: "← Projetos › A Travessia" */
+.tb-voltar { background: none; border: none; color: #cfcabf; cursor: pointer; font: inherit; padding: 2px 4px; border-radius: 4px; }
+.tb-voltar:hover { background: #3a3833; color: #fff; }
+.tb-sep { color: #6b6860; margin: 0 4px; }
+/* nome editável na árvore (páginas, projetos, notas) */
+.tree-nome { display: inline; }
+.tree-rename-btn { background: none; border: none; color: #a09c93; cursor: pointer; font-size: 0.68rem; padding: 2px 4px; border-radius: 3px; opacity: 0; transition: opacity 0.12s; }
+.tree-row:hover .tree-rename-btn, .tree-rename-btn:focus-visible { opacity: 1; }
+.tree-rename-btn:hover { color: var(--accent); background: #efece5; }
+.tree-rename { font: inherit; font-size: 0.72rem; color: #1c1b18; background: #fff; border: 1px solid var(--accent); border-radius: 3px; padding: 1px 4px; width: 100%; max-width: 150px; }

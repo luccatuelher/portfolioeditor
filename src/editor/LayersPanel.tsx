@@ -8,6 +8,7 @@ import type { Block, BlogItem, Page, ProjectItem, Section } from '../schema/v4';
 import { ADDABLE_BLOCKS, makeDefaultBlock } from './blockFactory';
 import type { Container, Selection } from './paths';
 import type { DocApi } from './useDocument';
+import { useTreeRename } from './TreeName';
 
 import { TYPE_LABEL as BLOCK_LABELS } from '../renderer/preview';
 
@@ -45,6 +46,7 @@ function AddBlock({ onAdd }: { onAdd: (t: Block['type']) => void }): React.React
 
 function SortableSection({ doc, container, section, index, selection, onSelect }: { doc: DocApi; container: Container; section: Section; index: number; selection: Selection; onSelect: (s: Selection) => void }): React.ReactElement {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+  const renome = useTreeRename(section.name ?? '', (v) => doc.updateSection({ container, sectionId: section.id }, (s) => void (s.name = v || undefined), `rename:${section.id}`));
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const selBlockId = selection?.kind === 'block' ? selection.ref.blockId : undefined;
   const selSectionId = selection?.kind === 'section' ? selection.ref.sectionId : undefined;
@@ -61,11 +63,15 @@ function SortableSection({ doc, container, section, index, selection, onSelect }
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} className="tree-section">
       <div className={`tree-row sec ${selSectionId === section.id ? 'sel' : ''}`}>
         <span className="tree-grip" {...attributes} {...listeners} title="Arraste a seção">⠿</span>
-        <button type="button" className="tree-main" onClick={() => onSelect({ kind: 'section', ref: { container, sectionId: section.id } })} onDoubleClick={() => { const n = prompt('Nome da seção:', section.name ?? ''); if (n !== null) doc.updateSection({ container, sectionId: section.id }, (s) => void (s.name = n.trim() || undefined)); }}>
-          <span className="tree-icon">▦</span>{section.name || `Seção ${index + 1}`}
-        </button>
+        {renome.editando ? (
+          renome.campo
+        ) : (
+          <button type="button" className="tree-main" onClick={() => onSelect({ kind: 'section', ref: { container, sectionId: section.id } })} onDoubleClick={renome.abrir}>
+            <span className="tree-icon">▦</span>{section.name || `Seção ${index + 1}`}
+          </button>
+        )}
         <span className="tree-sec-actions">
-          <button type="button" title="Renomear seção" onClick={() => { const n = prompt('Nome da seção:', section.name ?? ''); if (n !== null) doc.updateSection({ container, sectionId: section.id }, (s) => void (s.name = n.trim() || undefined)); }}>✎</button>
+          {renome.editando ? null : renome.botao}
           <button type="button" title="Duplicar seção" onClick={() => doc.duplicateSection(container, section.id)}>⧉</button>
           <button type="button" title="Excluir seção" onClick={() => { if (!section.blocks.length || confirm('Excluir esta seção e seus blocos?')) { doc.deleteSection(container, section.id); onSelect(null); } }}>✕</button>
         </span>
