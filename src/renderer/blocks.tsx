@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { embedSource } from '../embed/embedSource';
 import { spanVars } from './responsive';
+import { ErrorBoundary } from './ErrorBoundary';
 import type { Block, GalleryItem, HomePreview, ImageRef, ProjectItem, Section, SketchItem } from '../schema/v4';
 import { blockLabel, effectivePreview, projectBlocks } from './preview';
 import type { BlogItem } from '../schema/v4';
@@ -681,7 +682,18 @@ export function SectionView({ section, primeira }: { section: Section; primeira?
     <section className={`section width-${width}`} data-section-id={section.id} style={styleVars({ '--sec-gap': rem(section.style.gap), '--sec-rowgap': rem(section.style.rowGap), '--sec-top': rem(section.style.spaceTop), '--sec-bottom': rem(section.style.spaceBottom) })}>
       <div className="section-grid">
         {shown.map((b, i) => (
-          <BlockView key={b.id} block={b} place={places[i]} mobileRow={places[i] ? linhasIguais.has(places[i]!.row) : false} topo={primeira && (places[i]?.row ?? '').startsWith('1 ')} />
+          <ErrorBoundary
+            key={b.id}
+            fallback={(erro, tentarDeNovo) => (
+              <div className="block block-defeito" style={styleVars({ '--span': b.span })} data-block-id={b.id}>
+                <b>Este elemento não pôde ser exibido</b>
+                <span>{b.type} · {erro.message.slice(0, 120)}</span>
+                <button type="button" onClick={tentarDeNovo}>Tentar de novo</button>
+              </div>
+            )}
+          >
+            <BlockView block={b} place={places[i]} mobileRow={places[i] ? linhasIguais.has(places[i]!.row) : false} topo={primeira && (places[i]?.row ?? '').startsWith('1 ')} />
+          </ErrorBoundary>
         ))}
         {editing ? (
           <button type="button" className="canvas-add-block" data-add-block={section.id} style={{ gridRow: String(rows + 1) }}>

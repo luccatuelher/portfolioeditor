@@ -1,5 +1,6 @@
 import type { BlogItem, I18n, Page, ProjectItem } from '../schema/v4';
 import { SectionView } from './blocks';
+import { ErrorBoundary } from './ErrorBoundary';
 import { useRender } from './context';
 import { pick } from './text';
 
@@ -65,7 +66,12 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
     <div data-page-id={page.id}>
       {temH1 ? null : <h1 className="sr-only">{h1}</h1>}
       {page.sections.map((s, i) => (
-        <SectionView key={s.id} section={s} primeira={i === 0} />
+        <ErrorBoundary
+          key={s.id}
+          fallback={() => <p className="secao-defeito">Uma seção desta página não pôde ser exibida. O resto continua aqui.</p>}
+        >
+          <SectionView section={s} primeira={i === 0} />
+        </ErrorBoundary>
       ))}
     </div>
   );

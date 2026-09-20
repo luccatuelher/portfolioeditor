@@ -6,6 +6,7 @@ import templateRaw from '../../fixtures/template-v3.json?raw';
 import syntheticRaw from '../../fixtures/legacy-synthetic-v3.json?raw';
 import { migrate } from '../migrate/migrate';
 import { Editor } from '../editor/Editor';
+import { ErrorBoundary } from '../renderer/ErrorBoundary';
 import type { Backup } from '../editor/backup';
 import { loadLocalDraft, saveLocalDraft, saveRescueCopy } from '../editor/localDraft';
 import { repairDoc } from '../migrate/repair';
@@ -69,7 +70,26 @@ function Root(): React.ReactElement {
   // Adiciona imagem sem remontar (mantém seleção/undo).
   const onAddAsset = (id: string, dataUrl: string): void => setState((s) => (s ? { ...s, assets: { ...s.assets, [id]: dataUrl } } : s));
 
-  return <Editor key={state.version} initial={state.doc} assets={state.assets} onImport={onImport} onAddAsset={onAddAsset} notice={state.notice} persist={state.persist !== false} />;
+  return (
+    <ErrorBoundary
+      fallback={(erro, tentarDeNovo) => (
+        <div className="tela-de-erro">
+          <h1>O editor parou em algo inesperado</h1>
+          <p>
+            Seu rascunho continua salvo neste navegador — nada foi perdido. Tente de novo; se voltar a parar,
+            recarregue a página e, se ainda assim persistir, importe seu último backup.
+          </p>
+          <pre>{erro.message}</pre>
+          <div className="tela-de-erro-acoes">
+            <button type="button" onClick={tentarDeNovo}>Tentar de novo</button>
+            <button type="button" onClick={() => location.reload()}>Recarregar</button>
+          </div>
+        </div>
+      )}
+    >
+      <Editor key={state.version} initial={state.doc} assets={state.assets} onImport={onImport} onAddAsset={onAddAsset} notice={state.notice} persist={state.persist !== false} />
+    </ErrorBoundary>
+  );
 }
 
 const root = document.getElementById('root');

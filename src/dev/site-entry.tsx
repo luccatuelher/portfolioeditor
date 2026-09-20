@@ -4,6 +4,7 @@ import '../renderer/styles.css';
 import './site-entry.css';
 import type { AssetResolver } from '../renderer/context';
 import { Site } from '../renderer/Site';
+import { ErrorBoundary } from '../renderer/ErrorBoundary';
 import { decryptNda, type EncryptedNda } from '../publish/nda';
 import type { NdaBundle } from '../publish/publicSnapshot';
 import type { PortfolioV4 } from '../schema/v4';
@@ -57,7 +58,23 @@ function App(): React.ReactElement {
     }
   };
 
-  return <Site data={data} resolveAsset={resolver} editing={false} nda={hasNda ? { locked: !unlocked, unlock } : undefined} />;
+  return (
+    <ErrorBoundary
+      fallback={(erro, tentarDeNovo) => (
+        <div className="tela-de-erro">
+          <h1>Algo não pôde ser exibido</h1>
+          <p>Tente de novo ou recarregue a página.</p>
+          <pre>{erro.message}</pre>
+          <div className="tela-de-erro-acoes">
+            <button type="button" onClick={tentarDeNovo}>Tentar de novo</button>
+            <button type="button" onClick={() => location.reload()}>Recarregar</button>
+          </div>
+        </div>
+      )}
+    >
+      <Site data={data} resolveAsset={resolver} editing={false} nda={hasNda ? { locked: !unlocked, unlock } : undefined} />
+    </ErrorBoundary>
+  );
 }
 
 const root = document.getElementById('root');
