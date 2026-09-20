@@ -170,9 +170,15 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
   return (
     <RenderContext.Provider value={ctx}>
       <div className={`site${frame.className}`} lang={lang === 'en' ? 'en' : 'pt-BR'} style={styleVars({ ...themeToCssVars(data.theme), ...frame.vars })}>
+        {/* Primeiro item do Tab: pula o menu inteiro e vai ao conteúdo. Só aparece ao receber foco. */}
+        {!editing ? (
+          <a className="skip-link" href="#conteudo">
+            {lang === 'en' ? 'Skip to content' : 'Pular para o conteúdo'}
+          </a>
+        ) : null}
         <SiteHeader data={data} lang={lang} onLang={setLang} onNavigate={navigate} current={route} />
         {!editing ? <StickyNav data={data} lang={lang} onLang={setLang} onNavigate={navigate} current={route} /> : null}
-        <main className="container" data-route={route || 'home'}>
+        <main className="container" id="conteudo" data-route={route || 'home'}>
           <PageView page={page} item={item} />
         </main>
       </div>

@@ -400,3 +400,18 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
    (fechar é clicar fora ou Esc, como o resto do site) */
 .lightbox-close { display: none; position: absolute; top: max(10px, env(safe-area-inset-top)); right: 10px; width: 44px; height: 44px; border: none; border-radius: 50%; background: rgba(24, 23, 21, 0.55); color: rgb(250, 249, 247); font-size: 1.2rem; line-height: 1; cursor: pointer; place-items: center; }
 @media (hover: none) { .lightbox-close { display: grid; } }
+
+/* ---- acessibilidade ---- */
+/* Visível só para leitor de tela (o h1 de cada página quando o conteúdo não tem um). */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0;
+}
+/* Pular o menu: primeiro do Tab, aparece só ao receber foco. */
+.skip-link {
+  position: absolute; left: 12px; top: -60px; z-index: 9000;
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 0 0 6px 6px;
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none;
+  transition: top 0.15s;
+}
+.skip-link:focus { top: 0; }
