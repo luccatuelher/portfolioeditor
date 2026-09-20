@@ -1,0 +1,32 @@
+/* ================================================================ resoluções
+   Tudo no site está em rem: a fonte-base cresce com a tela e leva junto textos,
+   espaços e botões. ~15px no celular, ~16px em 1280/1366, ~18px em 1920,
+   ~20px em 2K e 21px em 4K. */
+html { font-size: clamp(15px, calc(12.5px + 0.3vw), 21px); }
+
+.site {
+  /* Safe area: margem de respiro de cada lado (padrão 10% da tela, ajustável no
+     Tema) e largura máxima (padrão 2200px). O conteúdo nunca encosta nas bordas. */
+  --edge: max(16px, var(--safe, 10vw));
+  --page-max: min(var(--page-cap, 2200px), 100vw - 2 * var(--edge));
+  --gutter: clamp(16px, 1.4vw, 44px);
+}
+
+/* Seções "Larga" e "Cheia" passam a ocupar mais que a coluna de texto. */
+/* "Larga"/"Cheia" avançam sobre a margem, mas sem sair da safe area (metade da margem fica livre). */
+.section.width-wide { margin-inline: calc((100% - min(100vw - 1.5 * var(--edge), var(--page-max) * 1.12)) / 2); }
+.section.width-full { margin-inline: calc((100% - min(100vw - var(--edge), var(--page-max) * 1.25)) / 2); }
+
+/* Em telas baixas (ex.: 1280x720) imagem/vídeo nunca passam de ~85% da altura. */
+.block-image-img { max-height: 85vh; object-fit: contain; }
+.block-image-img[src] { background: none; }
+.embed-area { max-width: calc(85vh * 16 / 9); margin-inline: auto; }
+
+@media (max-width: 600px) {
+  .site { --edge: 16px; --page-pad: 0px; }
+  .section.width-wide, .section.width-full { margin-inline: 0; }
+  .block-image-img { max-height: none; }
+  .embed-area { max-width: none; }
+}
+/* Com fundo nas laterais, nada atravessa a faixa do conteúdo. */
+.site.bd-sides .section.width-wide, .site.bd-sides .section.width-full { margin-inline: 0; }

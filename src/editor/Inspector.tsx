@@ -1,0 +1,783 @@
+import { useRef, useState } from 'react';
+import { DEFAULT_HEADER, type Block, type BlogItem, type GalleryItem, type HeaderConfig, type ProjectItem, type SketchItem, type Visibility } from '../schema/v4';
+import { reorderArray } from '../core/array';
+import { computeRowColumns, rowHeadId } from './gridOps';
+import { emptyI18n } from '../core/i18n';
+import { findBlock, findSection, type CollectionName, type Selection } from './paths';
+import type { DocApi } from './useDocument';
+import { EditLangContext, I18nInput, NumberInput, Row, RangeInput, SelectInput, TextInput } from './fields';
+import { LangFlag } from '../renderer/Flags';
+import { RichI18nInput } from './RichTextEditor';
+import { TYPE_LABEL } from '../renderer/preview';
+import { resolveSpan } from '../renderer/responsive';
+
+const PROJECT_META_FIELDS = ['tag', 'year', 'client', 'role', 'category', 'skills', 'contribution', 'credits', 'sequenceLabel', 'storyType', 'processNotes'] as const;
+const META_LABEL: Record<string, string> = {
+  tag: 'Tag', year: 'Ano', client: 'Cliente', role: 'Papel', category: 'Categoria (personal/professional)', skills: 'Competências',
+  contribution: 'Contribuição', credits: 'Créditos', sequenceLabel: 'Sequência', storyType: 'Formato', processNotes: 'Processo',
+};
+const COLL_LABEL: Record<CollectionName, string> = { projects: 'Projeto', blog: 'Nota', gallery: 'Imagem da galeria', sketches: 'Sketch' };
+
+function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc: DocApi; collection: CollectionName; id: string; onUploadImage?: UploadImage; onDeleted: () => void }): React.ReactElement {
+  const item = doc.state.collections[collection].find((x) => x.id === id);
+  if (!item) return <div className="insp-empty">Item não encontrado.</div>;
+  const del = (): void => {
+    if (confirm('Excluir este item?')) {
+      doc.deleteItem(collection, id);
+      onDeleted();
+    }
+  };
+  const uploadBtn = (apply: (aid: string) => void): React.ReactNode =>
+    onUploadImage ? <ImageUploadButton onPick={(f) => void onUploadImage(f).then(apply)} /> : null;
+
+  // Mesma régua dos blocos: largura em 12 avos (vazio = automático pelas colunas da coleção).
+  const widthRow = (coll: CollectionName, it: { width?: number }): React.ReactNode => (
+    <Row label="Largura (de 12, vazio = automático)">
+      <input className="insp-input" type="number" min={1} max={12} value={it.width ?? ''} placeholder="auto"
+        onChange={(e) => { const n = Number(e.target.value); doc.updateItem(coll, id, (x) => void ((x as { width?: number }).width = e.target.value === '' ? undefined : Math.max(1, Math.min(12, n))), `${id}:width`); }} />
+    </Row>
+  );
+  let fields: React.ReactNode = null;
+  if (collection === 'projects') {
+    const p = item as ProjectItem;
+    fields = (
+      <>
+        <Row label="Título"><I18nInput value={p.title} onChange={(v) => doc.updateItem('projects', id, (it) => void (it.title = v), `${id}:title`)} /></Row>
+        <Row label="Descrição"><I18nInput multiline value={p.description} onChange={(v) => doc.updateItem('projects', id, (it) => void (it.description = v), `${id}:desc`)} /></Row>
+        <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('projects', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }))}</Row>
+        {widthRow('projects', p)}
+        <label className="insp-check"><input type="checkbox" checked={p.featured} onChange={(e) => doc.updateItem('projects', id, (it) => void (it.featured = e.target.checked))} /> Destaque na Home</label>
+        <div className="insp-sub">Ficha técnica</div>
+        {PROJECT_META_FIELDS.map((f) => (
+          <Row key={f} label={META_LABEL[f] ?? f}><I18nInput value={p.meta[f] ?? emptyI18n()} onChange={(v) => doc.updateItem('projects', id, (it) => { it.meta[f] = v; }, `${id}:${f}`)} /></Row>
+        ))}
+      </>
+    );
+  } else if (collection === 'blog') {
+    const b = item as BlogItem;
+    fields = (
+      <>
+        <Row label="Título"><I18nInput value={b.title} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.title = v), `${id}:title`)} /></Row>
+        <Row label="Data"><I18nInput value={b.date} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.date = v), `${id}:date`)} /></Row>
+        <Row label="Resumo"><I18nInput multiline value={b.excerpt} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.excerpt = v), `${id}:exc`)} /></Row>
+        {widthRow('blog', b)}
+        <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('blog', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }))}</Row>
+      </>
+    );
+  } else if (collection === 'gallery') {
+    const g = item as GalleryItem;
+    fields = (
+      <>
+        <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('gallery', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }))}</Row>
+        <Row label="Legenda"><I18nInput value={g.caption} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.caption = v), `${id}:cap`)} /></Row>
+        <Row label="Alt"><I18nInput value={g.image.alt} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
+        {widthRow('gallery', g)}
+      </>
+    );
+  } else {
+    const s = item as SketchItem;
+    fields = (
+      <>
+        <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('sketches', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }))}</Row>
+        <Row label="Alt"><I18nInput value={s.image.alt} onChange={(v) => doc.updateItem('sketches', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
+        {widthRow('sketches', s)}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="insp-head">{COLL_LABEL[collection]}</div>
+      <div className="insp-body">
+        {fields}
+        <Row label="Visibilidade"><SelectInput value={item.visibility} onChange={(v) => doc.updateItem(collection, id, (it) => void (it.visibility = v))} options={VIS} /></Row>
+        <button type="button" className="insp-delete" onClick={del}>Excluir {COLL_LABEL[collection].toLowerCase()}</button>
+      </div>
+    </>
+  );
+}
+
+type Tab = 'content' | 'layout' | 'style' | 'visibility';
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'content', label: 'Conteúdo' },
+  { id: 'layout', label: 'Layout' },
+  { id: 'style', label: 'Estilo' },
+  { id: 'visibility', label: 'Visibilidade' },
+];
+
+const VIS: { value: Visibility; label: string }[] = [
+  { value: 'public', label: 'Público' },
+  { value: 'draft', label: 'Rascunho' },
+  { value: 'nda', label: 'NDA' },
+];
+
+export type UploadImage = (file: File) => Promise<string>;
+
+const ALIGNS = [
+  { value: 'start', icon: '⯇', label: 'Esquerda' },
+  { value: 'center', icon: '≡', label: 'Centro' },
+  { value: 'end', icon: '⯈', label: 'Direita' },
+] as const;
+
+/** Alinhamento do bloco (texto, imagem, vídeo, botão…) — mesmo controle em todo lugar. */
+function AlignRow({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef }): React.ReactElement {
+  const cur = block.align ?? 'start';
+  return (
+    <div className="insp-row">
+      <span className="insp-label">Alinhamento</span>
+      <div className="insp-align" role="group" aria-label="Alinhamento">
+        {ALIGNS.map((a) => (
+          <button key={a.value} type="button" className={cur === a.value ? 'on' : ''} aria-pressed={cur === a.value} title={a.label} onClick={() => doc.updateBlock(refBlock, (b) => void (b.align = a.value))}>
+            {a.icon} <span>{a.label}</span>
+          </button>
+        ))}
+      </div>
+      {block.type === 'image' && (block.content.widthPct ?? 100) >= 100 ? (
+        <div className="insp-note">A imagem ocupa 100% da largura — diminua a "Largura (%)" para ver o alinhamento.</div>
+      ) : null}
+    </div>
+  );
+}
+
+/** Espaçamentos da seção — os mesmos controles no inspector da seção e na aba Layout de cada bloco. */
+function SpacingControls({ doc, sectionRef, title }: { doc: DocApi; sectionRef: import('./paths').SectionRef; title?: string }): React.ReactElement | null {
+  const section = findSection(doc.state, sectionRef);
+  if (!section) return null;
+  const st = section.style;
+  const row = (key: 'gap' | 'rowGap' | 'spaceTop' | 'spaceBottom', label: string, max: number, def: number): React.ReactElement => {
+    const v = st[key];
+    return (
+      <div className="insp-row insp-space">
+        <span className="insp-label">{label} · {v ?? `padrão (${def})`}{v !== undefined ? 'px' : ''}</span>
+        <div className="insp-space-row">
+          <input type="range" min={0} max={max} step={2} value={v ?? def} onChange={(e) => doc.updateSection(sectionRef, (s) => void (s.style[key] = Number(e.target.value)), `${sectionRef.sectionId}:${key}`)} />
+          {v !== undefined ? <button type="button" title="Voltar ao padrão" onClick={() => doc.updateSection(sectionRef, (s) => void delete s.style[key])}>↺</button> : null}
+        </div>
+      </div>
+    );
+  };
+  return (
+    <>
+      {title ? <div className="insp-sub">{title}</div> : null}
+      {row('gap', 'Entre elementos (lado a lado)', 160, 24)}
+      <div className="insp-note">Os elementos mantêm o tamanho: o espaço usa a sobra da linha. Numa linha cheia, diminua a largura de um elemento para abrir espaço.</div>
+      {row('rowGap', 'Entre linhas', 160, 24)}
+      {row('spaceTop', 'Acima da seção', 320, 52)}
+      {row('spaceBottom', 'Abaixo da seção', 320, 52)}
+    </>
+  );
+}
+
+/** Grupo recolhível do inspector; lembra aberto/fechado entre sessões. */
+function Group({ id, title, children, defaultOpen = true }: { id: string; title: string; children: React.ReactNode; defaultOpen?: boolean }): React.ReactElement {
+  const key = `insp-group:${id}`;
+  const [open, setOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem(key);
+      return v === null ? defaultOpen : v === '1';
+    } catch {
+      return defaultOpen;
+    }
+  });
+  return (
+    <details className="insp-group" open={open} onToggle={(e) => {
+      const o = (e.currentTarget as HTMLDetailsElement).open;
+      setOpen(o);
+      try { localStorage.setItem(key, o ? '1' : '0'); } catch { /* sem storage */ }
+    }}>
+      <summary>{title}</summary>
+      <div className="insp-group-body">{children}</div>
+    </details>
+  );
+}
+
+const ROW_ALIGNS = [
+  { value: 'start', icon: '⯇', label: 'Esquerda' },
+  { value: 'center', icon: '≡', label: 'Centro' },
+  { value: 'end', icon: '⯈', label: 'Direita' },
+  { value: 'between', icon: '⟷', label: 'Distribuir' },
+] as const;
+
+/** Alinhamento da linha inteira em que o bloco está (usa a sobra da linha; nada muda de tamanho). */
+/**
+ * Largura nos três dispositivos, com a cascata à mostra.
+ *
+ * Cada linha diz de onde vem o valor: próprio daquela tela, herdado do
+ * computador/tablet, ou ajustado pelo piso (miniatura que ficaria pequena
+ * demais). "↺" devolve a linha para o valor herdado — é o mesmo gesto de
+ * "reset to inherited" dos editores que têm breakpoints.
+ */
+function LarguraPorDispositivo({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef }): React.ReactElement {
+  const spans = { desktop: block.span, tablet: block.responsive?.tablet?.span, mobile: block.responsive?.mobile?.span };
+  const telas: { id: 'desktop' | 'tablet' | 'mobile'; nome: string }[] = [
+    { id: 'desktop', nome: 'Computador' },
+    { id: 'tablet', nome: 'Tablet' },
+    { id: 'mobile', nome: 'Celular' },
+  ];
+  const setar = (tela: 'desktop' | 'tablet' | 'mobile', v: number): void => {
+    if (tela === 'desktop') return void doc.setBlockSpan(refBlock, v, `${refBlock.blockId}:span`);
+    doc.updateBlock(refBlock, (b) => void ((b.responsive ??= {})[tela] = { ...(b.responsive[tela] ?? {}), span: v }), `${refBlock.blockId}:${tela}span`);
+  };
+  const limpar = (tela: 'tablet' | 'mobile'): void =>
+    doc.updateBlock(refBlock, (b) => {
+      const r = b.responsive?.[tela];
+      if (!r) return;
+      delete r.span;
+      if (!r.hidden) delete b.responsive![tela];
+    }, `${refBlock.blockId}:${tela}span:clear`);
+
+  return (
+    <>
+      {telas.map((t) => {
+        const r = resolveSpan(spans, t.id, 'block');
+        return (
+          <Row key={t.id} label={`Largura · ${t.nome}`}>
+            <div className="insp-span-row">
+              <RangeInput min={1} max={12} value={r.span} onChange={(v) => setar(t.id, v)} />
+              <span className={`insp-span-tag${r.own ? ' own' : ''}`}>
+                {r.span}/12 · {r.own ? (t.id === 'desktop' ? 'padrão' : 'próprio') : r.floored ? 'ajustado' : `herdado do ${r.from === 'tablet' ? 'tablet' : 'computador'}`}
+              </span>
+              {t.id !== 'desktop' && r.own ? (
+                <button type="button" className="insp-span-reset" title="Voltar ao valor herdado" onClick={() => limpar(t.id as 'tablet' | 'mobile')}>↺</button>
+              ) : null}
+            </div>
+          </Row>
+        );
+      })}
+    </>
+  );
+}
+
+function RowAlignRow({ doc, refBlock }: { doc: DocApi; refBlock: import('./paths').BlockRef }): React.ReactElement | null {
+  const section = findSection(doc.state, refBlock);
+  if (!section) return null;
+  const head = section.blocks.find((b) => b.id === rowHeadId(section.blocks, refBlock.blockId));
+  const cur = head?.rowAlign ?? 'start';
+  const i = section.blocks.findIndex((b) => b.id === refBlock.blockId);
+  const row = computeRowColumns(section.blocks).find((r) => r.some((c) => c.includes(i)));
+  const used = row ? row.reduce((s, c) => s + section.blocks[c[0]!]!.span, 0) : 12;
+  return (
+    <div className="insp-row">
+      <span className="insp-label">Alinhamento da linha inteira</span>
+      <div className="insp-align" role="group" aria-label="Alinhamento da linha">
+        {ROW_ALIGNS.map((a) => (
+          <button key={a.value} type="button" className={cur === a.value ? 'on' : ''} aria-pressed={cur === a.value} title={a.label} onClick={() => doc.setRowAlign(refBlock, a.value)}>
+            {a.icon} <span>{a.label}</span>
+          </button>
+        ))}
+      </div>
+      {used >= 12 ? <div className="insp-note">Esta linha está cheia (12/12) — diminua a largura de um elemento para sobrar espaço para alinhar.</div> : null}
+    </div>
+  );
+}
+
+/** Espaço próprio do elemento (4 lados), dentro da sua célula da linha. */
+function BlockPadding({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef }): React.ReactElement {
+  const sides = [
+    { k: 't', label: 'Acima' },
+    { k: 'b', label: 'Abaixo' },
+    { k: 'l', label: 'Afastar para a direita' },
+    { k: 'r', label: 'Afastar para a esquerda' },
+  ] as const;
+  const set = (k: 't' | 'r' | 'b' | 'l', v: number | undefined): void =>
+    doc.updateBlock(refBlock, (b) => {
+      const pad = { ...(b.pad ?? {}) };
+      if (v === undefined) delete pad[k];
+      else pad[k] = v;
+      b.pad = Object.keys(pad).length ? pad : undefined;
+    }, `${refBlock.blockId}:pad:${k}`);
+  return (
+    <>
+      {sides.map(({ k, label }) => {
+        const v = block.pad?.[k];
+        return (
+          <div key={k} className="insp-row insp-space">
+            <span className="insp-label">{label} · {v ?? 0}px</span>
+            <div className="insp-space-row">
+              <input type="range" min={0} max={200} step={2} value={v ?? 0} onChange={(e) => set(k, Number(e.target.value) || undefined)} />
+              {v !== undefined ? <button type="button" title="Zerar" onClick={() => set(k, undefined)}>↺</button> : null}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+const HEADER_LABEL: Record<string, string> = { brand: 'Nome + função', nav: 'Menu', lang: 'Idiomas' };
+
+/** Layout, ordem e visibilidade dos elementos do cabeçalho + itens do menu. */
+function HeaderControls({ doc }: { doc: DocApi }): React.ReactElement {
+  const cfg = doc.state.site.header ?? DEFAULT_HEADER;
+  const hidden = new Set(cfg.hidden ?? []);
+  const setHeader = (recipe: (h: HeaderConfig) => void): void =>
+    doc.updateSite((s) => recipe((s.header ??= structuredClone(DEFAULT_HEADER))));
+  const toggle = (k: 'brand' | 'nav' | 'lang' | 'role'): void =>
+    setHeader((h) => {
+      const set = new Set(h.hidden ?? []);
+      if (set.has(k)) set.delete(k);
+      else set.add(k);
+      h.hidden = [...set];
+    });
+  const pages = doc.state.pages.filter((p) => p.kind === 'static' && p.visibility !== 'nda');
+  const nav = doc.state.site.nav;
+  return (
+    <>
+      <div className="insp-sub">Layout do cabeçalho</div>
+      <Row label="Arranjo">
+        <SelectInput
+          value={cfg.layout}
+          onChange={(v) => setHeader((h) => void (h.layout = v))}
+          options={[
+            { value: 'grid', label: 'Grade (como as seções)' },
+            { value: 'split', label: '1º à esquerda, resto à direita' },
+            { value: 'row', label: 'Tudo em uma linha' },
+            { value: 'stacked', label: 'Empilhado (esquerda)' },
+            { value: 'centered', label: 'Empilhado (centro)' },
+          ]}
+        />
+      </Row>
+      <div className="insp-list">
+        {cfg.order.map((el, i) => (
+          <div key={el} className={`insp-list-row${hidden.has(el) ? ' off' : ''}`}>
+            <label><input type="checkbox" checked={!hidden.has(el)} onChange={() => toggle(el)} /> {HEADER_LABEL[el]}</label>
+            {cfg.layout === 'grid' ? (
+              <select className="insp-list-align" value={cfg.align?.[el] ?? 'start'} title="Alinhamento na célula" onChange={(e) => setHeader((h) => void (h.align = { ...(h.align ?? {}), [el]: e.target.value as 'start' | 'center' | 'end' }))}>
+                <option value="start">⯇ esq.</option>
+                <option value="center">≡ centro</option>
+                <option value="end">dir. ⯈</option>
+              </select>
+            ) : null}
+            <span className="insp-list-ord">
+              <button type="button" disabled={i === 0} onClick={() => setHeader((h) => reorderArray(h.order, i, i - 1))}>↑</button>
+              <button type="button" disabled={i === cfg.order.length - 1} onClick={() => setHeader((h) => reorderArray(h.order, i, i + 1))}>↓</button>
+            </span>
+          </div>
+        ))}
+      </div>
+      <label className="insp-check"><input type="checkbox" checked={!hidden.has('role')} onChange={() => toggle('role')} /> Mostrar a função abaixo do nome</label>
+      <div className="insp-note">Dica: no canvas, arraste os elementos do cabeçalho e os itens do menu para reorganizar.</div>
+
+      <div className="insp-sub">Itens do menu</div>
+      <div className="insp-list">
+        {[...nav.map((id) => pages.find((p) => p.id === id)).filter((p): p is NonNullable<typeof p> => !!p), ...pages.filter((p) => !nav.includes(p.id))].map((p) => {
+          const i = nav.indexOf(p.id);
+          return (
+            <div key={p.id} className={`insp-list-row${i < 0 ? ' off' : ''}`}>
+              <label><input type="checkbox" checked={i >= 0} onChange={() => doc.toggleNav(p.id)} /> {p.title.pt || p.id}</label>
+              {i >= 0 ? (
+                <span className="insp-list-ord">
+                  <button type="button" disabled={i === 0} onClick={() => doc.updateSite((s) => reorderArray(s.nav, i, i - 1))}>↑</button>
+                  <button type="button" disabled={i === nav.length - 1} onClick={() => doc.updateSite((s) => reorderArray(s.nav, i, i + 1))}>↓</button>
+                </span>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+      <div className="insp-note">O nome de cada item é o título da página (aba Páginas → selecione a página).</div>
+    </>
+  );
+}
+
+function ImageUploadButton({ onPick }: { onPick: (file: File) => void }): React.ReactElement {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <button type="button" className="insp-upload" onClick={() => ref.current?.click()}>Enviar imagem…</button>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          if (f) onPick(f);
+        }}
+      />
+    </>
+  );
+}
+
+const LANGS = [
+  { id: 'pt', label: 'PT', name: 'Português' },
+  { id: 'en', label: 'EN', name: 'English' },
+] as const;
+
+export function Inspector({ lang, onLang, ...props }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void; lang: 'pt' | 'en'; onLang: (l: 'pt' | 'en') => void }): React.ReactElement {
+  return (
+    <aside className="inspector">
+      <div className="insp-langbar" role="group" aria-label="Idioma dos textos">
+        <span className="insp-langbar-label">Editando</span>
+        {LANGS.map((l) => (
+          <button key={l.id} type="button" className={`insp-lang ${lang === l.id ? 'on' : ''}`} aria-pressed={lang === l.id} title={`Editar textos em ${l.name}`} onClick={() => onLang(l.id)}>
+            <LangFlag lang={l.id} /> {l.label}
+          </button>
+        ))}
+      </div>
+      <EditLangContext.Provider value={lang}>
+        <InspectorBody {...props} />
+      </EditLangContext.Provider>
+    </aside>
+  );
+}
+
+function InspectorBody({ doc, selection, onUploadImage, onSelect }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void }): React.ReactElement {
+  const [tab, setTab] = useState<Tab>('content');
+
+  if (!selection) {
+    return (
+      <div className="insp-help">
+        <p className="insp-help-lead">Clique num elemento do canvas (ou nas Layers) para editar.</p>
+        <div className="insp-sub">Gestos no canvas</div>
+        <ul>
+          <li><b>⠿</b> arraste para mover · solte na <b>lateral</b> de outro elemento = mesma linha · <b>em cima/embaixo</b> = empilha na coluna</li>
+          <li><b>Borda direita</b> arraste para mudar a largura</li>
+          <li>Ícones no hover: trocar imagem, recortar, editar, excluir</li>
+          <li>Textos e títulos: selecione e clique de novo para escrever direto no canvas (com barra de formatação)</li>
+        </ul>
+        <div className="insp-sub">Atalhos</div>
+        <dl className="insp-keys">
+          <dt>Ctrl+Z / Ctrl+Shift+Z</dt><dd>desfazer / refazer</dd>
+          <dt>Ctrl+C · X · V</dt><dd>copiar · recortar · colar</dd>
+          <dt>Ctrl+D</dt><dd>duplicar</dd>
+          <dt>Delete</dt><dd>excluir o selecionado</dd>
+          <dt>Esc</dt><dd>selecionar o "pai" (bloco → seção → página)</dd>
+          <dt>Ctrl+S</dt><dd>baixar o backup (o rascunho já salva sozinho)</dd>
+        </dl>
+      </div>
+    );
+  }
+
+  if (selection.kind === 'item') {
+    return <><ItemInspector doc={doc} collection={selection.collection} id={selection.itemId} onUploadImage={onUploadImage} onDeleted={() => onSelect?.(null)} /></>;
+  }
+
+  if (selection.kind === 'site') {
+    return (
+      <>
+        <div className="insp-head">Site · cabeçalho</div>
+        <div className="insp-body">
+          <Row label="Nome"><I18nInput value={doc.state.site.name} onChange={(v) => doc.updateSite((s) => void (s.name = v), 'site:name')} /></Row>
+          <Row label="Função"><I18nInput value={doc.state.site.role} onChange={(v) => doc.updateSite((s) => void (s.role = v), 'site:role')} /></Row>
+          <HeaderControls doc={doc} />
+        </div>
+      </>
+    );
+  }
+
+  if (selection.kind === 'page') {
+    const page = doc.state.pages.find((p) => p.id === selection.pageId);
+    return (
+      <>
+        <div className="insp-head">Página · {page?.id}</div>
+        {page ? (
+          <div className="insp-body">
+            <Row label="Título">
+              <I18nInput value={page.title} onChange={(v) => doc.updatePage(page.id, (p) => void (p.title = v), `${page.id}:title`)} />
+            </Row>
+            {page.id !== 'home' ? (
+              <Row label="Endereço (slug) — site.html#…">
+                <TextInput value={page.slug} onChange={(v) => doc.updatePage(page.id, (p) => void (p.slug = v.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9-]+/g, '-').replace(/^-+/, '')), `${page.id}:slug`)} />
+                {!page.slug ? <div className="insp-note">Sem endereço, a página usa o id interno ({page.id}).</div> : null}
+                {page.slug && doc.state.pages.some((p) => p.id !== page.id && p.slug === page.slug) ? <div className="insp-note insp-warn">Outra página já usa este endereço — os links vão abrir a primeira.</div> : null}
+              </Row>
+            ) : null}
+            <label className="insp-check">
+              <input type="checkbox" checked={doc.state.site.nav.includes(page.id)} onChange={() => doc.toggleNav(page.id)} />
+              Mostrar no menu
+            </label>
+            <Group id="seo" title="SEO e compartilhamento" defaultOpen={false}>
+              <Row label="Descrição (Google e redes sociais)">
+                <I18nInput multiline value={page.seo?.description ?? emptyI18n()} onChange={(v) => doc.updatePage(page.id, (p) => void ((p.seo ??= {}).description = v), `${page.id}:seodesc`)} />
+              </Row>
+              {onUploadImage ? (
+                <Row label="Imagem ao compartilhar o link">
+                  <ImageUploadButton onPick={(f) => void onUploadImage(f).then((id) => doc.updatePage(page.id, (p) => void ((p.seo ??= {}).image = { assetId: id, alt: emptyI18n() })))} />
+                </Row>
+              ) : null}
+              <div className="insp-note">{page.id === 'home' ? 'A Home define o texto e a imagem que aparecem ao compartilhar o site.' : 'Usada quando esta página está aberta; o link compartilhado usa sempre os dados da Home (o site é um arquivo só).'}</div>
+            </Group>
+            {page.id !== 'home' ? (
+              <button type="button" className="insp-delete" onClick={() => { if (confirm('Excluir esta página?')) doc.deletePage(page.id); }}>Excluir página</button>
+            ) : null}
+          </div>
+        ) : null}
+      </>
+    );
+  }
+
+  if (selection.kind === 'section') {
+    const section = findSection(doc.state, selection.ref);
+    return (
+      <>
+        <div className="insp-head">Seção</div>
+        {section ? (
+          <div className="insp-body">
+            <SpacingControls doc={doc} sectionRef={selection.ref} title="Espaçamento" />
+            <Row label="Nome (só no editor)"><TextInput value={section.name ?? ''} placeholder="Ex.: Destaques" onChange={(v) => doc.updateSection(selection.ref, (s) => void (s.name = v || undefined), `${selection.ref.sectionId}:name`)} /></Row>
+            <Row label="Largura">
+              <SelectInput
+                value={section.style.width ?? 'normal'}
+                onChange={(v) => doc.updateSection(selection.ref, (s) => void (s.style.width = v))}
+                options={[
+                  { value: 'full', label: 'Cheia' },
+                  { value: 'wide', label: 'Larga' },
+                  { value: 'normal', label: 'Normal' },
+                  { value: 'narrow', label: 'Estreita' },
+                ]}
+              />
+            </Row>
+            {selection.ref.container.on === 'item' && selection.ref.container.collection === 'projects' ? (
+              <label className="insp-check">
+                <input type="checkbox" checked={!!section.homeHidden} onChange={(e) => doc.updateSection(selection.ref, (s) => void (s.homeHidden = e.target.checked || undefined))} />
+                Ocultar na prévia da Home
+              </label>
+            ) : null}
+            <div className="insp-move">
+              <button type="button" onClick={() => doc.duplicateSection(selection.ref.container, selection.ref.sectionId)}>Duplicar</button>
+            </div>
+            <button type="button" className="insp-delete" onClick={() => { if (confirm('Excluir esta seção e seus blocos?')) { doc.deleteSection(selection.ref.container, selection.ref.sectionId); onSelect?.(null); } }}>Excluir seção</button>
+          </div>
+        ) : null}
+      </>
+    );
+  }
+
+  const ref = selection.ref;
+  const block = findBlock(doc.state, ref);
+  if (!block) return <><div className="insp-empty">Bloco não encontrado.</div></>;
+
+  return (
+    <>
+      <div className="insp-head">{TYPE_LABEL[block.type] ?? block.type}</div>
+      <div className="insp-tabs">
+        {TABS.map((t) => (
+          <button key={t.id} type="button" className={`insp-tab ${tab === t.id ? 'active' : ''}`} onClick={() => setTab(t.id)}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+      <div className="insp-body">
+        {tab === 'content' && (
+          <>
+            <ContentTab doc={doc} block={block} refBlock={selection.ref} onUploadImage={onUploadImage} />
+            {['divider', 'spacer', 'collection', 'contact', 'columns'].includes(block.type) ? null : <AlignRow doc={doc} block={block} refBlock={selection.ref} />}
+          </>
+        )}
+        {tab === 'layout' && <LayoutTab doc={doc} block={block} refBlock={selection.ref} />}
+        {tab === 'style' && <StyleTab doc={doc} block={block} refBlock={selection.ref} />}
+        {tab === 'visibility' && (
+          <Row label="Visibilidade">
+            <SelectInput value={block.visibility} onChange={(v) => doc.updateBlock(selection.ref, (b) => void (b.visibility = v))} options={VIS} />
+          </Row>
+        )}
+      </div>
+    </>
+  );
+}
+
+function ContentTab({ doc, block, refBlock, onUploadImage }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef; onUploadImage?: UploadImage }): React.ReactElement {
+  const gk = (f: string): string => `${refBlock.blockId}:${f}`;
+  const upd = doc.updateBlock;
+  switch (block.type) {
+    case 'heading':
+      return (
+        <>
+          <Row label="Texto">
+            <I18nInput value={{ pt: stripTags(block.content.text.pt), en: stripTags(block.content.text.en) }} onChange={(v) => upd(refBlock, (b) => void (b.type === 'heading' && (b.content.text = { pt: escapeText(v.pt), en: escapeText(v.en) })), gk('text'))} />
+            {/<[a-z]/i.test(block.content.text.pt + block.content.text.en) ? <div className="insp-note">Este título tem formatação (cor, fonte…) feita no canvas. Editar aqui remove a formatação — para mantê-la, edite direto no canvas.</div> : null}
+          </Row>
+          <div className="insp-row">
+            <span className="insp-label">Nível do título</span>
+            <div className="insp-align" role="group" aria-label="Nível do título">
+              {[1, 2, 3, 4].map((n) => (
+                <button key={n} type="button" className={(block.content.level ?? 2) === n ? 'on' : ''} aria-pressed={(block.content.level ?? 2) === n} onClick={() => upd(refBlock, (b) => void (b.type === 'heading' && (b.content.level = n)))}>H{n}</button>
+              ))}
+            </div>
+          </div>
+        </>
+      );
+    case 'text':
+      return <Row label="Texto rich"><RichI18nInput value={block.content.html} onChange={(v) => upd(refBlock, (b) => void (b.type === 'text' && (b.content.html = v)), gk('html'))} /></Row>;
+    case 'image':
+      return (
+        <>
+          {onUploadImage ? (
+            <Row label="Imagem">
+              <ImageUploadButton
+                onPick={(file) => {
+                  void onUploadImage(file).then((id) =>
+                    upd(refBlock, (b) => {
+                      if (b.type === 'image') {
+                        b.content.image.assetId = id;
+                        b.content.image.url = undefined;
+                      }
+                    }),
+                  );
+                }}
+              />
+            </Row>
+          ) : null}
+          <Row label="Alt"><I18nInput value={block.content.image.alt} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.image.alt = v)), gk('alt'))} /></Row>
+          <Row label="Largura (%)"><NumberInput value={block.content.widthPct ?? 100} min={25} max={100} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.widthPct = v)), gk('wpct'))} /></Row>
+        </>
+      );
+    case 'embed':
+      return (
+        <>
+          <Row label="Provedor"><SelectInput value={block.content.provider} onChange={(v) => upd(refBlock, (b) => void (b.type === 'embed' && (b.content.provider = v)))} options={[{ value: 'youtube', label: 'YouTube' }, { value: 'vimeo', label: 'Vimeo' }, { value: 'speakerdeck', label: 'Speaker Deck' }]} /></Row>
+          <Row label="URL / ID / iframe"><TextInput value={block.content.ref} onChange={(v) => upd(refBlock, (b) => void (b.type === 'embed' && (b.content.ref = v)), gk('ref'))} /></Row>
+        </>
+      );
+    case 'collection':
+      return (
+        <>
+          <Row label="Coleção"><SelectInput value={block.content.collection} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.collection = v)))} options={[{ value: 'projects', label: 'Projetos' }, { value: 'blog', label: 'Notas' }, { value: 'gallery', label: 'Galeria' }, { value: 'sketches', label: 'Sketches' }]} /></Row>
+          <Row label="Colunas"><RangeInput min={1} max={6} value={block.content.cols} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.cols = v)), gk('cols'))} /></Row>
+          <Row label={`Espaço entre os itens · ${block.content.gap ?? 'padrão (24)'}${block.content.gap !== undefined ? 'px' : ''}`}><RangeInput min={0} max={120} value={block.content.gap ?? 24} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.gap = v)), gk('gap'))} /></Row>
+          <Row label="Filtro fixo"><SelectInput value={block.content.filter ?? 'all'} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.filter = v)))} options={[{ value: 'all', label: 'Todos' }, { value: 'featured', label: 'Destaques' }, { value: 'professional', label: 'Profissional' }, { value: 'personal', label: 'Pessoal' }, { value: 'nda', label: 'Só NDA (confidencial)' }]} /></Row>
+          <label className="insp-check">
+            <input type="checkbox" checked={!!block.content.showFilter} onChange={(e) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.showFilter = e.target.checked || undefined)))} />
+            Botões de filtro p/ o visitante (projetos)
+          </label>
+          {block.content.showFilter && (block.content.filter === 'professional' || block.content.filter === 'personal') ? (
+            <div className="insp-note">Com o filtro fixo numa categoria, os botões do visitante ficam ocultos (só haveria uma categoria).</div>
+          ) : null}
+          <label className="insp-check">
+            <input type="checkbox" checked={!!block.content.preview} onChange={(e) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.preview = e.target.checked || undefined)))} />
+            Prévia inline ao clicar (Home)
+          </label>
+        </>
+      );
+    case 'spacer':
+      return <Row label="Tamanho"><SelectInput value={block.content.size} onChange={(v) => upd(refBlock, (b) => void (b.type === 'spacer' && (b.content.size = v)))} options={[{ value: 's', label: 'P' }, { value: 'm', label: 'M' }, { value: 'l', label: 'G' }, { value: 'xl', label: 'GG' }]} /></Row>;
+    case 'contact': {
+      const c = block.content;
+      return (
+        <>
+          <Row label="Título"><I18nInput value={c.heading} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.heading = v)), gk('ch'))} /></Row>
+          <Row label="Corpo"><I18nInput multiline value={c.body} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.body = v)), gk('cb'))} /></Row>
+          <Row label="E-mail"><TextInput value={c.email} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.email = v)), gk('em'))} /></Row>
+          <Row label="Telefone"><TextInput value={c.phone} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.phone = v)), gk('ph'))} /></Row>
+          <Row label="CV">
+            <button type="button" className="insp-upload" onClick={() => { upd(refBlock, (b) => void (b.type === 'contact' && (b.content.cvHref = ''))); doc.insertBelow(refBlock, { id: `b_${Math.random().toString(36).slice(2, 14)}`, type: 'button', span: 4, visibility: 'public', content: { label: c.cvLabel.pt || c.cvLabel.en ? c.cvLabel : { pt: 'Baixar CV', en: 'Download CV' }, href: c.cvHref || 'cv.pdf', variant: 'solid' } }); }}>＋ Criar botão de CV logo abaixo</button>
+            <div className="insp-note">O CV é um bloco Botão: dá para mover, redimensionar e mudar texto/link como qualquer elemento.</div>
+          </Row>
+          {onUploadImage ? (
+            <Row label="Foto de contato">
+              <ImageUploadButton onPick={(f) => void onUploadImage(f).then((id) => upd(refBlock, (b) => { if (b.type === 'contact') b.content.image = { assetId: id, alt: emptyI18n() }; }))} />
+            </Row>
+          ) : null}
+          <div className="insp-sub">Redes sociais</div>
+          {c.socials.map((s, i) => (
+            <div key={i} className="insp-social">
+              <TextInput value={s.label} placeholder="Rótulo" onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.socials[i]!.label = v)), gk(`sl${i}`))} />
+              <TextInput value={s.href} placeholder="URL" onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.socials[i]!.href = v)), gk(`sh${i}`))} />
+              <button type="button" className="insp-social-del" onClick={() => upd(refBlock, (b) => { if (b.type === 'contact') b.content.socials.splice(i, 1); })}>✕</button>
+            </div>
+          ))}
+          <button type="button" className="add-block-btn additem" onClick={() => upd(refBlock, (b) => { if (b.type === 'contact') b.content.socials.push({ label: 'Rede', href: '#' }); })}>＋ Rede social</button>
+        </>
+      );
+    }
+    case 'button': {
+      const c = block.content;
+      return (
+        <>
+          <Row label="Texto do botão"><I18nInput value={c.label} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.label = v)), gk('lbl'))} /></Row>
+          <Row label="Link (URL, mailto:, arquivo.pdf)"><TextInput value={c.href} placeholder="https://… ou cv.pdf" onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.href = v)), gk('href'))} /></Row>
+          <Row label="Estilo"><SelectInput value={c.variant} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.variant = v)))} options={[{ value: 'solid', label: 'Cheio' }, { value: 'outline', label: 'Contorno' }, { value: 'link', label: 'Link' }]} /></Row>
+          <label className="insp-check"><input type="checkbox" checked={!!c.newTab} onChange={(e) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.newTab = e.target.checked || undefined)))} /> Abrir em nova aba</label>
+        </>
+      );
+    }
+    case 'columns':
+      return <Row label="Colunas"><NumberInput value={block.content.count} min={2} max={4} onChange={(v) => upd(refBlock, (b) => void (b.type === 'columns' && (b.content.count = v)), gk('count'))} /></Row>;
+    case 'storyboard':
+      return (
+        <>
+          {onUploadImage ? (
+            <Row label={`Quadros (${block.content.frames.length})`}>
+              <ImageUploadButton onPick={(f) => void onUploadImage(f).then((id) => upd(refBlock, (b) => void (b.type === 'storyboard' && b.content.frames.push({ assetId: id, alt: emptyI18n() }))))} />
+            </Row>
+          ) : null}
+          <div className="insp-note">No canvas, cada quadro tem trocar imagem, recortar e excluir no hover; arraste para reordenar e use a borda direita para a largura.</div>
+        </>
+      );
+    case 'divider':
+      return <div className="insp-note">O divisor não tem conteúdo — ajuste largura e espaçamento na aba Layout.</div>;
+    default:
+      return <div className="insp-note">—</div>;
+  }
+}
+
+function LayoutTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef }): React.ReactElement {
+  return (
+    <>
+      <Group id="size" title="Tamanho e alinhamento">
+        <LarguraPorDispositivo doc={doc} block={block} refBlock={refBlock} />
+        <AlignRow doc={doc} block={block} refBlock={refBlock} />
+        <RowAlignRow doc={doc} refBlock={refBlock} />
+        <div className="insp-move">
+          <button type="button" onClick={() => doc.moveBlock(refBlock, -1)}>↑ Subir</button>
+          <button type="button" onClick={() => doc.moveBlock(refBlock, 1)}>↓ Descer</button>
+        </div>
+      </Group>
+      <Group id="pad" title="Espaço deste elemento" defaultOpen={false}>
+        <BlockPadding doc={doc} block={block} refBlock={refBlock} />
+      </Group>
+      <Group id="section" title="Espaço da seção" defaultOpen={false}>
+        <SpacingControls doc={doc} sectionRef={{ container: refBlock.container, sectionId: refBlock.sectionId }} />
+      </Group>
+      <Group id="mobile" title="Mostrar em cada tela" defaultOpen={false}>
+        <label className="insp-check">
+          <input type="checkbox" checked={!!block.responsive?.tablet?.hidden} onChange={(e) => doc.updateBlock(refBlock, (b) => void ((b.responsive ??= {}).tablet = { ...(b.responsive.tablet ?? {}), hidden: e.target.checked }))} />
+          Ocultar no tablet
+        </label>
+        <label className="insp-check">
+          <input type="checkbox" checked={!!block.responsive?.mobile?.hidden} onChange={(e) => doc.updateBlock(refBlock, (b) => void ((b.responsive ??= {}).mobile = { ...(b.responsive.mobile ?? {}), hidden: e.target.checked }))} />
+          Ocultar no celular
+        </label>
+      </Group>
+    </>
+  );
+}
+
+const TEXT_STYLE_LABEL: Record<string, string> = { display: 'Display (título grande)', label: 'Etiqueta (mono, caixa alta)', body: 'Corpo (texto leve)' };
+const COLOR_LABEL: Record<string, string> = { bg: 'Fundo', surface: 'Superfície', ink: 'Tinta', inkSoft: 'Tinta suave', inkPale: 'Tinta clara', rule: 'Régua', accent: 'Destaque', accent2: 'Destaque 2' };
+
+/** Texto visível de um título salvo com formatação (HTML). */
+function stripTags(html: string): string {
+  return html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+}
+/** Texto digitado no inspector → seguro para renderizar como HTML. */
+function escapeText(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function StyleTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef }): React.ReactElement {
+  const colorTokens = Object.keys(doc.state.theme.colors);
+  const styleTokens = Object.keys(doc.state.theme.textStyles);
+  const bg = block.style?.bg ?? '';
+  const ts = block.style?.textStyle ?? '';
+  return (
+    <>
+      <Row label="Cor de fundo do bloco">
+        <SelectInput
+          value={bg}
+          onChange={(v) => doc.updateBlock(refBlock, (b) => void ((b.style ??= {}).bg = v || undefined))}
+          options={[{ value: '', label: '— nenhuma —' }, ...colorTokens.map((t) => ({ value: t, label: COLOR_LABEL[t] ?? t }))]}
+        />
+      </Row>
+      <Row label="Estilo de texto (do tema)">
+        <SelectInput
+          value={ts}
+          onChange={(v) => doc.updateBlock(refBlock, (b) => void ((b.style ??= {}).textStyle = v || undefined))}
+          options={[{ value: '', label: '— padrão do bloco —' }, ...styleTokens.map((t) => ({ value: t, label: TEXT_STYLE_LABEL[t] ?? t }))]}
+        />
+      </Row>
+    </>
+  );
+}

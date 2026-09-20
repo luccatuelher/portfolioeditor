@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 3,
+  "projects": [
+    {
+      "id": "demo-sequencia",
+      "title": "A Travessia",
+      "tag": "Storyboard · Ação",
+      "thumb": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzE3MzI0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2MxNDQwZSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMSDCtyBDaGVnYWRhPC90ZXh0Pjwvc3ZnPg==",
+      "description": "Uma sequência curta para testar a prévia expansível, a leitura dos quadros e a edição em tempo real.",
+      "text": "Texto simples dentro da prévia. Clique no projeto para expandir sem sair da Home.",
+      "year": "2026",
+      "client": "Projeto demonstrativo",
+      "role": "Storyboard",
+      "category": "personal",
+      "skills": "Ação, staging, ritmo",
+      "contribution": "Storyboard e edição",
+      "credits": "Conteúdo de teste",
+      "sequenceLabel": "Sequência de abertura",
+      "storyType": "mixed",
+      "processNotes": "Use este projeto para testar as linhas e os anexos.",
+      "featured": true,
+      "homeOrder": 0,
+      "embeds": [
+        {
+          "type": "youtube",
+          "id": "aqz-KE-bpKQ"
+        }
+      ],
+      "images": [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzE3MzI0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2MxNDQwZSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMSDCtyBDaGVnYWRhPC90ZXh0Pjwvc3ZnPg==",
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzJkNWE4ZSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFjMWIxOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMiDCtyBDb25mbGl0bzwvdGV4dD48L3N2Zz4=",
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzU5M2M3YSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2Q3ODAzZiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMyDCtyBWaXJhZGE8L3RleHQ+PC9zdmc+",
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzFjNWI0YSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2M5YTIyNyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwNCDCtyBEZXNmZWNobzwvdGV4dD48L3N2Zz4="
+      ],
+      "rows": [
+        {
+          "id": "demo-texto",
+          "cols": 1,
+          "items": [
+            {
+              "kind": "text",
+              "content": "Texto simples dentro da prévia. Clique no projeto para expandir sem sair da Home.",
+              "id": "mu71alxouhph"
+            }
+          ]
+        },
+        {
+          "id": "demo-imagens-a",
+          "cols": 2,
+          "items": [
+            {
+              "kind": "image",
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzE3MzI0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2MxNDQwZSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMSDCtyBDaGVnYWRhPC90ZXh0Pjwvc3ZnPg==",
+              "id": "mu71alxo3yrp"
+            },
+            {
+              "kind": "image",
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzJkNWE4ZSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFjMWIxOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMiDCtyBDb25mbGl0bzwvdGV4dD48L3N2Zz4=",
+              "id": "mu71alxo1941"
+            }
+          ]
+        },
+        {
+          "id": "demo-imagens-b",
+          "cols": 2,
+          "items": [
+            {
+              "kind": "image",
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzU5M2M3YSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2Q3ODAzZiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMyDCtyBWaXJhZGE8L3RleHQ+PC9zdmc+",
+              "id": "mu71alxo2of0"
+            },
+            {
+              "kind": "image",
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzFjNWI0YSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2M5YTIyNyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwNCDCtyBEZXNmZWNobzwvdGV4dD48L3N2Zz4=",
+              "id": "mu71alxoy6c2"
+            }
+          ]
+        },
+        {
+          "id": "demo-video",
+          "cols": 1,
+          "items": [
+            {
+              "kind": "embed",
+              "embedType": "youtube",
+              "embedId": "aqz-KE-bpKQ",
+              "id": "mu71alxon4fw"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "nda": false,
+      "order": 0,
+      "contentOrder": [
+        "embeds",
+        "images",
+        "text"
+      ],
+      "embedLayout": "stack"
+    },
+    {
+      "id": "demo-comedia",
+      "title": "Intervalo",
+      "tag": "Storyboard · Comédia",
+      "thumb": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzhkMzM0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2VmYWQ2MiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+UHJvamV0byBkZSBjb23DqWRpYTwvdGV4dD48L3N2Zz4=",
+      "description": "Exemplo de projeto profissional para testar filtros e reorganização.",
+      "year": "2025",
+      "client": "Estúdio Aurora",
+      "role": "Storyboard Artist",
+      "category": "professional",
+      "skills": "Acting, comédia",
+      "contribution": "Storyboard",
+      "credits": "Conteúdo de teste",
+      "sequenceLabel": "Cena 12",
+      "storyType": "storyboard",
+      "processNotes": "",
+      "featured": true,
+      "homeOrder": 1,
+      "rows": [
+        {
+          "id": "demo-comedia-row",
+          "cols": 1,
+          "items": [
+            {
+              "kind": "image",
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzhkMzM0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2VmYWQ2MiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+UHJvamV0byBkZSBjb23DqWRpYTwvdGV4dD48L3N2Zz4=",
+              "id": "mu71alxqj6rh"
+            }
+          ]
+        }
+      ],
+      "images": [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzhkMzM0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2VmYWQ2MiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+UHJvamV0byBkZSBjb23DqWRpYTwvdGV4dD48L3N2Zz4="
+      ],
+      "embeds": [],
+      "published": true,
+      "nda": false,
+      "order": 1,
+      "contentOrder": [
+        "embeds",
+        "images",
+        "text"
+      ],
+      "embedLayout": "stack",
+      "text": ""
+    },
+    {
+      "id": "demo-visual",
+      "title": "Jardim Suspenso",
+      "tag": "Visual Development",
+      "thumb": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzIzNGU3MCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdmYjNjOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+RXhwbG9yYcOnw6NvIHZpc3VhbDwvdGV4dD48L3N2Zz4=",
+      "description": "Projeto pessoal de exploração de ambiente e cor.",
+      "year": "2026",
+      "client": "Pessoal",
+      "role": "Visual Development",
+      "category": "personal",
+      "skills": "Composição, cor",
+      "contribution": "Conceito e arte",
+      "credits": "Conteúdo de teste",
+      "sequenceLabel": "",
+      "storyType": "storyboard",
+      "processNotes": "",
+      "featured": false,
+      "homeOrder": 2,
+      "rows": [
+        {
+          "id": "demo-visual-row",
+          "cols": 1,
+          "items": [
+            {
+              "kind": "image",
+              "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzIzNGU3MCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdmYjNjOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+RXhwbG9yYcOnw6NvIHZpc3VhbDwvdGV4dD48L3N2Zz4=",
+              "id": "mu71alxqwhlr"
+            }
+          ]
+        }
+      ],
+      "images": [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzIzNGU3MCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdmYjNjOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+RXhwbG9yYcOnw6NvIHZpc3VhbDwvdGV4dD48L3N2Zz4="
+      ],
+      "embeds": [],
+      "published": true,
+      "nda": false,
+      "order": 2,
+      "contentOrder": [
+        "embeds",
+        "images",
+        "text"
+      ],
+      "embedLayout": "stack",
+      "text": ""
+    }
+  ],
+  "blog": [
+    {
+      "id": "demo-nota",
+      "title": "Como organizo uma sequência",
+      "date": "Setembro 2026",
+      "excerpt": "Um texto curto para testar a página de notas.",
+      "content": "Começo pelos beats principais, verifico o ritmo e só então detalho os quadros.",
+      "thumb": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzJkNWE4ZSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFjMWIxOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMiDCtyBDb25mbGl0bzwvdGV4dD48L3N2Zz4=",
+      "images": [
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzJkNWE4ZSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFjMWIxOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMiDCtyBDb25mbGl0bzwvdGV4dD48L3N2Zz4="
+      ],
+      "published": true,
+      "nda": false,
+      "order": 0
+    }
+  ],
+  "gallery": [
+    {
+      "id": "demo-gal-1",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzU5M2M3YSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2Q3ODAzZiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMyDCtyBWaXJhZGE8L3RleHQ+PC9zdmc+",
+      "caption": "Exploração de cor",
+      "published": true,
+      "nda": false,
+      "order": 0
+    },
+    {
+      "id": "demo-gal-2",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzhkMzM0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2VmYWQ2MiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+UHJvamV0byBkZSBjb23DqWRpYTwvdGV4dD48L3N2Zz4=",
+      "caption": "Estudo de acting",
+      "published": true,
+      "nda": false,
+      "order": 1
+    },
+    {
+      "id": "demo-gal-3",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzIzNGU3MCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdmYjNjOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+RXhwbG9yYcOnw6NvIHZpc3VhbDwvdGV4dD48L3N2Zz4=",
+      "caption": "Ambiente",
+      "published": true,
+      "nda": false,
+      "order": 2
+    }
+  ],
+  "sketches": [
+    {
+      "id": "demo-sk-1",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzE3MzI0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2MxNDQwZSIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMSDCtyBDaGVnYWRhPC90ZXh0Pjwvc3ZnPg==",
+      "alt": "Thumbnail de ação",
+      "published": true,
+      "nda": false,
+      "order": 0
+    },
+    {
+      "id": "demo-sk-2",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzJkNWE4ZSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzFjMWIxOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwMiDCtyBDb25mbGl0bzwvdGV4dD48L3N2Zz4=",
+      "alt": "Estudo de composição",
+      "published": true,
+      "nda": false,
+      "order": 1
+    },
+    {
+      "id": "demo-sk-3",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzFjNWI0YSIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2M5YTIyNyIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+Q2VuYSAwNCDCtyBEZXNmZWNobzwvdGV4dD48L3N2Zz4=",
+      "alt": "Estudo de luz",
+      "published": true,
+      "nda": false,
+      "order": 2
+    },
+    {
+      "id": "demo-sk-4",
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzhkMzM0ZCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2VmYWQ2MiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+UHJvamV0byBkZSBjb23DqWRpYTwvdGV4dD48L3N2Zz4=",
+      "alt": "Expressões",
+      "published": true,
+      "nda": false,
+      "order": 3
+    }
+  ],
+  "texts": {
+    "siteName": "Studio Quadro",
+    "siteRole": "Storyboard & Visual Development",
+    "issueLabel": "Portfólio de demonstração — edite tudo à vontade",
+    "navHome": "Home",
+    "navProjectsPt": "Projetos",
+    "navProjectsEn": "Projects",
+    "navGalleryPt": "Galeria",
+    "navGalleryEn": "Gallery",
+    "navBlogPt": "Notas",
+    "navBlogEn": "Notes",
+    "navContactPt": "Contato",
+    "navContactEn": "Contact",
+    "homeWorkLabel": "Selected Work",
+    "homeSketchLabel": "Sketchbook",
+    "allProjectsPt": "Todos os Projetos",
+    "allProjectsEn": "All Projects",
+    "ndaTitle": "Acesso Restrito",
+    "ndaSubtitle": "Projetos sob acordo de confidencialidade",
+    "ndaBtn": "Entrar",
+    "ndaSectionLabel": "NDA — Confidential Work",
+    "galleryTitlePt": "Galeria de Arte",
+    "galleryTitleEn": "Art Gallery",
+    "gallerySubPt": "Ilustrações & Processo",
+    "gallerySubEn": "Illustrations & Process",
+    "blogLabelPt": "Notas & Reflexões",
+    "blogLabelEn": "Notes & Thoughts",
+    "backPt": "Voltar",
+    "backEn": "Back",
+    "contactHeadingPt": "Vamos\ncriar\njuntos.",
+    "contactHeadingEn": "Let's\ncreate\ntogether.",
+    "contactBodyPt": "Este é um conteúdo de teste. Troque textos, imagens e ordem dos blocos antes de publicar.",
+    "contactBodyEn": "This is sample content. Replace texts, images and block order before publishing.",
+    "contactEmail": "contato@exemplo.com",
+    "contactPhone": "",
+    "contactCvPt": "Baixar CV",
+    "contactCvEn": "Download CV",
+    "contactCvHref": "#",
+    "contactImgSrc": "data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 400 300%27%3E%3Crect width=%27400%27 height=%27300%27 fill=%27%23E8E4DB%27/%3E%3Ctext x=%27200%27 y=%27158%27 font-family=%27monospace%27 font-size=%2713%27 fill=%27%23A09C93%27 text-anchor=%27middle%27%3Esem imagem%3C/text%3E%3C/svg%3E",
+    "social1Label": "LinkedIn",
+    "social1Href": "#",
+    "social2Label": "Instagram",
+    "social2Href": "#",
+    "social3Label": "Behance",
+    "social3Href": "#",
+    "aboutEn": "This is a demonstration profile for testing the portfolio visual editor. Every text can be changed directly on the page while the editor is open.\n\nReal portfolio data remains separate and should only be enabled for the production merge.",
+    "aboutPt": "Este é um perfil de demonstração para testar o editor visual do portfólio. Todos os textos podem ser alterados diretamente na página quando o editor está aberto.\n\nOs dados reais ficam separados e só devem ser ativados no merge de produção.",
+    "clientsText": "Estúdio Aurora\nCasa Frame\nProjeto Independente"
+  },
+  "meta": {
+    "banner": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzE3MmM0NyIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2JmNWEzNiIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+QmFubmVyIGRlIGRlbW9uc3RyYcOnw6NvPC90ZXh0Pjwvc3ZnPg==",
+    "homeItems": [
+      {
+        "type": "image",
+        "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMjAwIDY3NSI+PGRlZnM+PGxpbmVhckdyYWRpZW50IGlkPSJnIiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMSI+PHN0b3Agc3RvcC1jb2xvcj0iIzIzNGU3MCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzdmYjNjOCIvPjwvbGluZWFyR3JhZGllbnQ+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMjAwIiBoZWlnaHQ9IjY3NSIgZmlsbD0idXJsKCNnKSIvPjxjaXJjbGUgY3g9IjkyMCIgY3k9IjEzNSIgcj0iMjMwIiBmaWxsPSJyZ2JhKDI1NSwyNTUsMjU1LC4xMikiLz48cGF0aCBkPSJNMCA1NDAgUTI2MCAzNTAgNTIwIDUzMCBUMTIwMCA0MjAgVjY3NSBIMFoiIGZpbGw9InJnYmEoMTUsMTgsMjgsLjQyKSIvPjx0ZXh0IHg9IjY0IiB5PSI1OTAiIGZpbGw9IndoaXRlIiBmb250LWZhbWlseT0iR2VvcmdpYSxzZXJpZiIgZm9udC1zaXplPSI1NCI+RXhwbG9yYcOnw6NvIHZpc3VhbDwvdGV4dD48L3N2Zz4="
+      },
+      {
+        "type": "youtube",
+        "id": "aqz-KE-bpKQ"
+      }
+    ],
+    "homeBlockOrder": [
+      "banner",
+      "projects",
+      "media",
+      "sketches"
+    ],
+    "homeSelectionConfigured": true,
+    "sketchCols": 4,
+    "ndaPassword": "",
+    "pageBlocks": {
+      "home": [],
+      "projects": [],
+      "nda": [],
+      "gallery": [],
+      "blog": [],
+      "about": []
+    },
+    "sectionOrder": {},
+    "elementText": {},
+    "aboutOrder": {}
+  }
+}

@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 2,
+  "projects": [
+    {
+      "id": "proj-a",
+      "title": "Projeto A",
+      "tag": "Storyboard",
+      "description": "Descrição do projeto A",
+      "text": "Texto do projeto A.",
+      "year": "2025",
+      "client": "Cliente A",
+      "role": "Storyboard Artist",
+      "category": "professional",
+      "skills": "Ritmo, staging",
+      "thumb": "data:image/png;base64,IMGDATA0001",
+      "images": [
+        "data:image/png;base64,IMGDATA0001",
+        "https://example.com/a1.jpg",
+        "data:image/png;base64,IMGDATA0002"
+      ],
+      "embeds": [{ "type": "youtube", "id": "aqz-KE-bpKQ" }],
+      "published": true,
+      "nda": false,
+      "featured": true,
+      "homeOrder": 0,
+      "order": 0
+    },
+    {
+      "id": "proj-b",
+      "title": "Projeto B (confidencial)",
+      "description": "Trabalho sob NDA",
+      "text": "Conteúdo secreto do projeto B.",
+      "images": ["data:image/png;base64,IMGDATA0003"],
+      "published": true,
+      "nda": true,
+      "order": 1
+    },
+    {
+      "id": "proj-c",
+      "title": "Projeto C (rascunho)",
+      "text": "",
+      "images": ["https://example.com/c1.png"],
+      "published": false,
+      "nda": false,
+      "order": 2
+    }
+  ],
+  "blog": [
+    {
+      "id": "note-x",
+      "title": "Nota X",
+      "date": "Março 2025",
+      "excerpt": "Resumo da nota X",
+      "content": "Corpo da nota X.",
+      "thumb": "https://example.com/nx.jpg",
+      "images": ["data:image/png;base64,IMGDATA0004"],
+      "published": true,
+      "nda": false,
+      "order": 0
+    },
+    {
+      "id": "note-y",
+      "title": "Nota Y (confidencial)",
+      "date": "Abril 2025",
+      "excerpt": "",
+      "content": "Nota secreta Y.",
+      "published": true,
+      "nda": true,
+      "order": 1
+    }
+  ],
+  "gallery": [
+    { "id": "gal-1", "src": "data:image/png;base64,IMGDATA0005", "caption": "Estudo de cor", "published": true, "nda": false, "colSpan": 1 },
+    { "id": "gal-2", "src": "https://example.com/g2.jpg", "caption": "Confidencial", "published": true, "nda": true, "colSpan": 2 }
+  ],
+  "sketches": [
+    { "id": "sk-1", "src": "data:image/png;base64,IMGDATA0006", "alt": "Thumbnail de ação", "published": true, "nda": false },
+    { "id": "sk-2", "src": "data:image/png;base64,IMGDATA0007", "alt": "Estudo secreto", "published": true, "nda": true }
+  ],
+  "texts": {
+    "siteName": "Estúdio Teste",
+    "siteRole": "Storyboard & Visual Dev",
+    "navProjectsPt": "Projetos",
+    "navProjectsEn": "Projects",
+    "navGalleryPt": "Galeria",
+    "navGalleryEn": "Gallery",
+    "navBlogPt": "Notas",
+    "navBlogEn": "Notes",
+    "homeWorkLabel": "Selected Work",
+    "homeSketchLabel": "Sketchbook",
+    "allProjectsPt": "Todos os Projetos",
+    "allProjectsEn": "All Projects",
+    "galleryTitlePt": "Galeria de Arte",
+    "galleryTitleEn": "Art Gallery",
+    "gallerySubPt": "Ilustrações",
+    "gallerySubEn": "Illustrations",
+    "blogLabelPt": "Notas & Reflexões",
+    "blogLabelEn": "Notes & Thoughts",
+    "backPt": "Voltar",
+    "backEn": "Back",
+    "contactHeadingPt": "Vamos trabalhar juntos.",
+    "contactHeadingEn": "Let's work together.",
+    "contactBodyPt": "Disponível para freelance.",
+    "contactBodyEn": "Available for freelance.",
+    "contactEmail": "teste@exemplo.com",
+    "contactPhone": "+55 (48) 90000-0000",
+    "contactCvPt": "Baixar CV",
+    "contactCvEn": "Download CV",
+    "contactCvHref": "cv.pdf",
+    "social1Label": "LinkedIn",
+    "social1Href": "https://linkedin.com/in/teste",
+    "aboutPt": "Bio em português.",
+    "aboutEn": "Bio in English.",
+    "clientsText": "Cliente Um\nCliente Dois"
+  },
+  "meta": {
+    "banner": "data:image/png;base64,IMGDATA0008",
+    "homeItems": [
+      { "type": "image", "src": "data:image/png;base64,IMGDATA0005" },
+      { "type": "vimeo", "id": "76979871" }
+    ],
+    "sketchCols": 4,
+    "ndaPassword": "segredo123"
+  }
+}

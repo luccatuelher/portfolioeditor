@@ -1,0 +1,69 @@
+import type { MigratedAsset } from '../migrate/migrate';
+import type { PortfolioV4 } from '../schema/v4';
+import { encryptNda, type EncryptedNda } from './nda';
+import { publicSnapshot, type NdaBundle } from './publicSnapshot';
+import { repairDoc } from '../migrate/repair';
+
+export interface PublishPayload {
+  /** Documento público (sem NDA/rascunho). */
+  publicData: PortfolioV4;
+  /** assetId → data URL, apenas os referenciados pelo público. */
+  assetMap: Record<string, string>;
+  /** Blob NDA cifrado (ou null se não há itens NDA ou sem senha). */
+  ndaBlob: EncryptedNda | null;
+  /** assetId → bytes (para preflight de tamanho). */
+  assetSizes: Record<string, number>;
+}
+
+function dataUrlBytes(dataUrl: string): number {
+  const comma = dataUrl.indexOf(',');
+  const payload = comma >= 0 ? dataUrl.slice(comma + 1) : dataUrl;
+  return /;base64/i.test(dataUrl.slice(0, comma)) ? Math.floor((payload.length * 3) / 4) : payload.length;
+}
+
+/**
+ * Monta o payload de publicação a partir do resultado da migração:
+ * separa público × NDA, poda assets, encripta o bundle NDA. Testável sem Vite.
+ */
+export async function buildPublishPayload(
+  migrated: { data: PortfolioV4; assets: MigratedAsset[] },
+  ndaPassword?: string,
+): Promise<PublishPayload> {
+  const snap = publicSnapshot(migrated.data);
+  const nda = snap.nda;
+  // O site publicado valida os dados ao abrir: garante aqui que eles saem válidos.
+  const publicData = repairDoc(snap.data).doc ?? snap.data;
+
+  const byId = new Map(migrated.assets.map((a) => [a.id, a.dataUrl]));
+  const assetMap: Record<string, string> = {};
+  const assetSizes: Record<string, number> = {};
+  for (const id of Object.keys(publicData.assets)) {
+    const url = byId.get(id);
+    if (url) {
+      assetMap[id] = url;
+      assetSizes[id] = dataUrlBytes(url);
+    }
+  }
+
+  const hasNda = nda.projects.length + nda.blog.length + nda.gallery.length + nda.sketches.length > 0;
+  let ndaBlob: EncryptedNda | null = null;
+  if (hasNda && ndaPassword) {
+    // Inclui os data URLs dos assets NDA dentro do bundle cifrado.
+    const ndaAssets: Record<string, string> = {};
+    const collect = (obj: unknown): void => {
+      if (Array.isArray(obj)) obj.forEach(collect);
+      else if (obj && typeof obj === 'object') {
+        const r = obj as Record<string, unknown>;
+        if (typeof r['assetId'] === 'string') {
+          const url = byId.get(r['assetId']);
+          if (url) ndaAssets[r['assetId']] = url;
+        }
+        Object.values(r).forEach(collect);
+      }
+    };
+    collect(nda);
+    ndaBlob = await encryptNda({ items: nda as NdaBundle, assets: ndaAssets }, ndaPassword);
+  }
+
+  return { publicData, assetMap, ndaBlob, assetSizes };
+}
