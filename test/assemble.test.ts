@@ -70,3 +70,67 @@ describe('assembleSiteHtml — celular', () => {
     expect(html).toContain('<meta name="theme-color" content="#101014">');
   });
 });
+
+describe('assembleSiteHtml — compartilhamento do link', () => {
+  const shell = readFileSync('src/publish/site-shell.html', 'utf8');
+  const comSite = async (ajuste: (m: ReturnType<typeof migrate>) => void) => {
+    const mig = migrate(loadFixture('template-v3.json'));
+    ajuste(mig);
+    return assembleSiteHtml(shell, await buildPublishPayload(mig));
+  };
+
+  it('imagem embutida NÃO vira og:image (nenhuma rede busca data:)', async () => {
+    const html = await comSite((m) => {
+      const home = m.data.pages.find((p) => p.id === 'home')!;
+      home.seo = { image: { assetId: Object.keys(m.data.assets)[0]!, alt: { pt: '', en: '' } } };
+    });
+    expect(html).not.toMatch(/og:image" content="data:/);
+    expect(html).toContain('twitter:card" content="summary"'); // cartão pequeno, sem imagem
+  });
+
+  it('imagem por endereço público vira og:image e cartão grande', async () => {
+    const html = await comSite((m) => {
+      m.data.site.url = 'https://luccatuelher.com/';
+      const home = m.data.pages.find((p) => p.id === 'home')!;
+      home.seo = { image: { url: 'capa.jpg', alt: { pt: '', en: '' } } };
+    });
+    expect(html).toContain('<meta property="og:image" content="https://luccatuelher.com/capa.jpg">');
+    expect(html).toContain('twitter:card" content="summary_large_image"');
+    expect(html).toContain('<meta name="twitter:image" content="https://luccatuelher.com/capa.jpg">');
+  });
+
+  it('com endereço do site sai link canônico e og:url', async () => {
+    const html = await comSite((m) => void (m.data.site.url = 'https://luccatuelher.com'));
+    expect(html).toContain('<link rel="canonical" href="https://luccatuelher.com">');
+    expect(html).toContain('<meta property="og:url" content="https://luccatuelher.com">');
+  });
+
+  it('sem endereço, nada de canônico inventado', async () => {
+    const html = await comSite(() => {});
+    expect(html).not.toContain('rel="canonical"');
+    expect(html).not.toContain('og:url');
+  });
+
+  it('dados estruturados descrevem a pessoa e os perfis', async () => {
+    const html = await comSite((m) => {
+      m.data.site.url = 'https://luccatuelher.com';
+    });
+    const bloco = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '';
+    const dados = JSON.parse(bloco.replace(/\u003c/g, '<'));
+    expect(dados['@type']).toBe('Person');
+    expect(dados.name).toBe(migrate(loadFixture('template-v3.json')).data.site.name.pt);
+    expect(dados.url).toBe('https://luccatuelher.com');
+  });
+
+  it('nome com "</script>" não corta o bloco de dados', async () => {
+    const html = await comSite((m) => void (m.data.site.name = { pt: 'Lucca </script><script>alert(1)</script>', en: 'x' }));
+    expect(html).not.toContain('</script><script>alert(1)');
+    expect(html.match(/<script type="application\/ld\+json">/g)?.length).toBe(1);
+  });
+
+  it('locale e nome do site saem sempre', async () => {
+    const html = await comSite(() => {});
+    expect(html).toContain('og:locale" content="pt_BR"');
+    expect(html).toContain('og:site_name');
+  });
+});

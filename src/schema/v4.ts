@@ -393,6 +393,10 @@ export const SiteSchema = z.strictObject({
   favicon: ImageRefSchema.optional(),
   /** Snippet de analytics (Plausible/GA/Fathom) colado pelo usuário; vai cru no <head> do site publicado. */
   analytics: z.string().optional(),
+  /** Endereço público do site (ex.: https://luccatuelher.com). Usado no link canônico,
+   *  no og:url e para transformar a imagem social embutida num endereço que o
+   *  WhatsApp/LinkedIn consigam buscar. */
+  url: z.string().optional(),
 });
 
 // -------------------------------------------------------------------- top-level

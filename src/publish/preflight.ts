@@ -25,6 +25,19 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
   let missingAlt = 0;
   let incompleteI18n = 0;
 
+  // Compartilhamento: o que aparece quando alguém manda o link no WhatsApp,
+  // no LinkedIn ou no X. Imagem embutida (data:) nenhuma rede busca.
+  const home = data.pages.find((pg) => pg.id === 'home');
+  const socialImg = home?.seo?.image;
+  if (!data.site.url) {
+    warnings.push('Endereço do site em branco (Tema › Endereço): sem ele não há link canônico nem imagem de preview ao compartilhar.');
+  }
+  if (!socialImg) {
+    warnings.push('Sem imagem de compartilhamento (inspector da Home › SEO): o link vai aparecer sem miniatura.');
+  } else if (socialImg.assetId) {
+    warnings.push('A imagem de compartilhamento está embutida no arquivo — WhatsApp, LinkedIn e X só buscam imagem por endereço http. Use uma URL pública no campo de imagem do SEO.');
+  }
+
   const checkI18n = (v: I18n): void => {
     if (i18nIncomplete(v)) incompleteI18n++;
   };

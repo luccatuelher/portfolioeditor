@@ -160,6 +160,17 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
         <input className="insp-input" type="number" step="0.05" value={theme.type.ratio} onChange={(e) => doc.updateTheme((t) => void (t.type.ratio = Number(e.target.value) || t.type.ratio), 'theme:ratio')} />
       </label>
 
+      <div className="panel-h">Endereço do site</div>
+      <input
+        className="insp-input analytics-input"
+        type="url"
+        spellCheck={false}
+        value={doc.state.site.url ?? ''}
+        placeholder="https://seusite.com"
+        onChange={(e) => doc.updateSite((s) => void (s.url = e.target.value.trim() || undefined), 'site:url')}
+      />
+      <p className="panel-hint">Usado no link canônico, no endereço de compartilhamento e para completar o caminho da imagem de preview. Deixe em branco se ainda não tem domínio.</p>
+
       <div className="panel-h">Analytics</div>
       <textarea
         className="insp-input analytics-input"

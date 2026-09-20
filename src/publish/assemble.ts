@@ -22,14 +22,38 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
   const homeDesc = homePage?.seo?.description;
   const role = homeDesc?.pt || homeDesc?.en || payload.publicData.site.role.pt || payload.publicData.site.role.en || '';
   const homeImg = homePage?.seo?.image;
-  const homeImgUrl = homeImg ? (homeImg.assetId ? payload.assetMap[homeImg.assetId] ?? '' : homeImg.url ?? '') : '';
-  const firstImg = homeImgUrl || Object.values(payload.assetMap)[0] || '';
+  // Endereço público do site: sem ele não há link canônico nem imagem de preview
+  // (WhatsApp, LinkedIn e X só buscam imagem por http — data: eles ignoram).
+  const siteUrl = (payload.publicData.site.url ?? '').trim().replace(/\/+$/, '');
+  const absoluto = (u: string): string => (/^https?:\/\//i.test(u) ? u : siteUrl && u ? `${siteUrl}/${u.replace(/^\//, '')}` : '');
+  // A imagem social só entra se der para buscá-la de fora. Uma embutida (data:)
+  // não vira preview em rede nenhuma e ainda repetiria a foto inteira no <head>.
+  const socialImg = homeImg && !homeImg.assetId && homeImg.url ? absoluto(homeImg.url) : '';
   // Snippet de analytics: é código do próprio dono do site, então entra cru —
   // só barramos o que fecharia o <head> ou escaparia do que ele colou.
   const analytics = (payload.publicData.site.analytics ?? '').trim();
   const analyticsTag = analytics && !/<\/head|<\/html/i.test(analytics) ? analytics : '';
   const fav = payload.publicData.site.favicon;
   const favicon = fav ? (fav.assetId ? payload.assetMap[fav.assetId] ?? '' : fav.url ?? '') : '';
+  const socials = payload.publicData.pages
+    .flatMap((p) => p.sections.flatMap((s) => s.blocks))
+    .flatMap((b) => (b.type === 'contact' ? b.content.socials : []))
+    .map((s) => s.href)
+    .filter((h) => /^https?:\/\//i.test(h));
+
+  // Dados estruturados: diz ao buscador que este site é o portfólio de UMA
+  // pessoa, com nome, função e perfis — é o que alimenta o painel de resultado.
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Person',
+    name,
+    jobTitle: payload.publicData.site.role.pt || payload.publicData.site.role.en || undefined,
+    description: role || undefined,
+    url: siteUrl || undefined,
+    image: socialImg || undefined,
+    sameAs: socials.length ? [...new Set(socials)] : undefined,
+  };
+
   const meta =
     `<meta name="description" content="${esc(role)}">` +
     // Pinta a barra do navegador no celular com a cor de fundo do site.
@@ -37,7 +61,17 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
     `<meta property="og:title" content="${esc(name)}">` +
     `<meta property="og:description" content="${esc(role)}">` +
     `<meta property="og:type" content="website">` +
-    (firstImg ? `<meta property="og:image" content="${esc(firstImg)}">` : '') +
+    `<meta property="og:site_name" content="${esc(name)}">` +
+    `<meta property="og:locale" content="pt_BR"><meta property="og:locale:alternate" content="en_US">` +
+    (siteUrl ? `<meta property="og:url" content="${esc(siteUrl)}"><link rel="canonical" href="${esc(siteUrl)}">` : '') +
+    (socialImg ? `<meta property="og:image" content="${esc(socialImg)}">` : '') +
+    // X/Twitter: sem esta linha o link vira só texto, sem cartão.
+    `<meta name="twitter:card" content="${socialImg ? 'summary_large_image' : 'summary'}">` +
+    `<meta name="twitter:title" content="${esc(name)}"><meta name="twitter:description" content="${esc(role)}">` +
+    (socialImg ? `<meta name="twitter:image" content="${esc(socialImg)}">` : '') +
+    // O JSON passa pelo mesmo escape do resto: um "</script>" dentro de um nome
+    // fecharia o bloco cedo demais e quebraria a página.
+    `<script type="application/ld+json">${jsonSafe(jsonLd)}</script>` +
     (favicon ? `<link rel="icon" href="${esc(favicon)}"><link rel="apple-touch-icon" href="${esc(favicon)}">` : '') +
     // Sem bloquear a pintura: entra como impressão e vira 'all' ao carregar.
     themeFontUrls(payload.publicData.theme.fonts)
