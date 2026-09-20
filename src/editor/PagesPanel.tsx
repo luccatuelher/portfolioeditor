@@ -1,6 +1,7 @@
 import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useState } from 'react';
 import { pick } from '../renderer/text';
 import { useTreeRename } from './TreeName';
 import type { Lang } from '../renderer/context';
@@ -52,10 +53,10 @@ function ItemRow({ doc, collection, item, lang, active, onOpen }: { doc: DocApi;
   );
 }
 
-function PageRow({ doc, page, lang, active, onOpen, children }: { doc: DocApi; page: Page; lang: Lang; active: boolean; onOpen: () => void; children?: React.ReactNode }): React.ReactElement {
+function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc: DocApi; page: Page; lang: Lang; active: boolean; onOpen: () => void; children?: React.ReactNode; novaAgora?: boolean }): React.ReactElement {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
   const nome = pick(page.title, lang);
-  const renome = useTreeRename(nome, (v) => doc.updatePage(page.id, (pg) => void (pg.title[lang] = v), `rename:${page.id}`));
+  const renome = useTreeRename(nome, (v) => doc.updatePage(page.id, (pg) => void (pg.title[lang] = v), `rename:${page.id}`), novaAgora);
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
       <div className={`tree-row pagerow ${active ? 'sel' : ''}`}>
@@ -83,6 +84,7 @@ function PageRow({ doc, page, lang, active, onOpen, children }: { doc: DocApi; p
 
 export function PagesPanel({ doc, container, lang, onOpen, onSelect }: { doc: DocApi; container: Container; lang: Lang; onOpen: (c: Container) => void; onSelect: (s: Selection) => void }): React.ReactElement {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const [recemCriada, setRecemCriada] = useState<string | null>(null);
   const pages = doc.state.pages.filter((p) => p.kind === 'static');
 
   // Página "ativa": a aberta, ou — com um projeto/nota aberto — a página da lista dele.
@@ -154,13 +156,25 @@ export function PagesPanel({ doc, container, lang, onOpen, onSelect }: { doc: Do
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onPagesEnd}>
         <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           {pages.map((p) => (
-            <PageRow key={p.id} doc={doc} page={p} lang={lang} active={activePageId === p.id && container.on === 'page'} onOpen={() => { onOpen({ on: 'page', pageId: p.id }); onSelect({ kind: 'page', pageId: p.id }); }}>
+            <PageRow key={p.id} doc={doc} page={p} lang={lang} novaAgora={recemCriada === p.id} active={activePageId === p.id && container.on === 'page'} onOpen={() => { onOpen({ on: 'page', pageId: p.id }); onSelect({ kind: 'page', pageId: p.id }); }}>
               {nested(p)}
             </PageRow>
           ))}
         </SortableContext>
       </DndContext>
-      <button type="button" className="add-block-btn newpage" onClick={() => { const t = prompt('Nome da nova página:'); if (t) onOpen({ on: 'page', pageId: doc.addPage(t) }); }}>＋ Nova página</button>
+      <button
+        type="button"
+        className="add-block-btn newpage"
+        onClick={() => {
+          // Nasce com nome provisório e o campo já aberto — o mesmo gesto de
+          // renomear do resto da árvore, em vez de um prompt() do navegador.
+          const id = doc.addPage('Nova página');
+          setRecemCriada(id);
+          onOpen({ on: 'page', pageId: id });
+        }}
+      >
+        ＋ Nova página
+      </button>
     </div>
   );
 }

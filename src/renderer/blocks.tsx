@@ -403,13 +403,18 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
         ndaOnly && !editing && nda?.locked ? (
           <NdaUnlock />
         ) : (
-          <p className={`empty-collection${ndaOnly ? ' empty-nda' : ''}`}>
-            {ndaOnly
-              ? editing
-                ? 'Nenhum item NDA ainda — marque a visibilidade de um projeto como NDA. No site, a senha é pedida aqui.'
-                : lang === 'en' ? 'No confidential work yet.' : 'Nenhum trabalho confidencial ainda.'
-              : 'Nenhum item publicado nesta coleção ainda.'}
-          </p>
+          // Visitante não precisa saber que falta conteúdo: fora do editor, uma
+          // lista vazia simplesmente não aparece. A exceção é a área NDA, onde
+          // o vazio É a informação ("não há trabalho confidencial").
+          !editing && !ndaOnly ? null : (
+            <p className={`empty-collection${ndaOnly ? ' empty-nda' : ''}`}>
+              {ndaOnly
+                ? editing
+                  ? 'Nenhum item NDA ainda — marque a visibilidade de um projeto como NDA. No site, a senha é pedida aqui.'
+                  : lang === 'en' ? 'No confidential work yet.' : 'Nenhum trabalho confidencial ainda.'
+                : 'Nenhum item aqui ainda — crie no painel Dados, à esquerda. Esta mensagem só aparece no editor.'}
+            </p>
+          )
         )
       ) : (
         <div className={`collection-grid collection-${collection}`} style={styleVars({ '--cols': cols, '--coll-gap': rem(block.content.gap) })}>

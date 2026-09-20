@@ -103,3 +103,29 @@ describe('renderer — pureza de estilo (arquitetura)', () => {
     expect(css.includes('!important')).toBe(false);
   });
 });
+
+describe('coleção vazia', () => {
+  const { data } = migrate(loadFixture('template-v3.json'));
+  const vazio: PortfolioV4 = { ...data, collections: { projects: [], blog: [], gallery: [], sketches: [] } };
+  const bloco: Block = { id: 'c1', type: 'collection', visibility: 'public', span: 12, content: { collection: 'projects', cols: 3 } } as Block;
+  const secao: Section = { id: 's1', style: { width: 'normal' }, blocks: [bloco] };
+
+  const render = (editing: boolean): string =>
+    renderToStaticMarkup(
+      <RenderContext.Provider value={{ data: vazio, lang: 'pt', resolveAsset: () => '', editing }}>
+        <SectionView section={secao} />
+      </RenderContext.Provider>,
+    );
+
+  it('no site publicado, lista vazia não anuncia que está vazia', () => {
+    const html = render(false);
+    expect(html).not.toContain('Nenhum item');
+    expect(html).not.toContain('empty-collection');
+  });
+
+  it('no editor, a mensagem fica e diz onde resolver', () => {
+    const html = render(true);
+    expect(html).toContain('empty-collection');
+    expect(html).toContain('painel Dados');
+  });
+});

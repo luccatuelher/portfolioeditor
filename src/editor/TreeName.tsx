@@ -8,13 +8,13 @@ import { useState } from 'react';
  * DENTRO do botão que abre o item, e o lápis precisa ficar FORA dele: botão
  * dentro de botão é HTML inválido e faz o clique cair no lugar errado.
  */
-export function useTreeRename(texto: string, onCommit: (v: string) => void): {
+export function useTreeRename(texto: string, onCommit: (v: string) => void, abrirJa = false): {
   editando: boolean;
   campo: React.ReactElement;
   botao: React.ReactElement;
   abrir: (e: React.SyntheticEvent) => void;
 } {
-  const [editando, setEditando] = useState(false);
+  const [editando, setEditando] = useState(abrirJa);
   const [valor, setValor] = useState(texto);
 
   const abrir = (e: React.SyntheticEvent): void => {
