@@ -405,7 +405,7 @@ const LANGS = [
   { id: 'en', label: 'EN', name: 'English' },
 ] as const;
 
-export function Inspector({ lang, onLang, ...props }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void; lang: 'pt' | 'en'; onLang: (l: 'pt' | 'en') => void }): React.ReactElement {
+export function Inspector({ lang, onLang, quadroEmFoco, ...props }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void; lang: 'pt' | 'en'; onLang: (l: 'pt' | 'en') => void; quadroEmFoco?: { blockId: string; idx: number } | null }): React.ReactElement {
   return (
     <aside className="inspector">
       <div className="insp-langbar" role="group" aria-label="Idioma dos textos">
@@ -417,13 +417,13 @@ export function Inspector({ lang, onLang, ...props }: { doc: DocApi; selection: 
         ))}
       </div>
       <EditLangContext.Provider value={lang}>
-        <InspectorBody {...props} />
+        <InspectorBody {...props} quadroEmFoco={quadroEmFoco} />
       </EditLangContext.Provider>
     </aside>
   );
 }
 
-function InspectorBody({ doc, selection, onUploadImage, onSelect }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void }): React.ReactElement {
+function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void ; quadroEmFoco?: { blockId: string; idx: number } | null }): React.ReactElement {
   const [tab, setTab] = useState<Tab>('content');
 
   if (!selection) {
@@ -562,7 +562,7 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect }: { doc: DocAp
       <div className="insp-body">
         {tab === 'content' && (
           <>
-            <ContentTab doc={doc} block={block} refBlock={selection.ref} onUploadImage={onUploadImage} />
+            <ContentTab doc={doc} block={block} refBlock={selection.ref} onUploadImage={onUploadImage} foco={quadroEmFoco?.blockId === selection.ref.blockId ? quadroEmFoco.idx : undefined} />
           </>
         )}
         {tab === 'layout' && <LayoutTab doc={doc} block={block} refBlock={selection.ref} />}
@@ -577,7 +577,7 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect }: { doc: DocAp
   );
 }
 
-function ContentTab({ doc, block, refBlock, onUploadImage }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef; onUploadImage?: UploadImage }): React.ReactElement {
+function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef; onUploadImage?: UploadImage; foco?: number }): React.ReactElement {
   const gk = (f: string): string => `${refBlock.blockId}:${f}`;
   const upd = doc.updateBlock;
   switch (block.type) {
@@ -702,7 +702,20 @@ function ContentTab({ doc, block, refBlock, onUploadImage }: { doc: DocApi; bloc
               <ImageUploadButton onPick={(f) => void onUploadImage(f).then((id) => upd(refBlock, (b) => void (b.type === 'storyboard' && b.content.frames.push({ assetId: id, alt: emptyI18n() }))))} />
             </Row>
           ) : null}
-          <div className="insp-note">No canvas, cada quadro tem trocar imagem, recortar e excluir no hover; arraste para reordenar e use a borda direita para a largura.</div>
+          {/* Texto alternativo de cada quadro: é o que leitor de tela e busca leem.
+              Antes não havia lugar nenhum para escrevê-lo — imagem solta e galeria
+              tinham, o quadro não. */}
+          {block.content.frames.map((f, n) => (
+            <Row key={n} label={`Quadro ${n + 1} · descrição`}>
+              <div className={`insp-quadro${foco === n ? ' em-foco' : ''}`} data-quadro={n}>
+                <I18nInput
+                  value={f.alt}
+                  onChange={(v) => upd(refBlock, (b) => { const fr = b.type === 'storyboard' ? b.content.frames[n] : undefined; if (fr) fr.alt = v; }, `${refBlock.blockId}:alt${n}`)}
+                />
+              </div>
+            </Row>
+          ))}
+          <div className="insp-note">No canvas, cada quadro tem trocar imagem, recortar, editar e excluir no hover; arraste para reordenar e use a borda direita para a largura.</div>
         </>
       );
     case 'divider':

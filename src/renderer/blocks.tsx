@@ -310,7 +310,7 @@ function SketchCard({ item, cols, onOpen }: { item: SketchItem; cols: number; on
   const span = itemWidth(item, cols);
   return (
     <div className={`sketch-item${useItemSel(item.id)}`} style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'media'))} {...itemDrag(editing, 'sketches', item.id)}>
-      <EditActions target={{ target: 'item', coll: 'sketches', id: item.id }} acts={['image', 'crop', 'delete']} />
+      <EditActions target={{ target: 'item', coll: 'sketches', id: item.id }} acts={['image', 'crop', 'edit', 'delete']} />
       <ItemResize coll="sketches" id={item.id} span={span} />
       <button type="button" className="sketch-img-btn" onClick={onOpen} aria-label="Abrir imagem">
         <Img image={item.image} />
@@ -626,7 +626,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
               <button type="button" className="storyboard-frame-btn" onClick={() => onOpenLightbox?.(light, i)} aria-label={`Abrir quadro ${i + 1}`}>
                 <Img image={f} className="storyboard-frame" />
               </button>
-              <EditActions target={{ target: 'frame', id: block.id, idx: i }} acts={['image', 'crop', 'delete']} />
+              <EditActions target={{ target: 'frame', id: block.id, idx: i }} acts={['image', 'crop', 'edit', 'delete']} />
               {onSetItemSpan ? <SpanHandle span={f.span ?? 3} onSpan={(n) => onSetItemSpan({ blockId: block.id, frame: i }, n)} /> : null}
             </div>
           ))}

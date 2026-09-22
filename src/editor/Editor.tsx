@@ -170,6 +170,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   // Guias de alinhamento: enquanto arrasta, o canvas mostra as 12 colunas da grade.
   const [dragging, setDragging] = useState(false);
   const [showVersions, setShowVersions] = useState(false);
+  // Quadro de storyboard que o ✎ pediu para editar (destaca o campo dele).
+  const [quadroEmFoco, setQuadroEmFoco] = useState<{ blockId: string; idx: number } | null>(null);
 
   const { page, item } = resolveView(doc.state, container);
   const favSrc = doc.state.site.favicon ? resolveAsset(doc.state.site.favicon) : '';
@@ -511,6 +513,13 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           const ref = locateBlock(d.state, container, id);
           const idx = Number(actBox.getAttribute('data-idx'));
           if (!ref) return;
+          if (act === 'edit') {
+            // Mesmo destino do ✎ de uma imagem: os campos daquele elemento — aqui,
+            // a lista de quadros do bloco com este em foco.
+            setSelection({ kind: 'block', ref });
+            setQuadroEmFoco({ blockId: ref.blockId, idx });
+            return;
+          }
           if (act === 'delete') d.updateBlock(ref, (b) => void (b.type === 'storyboard' && b.content.frames.splice(idx, 1)));
           else if (act === 'crop') {
             const blk = findSection(d.state, ref)?.blocks.find((x) => x.id === ref.blockId);
@@ -874,7 +883,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           </div>
         </div>
 
-        <Inspector doc={doc} selection={selection} onUploadImage={uploadImage} onSelect={setSelection} lang={lang} onLang={setLang} />
+        <Inspector doc={doc} selection={selection} onUploadImage={uploadImage} onSelect={setSelection} lang={lang} onLang={setLang} quadroEmFoco={quadroEmFoco} />
       </div>
       <FloatingToolbar fonts={doc.state.theme.fonts} colors={doc.state.theme.colors} />
       {addMenu ? (
