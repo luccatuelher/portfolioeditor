@@ -1,3 +1,7 @@
+/* As regras de prévia (tablet/celular) são GERADAS do CSS do site:
+   veja scripts/gen-preview-css.mjs. Não escreva espelho à mão aqui. */
+@import './preview.generated.css';
+
 /* Chrome do editor (UI própria, fora do sistema de tokens de bloco). */
 .editor { display: flex; flex-direction: column; height: 100vh; overflow: hidden; font-family: var(--font-body); color: #1c1b18; background: #e9e6df; }
 
@@ -427,62 +431,6 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .editor-canvas.pv-tablet { max-width: 768px; width: 768px; }
 .editor-canvas.pv-mobile { max-width: 390px; width: 390px; }
 .editor-canvas.pv-tablet, .editor-canvas.pv-mobile { transition: max-width 0.15s; }
-/* Espelha o CSS responsivo do site (o canvas não dispara media queries por ser só estreito) */
-/* Tablet segue a grade do computador (3 colunas continuam 3). No celular os
-   cards empilham, mas a prévia do projeto sempre ocupa a linha inteira. */
-.pv-mobile .collection-grid { grid-template-columns: repeat(12, 1fr); }
-.pv-mobile .collection-grid > *:not(.home-preview) { grid-column: var(--gc-m, span 12); }
-.pv-mobile .site-header.hdr-layout-grid > .hdr-el, .pv-mobile .storyboard-grid > .storyboard-cell { grid-column: var(--gc-m, span 12); }
-/* tablet: largura própria quando existe, senão a do computador */
-.pv-tablet .block { grid-column: var(--gc-t, var(--gc, span var(--span, 12))); }
-.pv-tablet .block.t-row { --cfree: var(--cfree-t, 0); }
-.pv-tablet .block:not(.t-row) { transform: none; }
-.pv-tablet .block.hide-tablet { display: none; }
-.pv-tablet .collection-grid > *:not(.home-preview), .pv-tablet .storyboard-grid > .storyboard-cell, .pv-tablet .site-header.hdr-layout-grid > .hdr-el { grid-column: var(--gc-t, span var(--span, 12)); }
-.pv-tablet .collection-grid > .home-preview, .pv-mobile .collection-grid > .home-preview { grid-column: 1 / -1; }
-/* A prévia de tablet tem 768px: nessa largura o site põe cards COM TÍTULO em
-   duas colunas (três dariam ~160px). O espelho tem de mostrar o mesmo. */
-.pv-tablet .collection-projects > *:not(.home-preview), .pv-tablet .collection-blog > *:not(.home-preview) { grid-column: span 6; }
-.pv-tablet .contact-layout, .pv-mobile .contact-layout { grid-template-columns: 1fr; gap: 2rem; }
-.pv-tablet .storyboard-grid > *, .pv-mobile .storyboard-grid > * { grid-column: span 6; }
-.pv-mobile .container, .pv-mobile .site-header { width: calc(100% - 32px); }
-.pv-mobile .container { padding: 0 0 4rem; }
-.pv-mobile .site-header { padding: 1.5rem 0 1rem; gap: 12px; }
-.pv-mobile .section { margin: var(--sec-top, 2rem) 0 var(--sec-bottom, 2rem); }
-/* 12px = os mesmos 3vw da tela de 390px que o site usa no celular. */
-.pv-mobile .section-grid { --g0: min(12px, var(--gutter, var(--grid-gutter, 24px))); }
-.pv-mobile .block { grid-column: span var(--span-m, 12); grid-row: auto; }
-.pv-mobile .block.block-image { grid-column: var(--gc-m, span var(--span, 12)); }
-.pv-mobile .block.hide-mobile { display: none; }
-.pv-mobile .block:not(.m-row) { transform: none; }
-.pv-mobile .block.m-row { --cfree: var(--cfree-m, 0); }
-/* Espelha o site: imagens mantêm a proporção horizontal da grade do desktop. */
-.pv-mobile .block.block-image { grid-column: var(--gc-m, span var(--span, 12)); }
-.pv-mobile .collection-gallery, .pv-mobile .collection-sketches { grid-template-columns: repeat(12, 1fr); }
-.pv-mobile .collection-gallery > *, .pv-mobile .collection-sketches > * { grid-column: var(--gc-m, span var(--span, 12)); }
-.pv-mobile .block.hide-mobile { display: none; }
-.pv-mobile .pv-cell { grid-column: span 12; }
-.pv-mobile .site-header .hdr-el nav { flex-wrap: wrap; justify-content: center; row-gap: 2px; }
-.pv-mobile .nav-link { padding: 8px 10px; }
-.pv-mobile .detail-meta { gap: 16px 24px; }
-/* Espelha os alvos de toque e o piso de tamanho de texto do site no celular
-   (mudam a altura do cabeçalho, então a prévia tem que mostrar isso). */
-.pv-mobile .nav-link, .pv-mobile .flag-btn, .pv-mobile .filter-btn,
-.pv-mobile .social-link, .pv-mobile .contact-phone, .pv-mobile .contact-email, .pv-mobile .home-preview-go {
-  display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
-}
-.pv-mobile .nav-link { padding: 6px 12px; font-size: 13px; }
-.pv-mobile .flag-btn { padding: 6px 10px; font-size: 13px; }
-.pv-mobile .filter-btn { padding: 6px 14px; font-size: 13px; }
-.pv-mobile .btn { padding: 15px 28px; font-size: 13px; }
-.pv-mobile .header-role, .pv-mobile .social-link, .pv-mobile .empty-collection, .pv-mobile .empty-section { font-size: 13px; }
-.pv-mobile .contact-phone { font-size: 14px; align-self: flex-start; }
-.pv-mobile .contact-email { font-size: 15px; align-self: flex-start; }
-.pv-mobile .contact-main { display: flex; flex-direction: column; align-items: flex-start; }
-.pv-mobile .social-row { gap: 14px; flex-wrap: wrap; }
-.pv-mobile .nda-unlock input { font-size: 16px; min-height: 44px; width: 100%; }
-.pv-mobile .nda-unlock button { min-height: 44px; font-size: 13px; }
-.pv-mobile .card-title { font-size: 1.05rem; }
 /* ---- seções prontas ---- */
 .presets-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 0 12px; }
 .preset-tile { padding: 5px 7px; border: 1px solid #d3cfc6; border-radius: 6px; background: #fff; cursor: pointer; text-align: left; font-family: var(--font-body); font-size: 0.68rem; color: #33312c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

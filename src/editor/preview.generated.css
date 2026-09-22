@@ -1,0 +1,120 @@
+/* GERADO por scripts/gen-preview-css.mjs — não edite à mão.
+   As regras de tablet/celular da PRÉVIA do editor saem das mesmas @media do
+   site, para as duas nunca saírem de sincronia. Rode: npm run gen:preview */
+
+/* ---------- pv-tablet (768px) ---------- */
+/* de src/renderer/styles.css: @media (max-width: 900px) */
+
+.pv-tablet .site-header { grid-template-columns: 1fr; }
+.pv-tablet .site-header-right { align-items: flex-start; }
+.pv-tablet .block { grid-column: var(--gc-t, var(--gc, span var(--span, 12))); }
+.pv-tablet .block.hide-tablet { display: none; }
+.pv-tablet .block.t-row { --cfree: var(--cfree-t, 0); }
+.pv-tablet .block:not(.t-row) { transform: none; }
+.pv-tablet .collection-grid > *:not(.home-preview), .pv-tablet .storyboard-grid > .storyboard-cell, .pv-tablet .site-header.hdr-layout-grid > .hdr-el {
+    grid-column: var(--gc-t, span var(--span, 12));
+  }
+.pv-tablet .contact-layout { grid-template-columns: 1fr; gap: 40px; }
+.pv-tablet .storyboard-grid > * { grid-column: span 6; }
+/* de src/renderer/styles.css: @media (min-width: 601px) and (max-width: 819px) */
+
+.pv-tablet .collection-projects > *:not(.home-preview), .pv-tablet .collection-blog > *:not(.home-preview) { grid-column: span 6; }
+/* de src/dev/site-entry.css: @media (min-width: 601px) and (max-width: 900px) */
+
+.pv-tablet .site { --edge: clamp(16px, calc(24px + (768px - 600px) * 0.219), var(--safe, 76.8px)); }
+
+/* ---------- pv-mobile (390px) ---------- */
+/* de src/renderer/styles.css: @media (max-width: 700px) */
+
+.pv-mobile .sticky-nav { gap: 8px; padding: 6px 10px; }
+.pv-mobile .sticky-nav .nav-link { padding: 9px 8px; font-size: 0.66rem; }
+/* de src/renderer/styles.css: @media (max-width: 900px) */
+
+.pv-mobile .site-header { grid-template-columns: 1fr; }
+.pv-mobile .site-header-right { align-items: flex-start; }
+.pv-mobile .block { grid-column: var(--gc-t, var(--gc, span var(--span, 12))); }
+.pv-mobile .block.hide-tablet { display: none; }
+.pv-mobile .block.t-row { --cfree: var(--cfree-t, 0); }
+.pv-mobile .block:not(.t-row) { transform: none; }
+.pv-mobile .collection-grid > *:not(.home-preview), .pv-mobile .storyboard-grid > .storyboard-cell, .pv-mobile .site-header.hdr-layout-grid > .hdr-el {
+    grid-column: var(--gc-t, span var(--span, 12));
+  }
+.pv-mobile .contact-layout { grid-template-columns: 1fr; gap: 40px; }
+.pv-mobile .storyboard-grid > * { grid-column: span 6; }
+/* de src/renderer/styles.css: @media (max-width: 600px) */
+
+.pv-mobile .collection-grid { grid-template-columns: repeat(12, 1fr); }
+.pv-mobile .collection-grid > *:not(.home-preview) { grid-column: var(--gc-m, span 12); }
+.pv-mobile .collection-grid > .home-preview { grid-column: 1 / -1; }
+.pv-mobile .section-grid { --g0: clamp(8px, 11.7px, var(--gutter, var(--grid-gutter, 24px))); }
+.pv-mobile .block { grid-column: span var(--span-m, 12); grid-row: auto; }
+.pv-mobile .block:not(.m-row) { transform: none; }
+.pv-mobile .block.m-row { --cfree: var(--cfree-m, 0); }
+.pv-mobile .block.block-image { grid-column: var(--gc-m, span var(--span, 12)); }
+.pv-mobile .collection-gallery, .pv-mobile .collection-sketches { grid-template-columns: repeat(12, 1fr); }
+.pv-mobile .collection-gallery > *, .pv-mobile .collection-sketches > * { grid-column: var(--gc-m, span var(--span, 12)); }
+.pv-mobile .block.hide-mobile { display: none; }
+.pv-mobile .site-header.hdr-layout-grid > .hdr-el, .pv-mobile .storyboard-grid > .storyboard-cell { grid-column: var(--gc-m, span 12); }
+/* de src/renderer/styles.css: @media (max-width: 700px) */
+
+.pv-mobile .hdr-layout-grid > .hdr-el { grid-column: span 12; }
+/* de src/renderer/styles.css: @media (max-width: 700px) */
+
+.pv-mobile .pv-cell { grid-column: span 12; }
+/* de src/renderer/styles.css: @media (max-width: 600px) */
+
+.pv-mobile .container, .pv-mobile .site-header { width: calc(100% - 32px); }
+.pv-mobile .container { padding: 0 0 4rem; }
+.pv-mobile .site-header { padding: 1.5rem 0 1rem; gap: 12px; }
+.pv-mobile .section { margin: var(--sec-top, 2rem) 0 var(--sec-bottom, 2rem); }
+.pv-mobile .site-header .hdr-el nav, .pv-mobile .site-header > nav { flex-wrap: wrap; justify-content: center; row-gap: 2px; }
+.pv-mobile .sticky-nav nav { flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; scrollbar-width: none; -webkit-overflow-scrolling: touch; max-width: 100%; }
+.pv-mobile .sticky-nav nav::-webkit-scrollbar { display: none; }
+.pv-mobile .nav-link { padding: 8px 10px; white-space: nowrap; }
+.pv-mobile .project-filter { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+.pv-mobile .filter-btn { white-space: nowrap; }
+.pv-mobile .detail-header { margin: 1.5rem 0 2rem; }
+.pv-mobile .detail-meta { gap: 16px 24px; }
+.pv-mobile .contact-layout { gap: 2rem; }
+.pv-mobile .nda-unlock { padding: 24px 16px; }
+.pv-mobile .nda-unlock-row { width: 100%; }
+.pv-mobile .nda-unlock input { min-width: 0; flex: 1; }
+.pv-mobile .lightbox { padding: 2vh 7.8px; }
+.pv-mobile .lightbox-nav { width: 44px; height: 44px; font-size: 1.5rem; background: rgba(24, 23, 21, 0.45); }
+.pv-mobile .nav-link, .pv-mobile .flag-btn, .pv-mobile .filter-btn, .pv-mobile .social-link, .pv-mobile .contact-phone, .pv-mobile .contact-email, .pv-mobile .home-preview-go {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
+  }
+.pv-mobile .nav-link { padding: 6px 12px; }
+.pv-mobile .sticky-nav .nav-link { min-height: 40px; padding: 4px 10px; font-size: 13px; }
+.pv-mobile .flag-btn { padding: 6px 10px; font-size: 13px; }
+.pv-mobile .filter-btn { padding: 6px 14px; font-size: 13px; }
+.pv-mobile .btn { padding: 15px 28px; font-size: 13px; }
+.pv-mobile .home-preview-go { padding: 6px 16px; font-size: 13px; }
+.pv-mobile .home-preview-close { width: 44px; height: 44px; }
+.pv-mobile .header-role { font-size: 13px; }
+.pv-mobile .nav-link { font-size: 13px; }
+.pv-mobile .social-link { font-size: 13px; }
+.pv-mobile .contact-phone { font-size: 14px; align-self: flex-start; }
+.pv-mobile .contact-email { font-size: 15px; align-self: flex-start; }
+.pv-mobile .empty-collection, .pv-mobile .empty-section { font-size: 13px; }
+.pv-mobile .lightbox-count { font-size: 13px; }
+.pv-mobile .card-title { font-size: 1.05rem; }
+.pv-mobile .contact-main { display: flex; flex-direction: column; align-items: flex-start; }
+.pv-mobile .social-row { gap: 14px; flex-wrap: wrap; }
+.pv-mobile .nda-unlock input { font-size: 16px; min-height: 44px; width: 100%; }
+.pv-mobile .nda-unlock button { min-height: 44px; font-size: 13px; }
+.pv-mobile .nda-unlock-text { font-size: 13px; }
+.pv-mobile a, .pv-mobile button, .pv-mobile [role="button"], .pv-mobile input, .pv-mobile select, .pv-mobile .project-card, .pv-mobile .art-img-btn, .pv-mobile .sketch-img-btn, .pv-mobile .storyboard-frame-btn {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.06);
+    touch-action: manipulation;
+  }
+.pv-mobile .lightbox-count { bottom: max(2vh, env(safe-area-inset-bottom)); }
+/* de src/renderer/styles.css: @media (max-width: 600px) */
+
+.pv-mobile .site.has-backdrop { background-attachment: scroll; }
+/* de src/dev/site-entry.css: @media (max-width: 600px) */
+
+.pv-mobile .site { --edge: 16px; --page-pad: 0px; }
+.pv-mobile .section.width-wide, .pv-mobile .section.width-full { margin-inline: 0; }
+.pv-mobile .block-image-img { max-height: none; }
+.pv-mobile .embed-area { max-width: none; }
