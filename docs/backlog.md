@@ -36,3 +36,20 @@ Refinos pendentes:
 - **Node portátil**: máquina sem admin; Node LTS foi instalado via ZIP em `%LOCALAPPDATA%\nodejs-portable`. Se o PATH de usuário for limpo, reconfigurar. Ver `README.md`.
 - **dnd-kit / Tiptap**: libs decididas mas ainda não instaladas (entram em F3/F4) para não inflar a fundação.
 - **Artefatos de build** `editor.html` / `site.html` (`vite-plugin-singlefile`): configurar quando houver renderer (F2+).
+
+## Pedido do Lucca (2026-09-22): carrossel no popup do projeto
+
+Ao abrir a prévia de um projeto na Home, os embeds do projeto devem virar um
+CARROSSEL em vez de aparecerem empilhados:
+
+- animatic (YouTube)
+- apresentação (Speaker Deck)
+- vídeo final (YouTube/Vimeo), quando existir
+
+Regras:
+- Só entram os embeds que o projeto realmente tem — nada de espaço vazio para
+  o que não foi preenchido.
+- Um embed só: sem setas nem marcadores (não é carrossel de um item).
+- Navegação por setas e por marcadores, com teclado e deslize no celular
+  (mesmo gesto do visualizador de imagem, que já tem deslize).
+- Vale para a prévia; a página do projeto continua mostrando tudo em sequência.
