@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { embedSource } from '../embed/embedSource';
+import { embedSource, motivoDoEmbedVazio } from '../embed/embedSource';
 import { sobraDaLinha, spanVars } from './responsive';
 import { ErrorBoundary } from './ErrorBoundary';
 import type { Block, GalleryItem, HomePreview, ImageRef, ProjectItem, Section, SketchItem } from '../schema/v4';
@@ -50,7 +50,8 @@ export function cropImgStyle(c: { x: number; y: number; w: number; h: number }):
 function EmbedFrame({ provider, refValue, options }: { provider: string; refValue: string; options?: Record<string, string> }): React.ReactElement {
   const { editing, posterEmbeds } = useRender();
   const src = embedSource({ type: provider, id: refValue, ...(options ?? {}) });
-  if (!src) return <p className="media-message">{editing ? 'Cole o link do vídeo no inspector (✎).' : 'Mídia indisponível.'}</p>;
+  // No editor, a mensagem diz o que fazer; no site, o visitante não precisa saber.
+  if (!src) return <p className="media-message">{editing ? motivoDoEmbedVazio({ type: provider, id: refValue }) : 'Mídia indisponível.'}</p>;
   if (posterEmbeds) {
     // No editor: capa estática em vez do player (arrastável, sem o erro 153 do YouTube em file://).
     const yt = src.match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]{11})/)?.[1];

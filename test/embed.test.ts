@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { embedProvider, embedSource } from '../src/embed/embedSource';
+import { embedProvider, embedSource, segundosDoTempo, motivoDoEmbedVazio } from '../src/embed/embedSource';
 
 describe('embedSource — porta pura do v3', () => {
   it('YouTube por id de 11 chars', () => {
@@ -54,5 +54,52 @@ describe('embedSource — porta pura do v3', () => {
     expect(embedProvider({ type: 'youtube', id: 'aqz-KE-bpKQ' })).toBe('youtube');
     expect(embedProvider({ type: 'vimeo', id: '76979871' })).toBe('vimeo');
     expect(embedProvider({ id: 'nada' })).toBeNull();
+  });
+});
+
+describe('tempo no link do vídeo', () => {
+  it('lê os formatos que o botão "copiar a partir daqui" produz', () => {
+    expect(segundosDoTempo('90')).toBe('90');
+    expect(segundosDoTempo('90s')).toBe('90');
+    expect(segundosDoTempo('1m30s')).toBe('90');
+    expect(segundosDoTempo('1h2m3s')).toBe('3723');
+    expect(segundosDoTempo('0')).toBeNull();
+    expect(segundosDoTempo('depois do meio')).toBeNull();
+    expect(segundosDoTempo(null)).toBeNull();
+  });
+
+  it('YouTube começa no momento escolhido', () => {
+    expect(embedSource({ id: 'https://youtu.be/dQw4w9WgXcQ?t=42' })).toContain('start=42');
+    expect(embedSource({ id: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s' })).toContain('start=90');
+  });
+
+  it('Vimeo usa o fragmento, que é como o player dele aceita', () => {
+    const src = embedSource({ id: 'https://vimeo.com/123456789#t=90s' });
+    expect(src).toContain('#t=90s');
+    expect(src).not.toContain('start=');
+  });
+
+  it('link sem tempo continua começando do início', () => {
+    expect(embedSource({ id: 'https://youtu.be/dQw4w9WgXcQ' })).not.toContain('start=');
+  });
+});
+
+describe('por que o embed não virou player', () => {
+  it('a página do Speaker Deck explica que ali precisa do código', () => {
+    const m = motivoDoEmbedVazio({ id: 'https://speakerdeck.com/lucca/minha-apresentacao' });
+    expect(m).toContain('Speaker Deck');
+    expect(m).toContain('Embed');
+  });
+
+  it('link de site não suportado diz quais valem', () => {
+    expect(motivoDoEmbedVazio({ id: 'https://exemplo.com/video/1' })).toContain('YouTube');
+  });
+
+  it('campo vazio pede o link, sem drama', () => {
+    expect(motivoDoEmbedVazio({ id: '' })).toContain('Cole o link');
+  });
+
+  it('link de YouTube quebrado não é confundido com campo vazio', () => {
+    expect(motivoDoEmbedVazio({ id: 'https://youtube.com/watch?v=' })).toContain('YouTube não reconhecido');
   });
 });
