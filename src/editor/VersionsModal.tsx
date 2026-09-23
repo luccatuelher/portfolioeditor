@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
+import { useDialog } from './useDialog';
 import type { PortfolioV4 } from '../schema/v4';
 import { deleteVersion, listVersions, loadVersion, MAX_VERSIONS, saveVersion, type VersionEntry } from './versions';
 
@@ -17,11 +18,8 @@ export function VersionsModal({ doc, onRestore, onClose }: { doc: PortfolioV4; o
 
   const refresh = (): void => void listVersions().then(setList).catch(() => setList([]));
   useEffect(refresh, []);
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => void (e.key === 'Escape' && onClose());
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const dialogo = useDialog<HTMLDivElement>(onClose);
+  const titulo = useId();
 
   const save = async (): Promise<void> => {
     setBusy(true);
@@ -63,9 +61,9 @@ export function VersionsModal({ doc, onRestore, onClose }: { doc: PortfolioV4; o
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="modal versions-modal" role="dialog" aria-label="Histórico de versões" onClick={(e) => e.stopPropagation()}>
+      <div className="modal versions-modal" role="dialog" aria-modal="true" aria-labelledby={titulo} ref={dialogo} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <header className="modal-head">
-          <h2>Histórico de versões</h2>
+          <h2 id={titulo}>Histórico de versões</h2>
           <button type="button" onClick={onClose} aria-label="Fechar">✕</button>
         </header>
 

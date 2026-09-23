@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { useDialog } from './useDialog';
 import type { ImageCrop } from '../schema/v4';
 
 type Rect = { x: number; y: number; w: number; h: number };
@@ -41,13 +42,8 @@ export function CropModal({ src, initial, lockRatio, onApply, onClose }: { src: 
   // Proporção em pixels exigida pelo preset (null = livre).
   const pxRatio = (): number | null => (!nat ? null : ratio === 'free' ? null : ratio === 'orig' ? nat.w / nat.h : ratio);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent): void => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  const dialogo = useDialog<HTMLDivElement>(onClose);
+  const titulo = useId();
 
   const choose = (r: number | 'free' | 'orig'): void => {
     setRatio(r);
@@ -130,10 +126,10 @@ export function CropModal({ src, initial, lockRatio, onApply, onClose }: { src: 
   const outH = nat ? Math.round(rect.h * nat.h) : 0;
 
   return (
-    <div className="crop-modal" role="dialog" aria-modal="true" aria-label="Recortar imagem" onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className="crop-modal" role="dialog" aria-modal="true" aria-labelledby={titulo} ref={dialogo} tabIndex={-1} onPointerDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="crop-panel">
         <div className="crop-head">
-          <strong>Recortar imagem</strong>
+          <strong id={titulo}>Recortar imagem</strong>
           <span className="crop-size">{nat ? `${outW} × ${outH}px` : 'carregando…'}</span>
         </div>
         <div className="crop-presets">

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { useDialog } from './useDialog';
 import { medirForca, sugerirSenha, TAMANHO_MINIMO } from '../publish/passwordStrength';
 
 /**
@@ -13,6 +14,8 @@ export function NdaPasswordModal({ quantidade, onConfirm, onCancel }: { quantida
   const [vendo, setVendo] = useState(false);
   const forca = medirForca(senha);
   const vazia = !senha.trim();
+  const dialogo = useDialog<HTMLDivElement>(onCancel);
+  const titulo = useId();
 
   const confirmar = (): void => {
     if (vazia) return;
@@ -22,9 +25,9 @@ export function NdaPasswordModal({ quantidade, onConfirm, onCancel }: { quantida
 
   return (
     <div className="modal-backdrop" onClick={onCancel}>
-      <div className="modal nda-modal" role="dialog" aria-label="Senha da área NDA" onClick={(e) => e.stopPropagation()}>
+      <div className="modal nda-modal" role="dialog" aria-modal="true" aria-labelledby={titulo} ref={dialogo} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
         <header className="modal-head">
-          <h2>Senha da área NDA</h2>
+          <h2 id={titulo}>Senha da área NDA</h2>
           <button type="button" onClick={onCancel} aria-label="Fechar">✕</button>
         </header>
 
