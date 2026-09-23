@@ -555,3 +555,7 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .publish-notice details ul { margin: 4px 0 0; padding-left: 18px; }
 /* Data da nota: mês e ano lado a lado */
 .insp-data-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+/* Recorte pelo teclado: foco visível na moldura e a dica dos atalhos */
+.crop-rect:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; }
+.crop-hint { margin: 0; font-size: 0.7rem; color: #6f6c64; line-height: 1.5; }
+.crop-hint kbd { font-family: var(--font-mono); font-size: 0.64rem; padding: 0 4px; border: 1px solid #cfcabf; border-bottom-width: 2px; border-radius: 3px; background: #fff; }

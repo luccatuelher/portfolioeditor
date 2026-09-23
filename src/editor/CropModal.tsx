@@ -105,6 +105,50 @@ export function CropModal({ src, initial, lockRatio, onApply, onClose }: { src: 
     window.addEventListener('pointerup', up);
   };
 
+  /**
+   * Teclado na moldura (o mesmo recorte que o mouse faz): setas movem (Shift =
+   * passo maior), + e − mudam o tamanho mantendo a proporção, Alt+setas mudam
+   * largura/altura na proporção livre e Enter aplica.
+   */
+  const onKeyRect = (e: React.KeyboardEvent): void => {
+    if (!nat) return;
+    const passo = e.shiftKey ? 0.1 : 0.01;
+    const dir: Record<string, [number, number]> = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+    const d = dir[e.key];
+    if (d && e.altKey && pxRatio() === null) {
+      e.preventDefault();
+      setRect((r) => {
+        const w = clamp(r.w + d[0] * passo, MIN, 1 - r.x);
+        const h = clamp(r.h + d[1] * passo, MIN, 1 - r.y);
+        return { ...r, w, h };
+      });
+      return;
+    }
+    if (d) {
+      e.preventDefault();
+      setRect((r) => ({ ...r, x: clamp(r.x + d[0] * passo, 0, 1 - r.w), y: clamp(r.y + d[1] * passo, 0, 1 - r.h) }));
+      return;
+    }
+    if (e.key === '+' || e.key === '=' || e.key === '-' || e.key === '_') {
+      e.preventDefault();
+      const quer = e.key === '+' || e.key === '=' ? 1.08 : 1 / 1.08;
+      setRect((r) => {
+        // Escala pelo centro, sem passar da imagem nem ficar menor que o mínimo.
+        const k = Math.min(Math.max(quer, MIN / r.w, MIN / r.h), 1 / r.w, 1 / r.h);
+        const w = r.w * k;
+        const h = r.h * k;
+        const cx = r.x + r.w / 2;
+        const cy = r.y + r.h / 2;
+        return { w, h, x: clamp(cx - w / 2, 0, 1 - w), y: clamp(cy - h / 2, 0, 1 - h) };
+      });
+      return;
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      apply();
+    }
+  };
+
   const apply = (): void => {
     if (!nat) return;
     const full = rect.x <= 0.001 && rect.y <= 0.001 && rect.w >= 0.999 && rect.h >= 0.999;
@@ -144,13 +188,25 @@ export function CropModal({ src, initial, lockRatio, onApply, onClose }: { src: 
         <div className="crop-stage" ref={stage}>
           <img src={src} alt="" onLoad={onLoad} draggable={false} style={dispSize()} />
           {nat ? (
-            <div className="crop-rect" style={{ left: pct(rect.x), top: pct(rect.y), width: pct(rect.w), height: pct(rect.h) }} onPointerDown={startDrag('move')}>
+            <div
+              className="crop-rect"
+              style={{ left: pct(rect.x), top: pct(rect.y), width: pct(rect.w), height: pct(rect.h) }}
+              onPointerDown={startDrag('move')}
+              tabIndex={0}
+              role="group"
+              aria-roledescription="moldura do recorte"
+              aria-label={`Recorte: ${outW} × ${outH} px, a ${Math.round(rect.x * 100)}% da esquerda e ${Math.round(rect.y * 100)}% do topo. Setas movem, + e − mudam o tamanho, Enter aplica.`}
+              onKeyDown={onKeyRect}
+            >
               {(['nw', 'ne', 'sw', 'se'] as const).map((c) => (
                 <span key={c} className={`crop-handle ${c}`} onPointerDown={startDrag(c)} />
               ))}
             </div>
           ) : null}
         </div>
+        <p className="crop-hint">
+          Arraste a moldura ou os cantos. Pelo teclado (Tab até a moldura): <kbd>←↑↓→</kbd> movem (<kbd>Shift</kbd> = passo maior), <kbd>+</kbd> <kbd>−</kbd> mudam o tamanho{pxRatio() === null ? <>, <kbd>Alt</kbd>+setas mudam largura e altura</> : null}, <kbd>Enter</kbd> aplica.
+        </p>
         <div className="crop-actions">
           <button type="button" className="crop-reset" onClick={() => onApply(undefined)} title="Volta a mostrar a imagem inteira">Remover recorte</button>
           <span className="crop-spacer" />
