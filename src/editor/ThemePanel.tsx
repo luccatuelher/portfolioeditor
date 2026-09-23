@@ -119,6 +119,41 @@ export const RATIOS: { value: number; label: string }[] = [
   { value: 1.618, label: '1,618 — áurea (contraste máximo)' },
 ];
 
+/** Tamanhos do texto corrido mais usados na web, pelo efeito na leitura. */
+export const BASES: { value: number; label: string }[] = [
+  { value: 14, label: '14 px — compacto' },
+  { value: 15, label: '15 px' },
+  { value: 16, label: '16 px — padrão da web' },
+  { value: 17, label: '17 px' },
+  { value: 18, label: '18 px — confortável' },
+  { value: 20, label: '20 px — grande' },
+];
+
+/** Tamanho base do texto: lista + "Outro…" para um número próprio (12 a 24 px). */
+function BasePicker({ value, onChange }: { value: number; onChange: (v: number) => void }): React.ReactElement {
+  const id = useId();
+  const conhecida = BASES.find((b) => b.value === value);
+  const [digitando, setDigitando] = useState(false);
+  const outra = digitando || !conhecida;
+  return (
+    <div className="theme-font">
+      <label className="insp-label" htmlFor={id}>Tamanho do texto</label>
+      <select id={id} className="insp-input" value={outra ? OUTRA_FONTE : String(value)} onChange={(e) => {
+        const v = e.target.value;
+        setDigitando(v === OUTRA_FONTE);
+        if (v !== OUTRA_FONTE) onChange(Number(v));
+      }}>
+        {BASES.map((b) => <option key={b.value} value={String(b.value)}>{b.label}</option>)}
+        <option value={OUTRA_FONTE}>{outra ? `Outro: ${value} px` : 'Outro…'}</option>
+      </select>
+      {outra ? (
+        <input className="insp-input" aria-label="Tamanho do texto (px)" type="number" step="1" min={12} max={24} value={value} onChange={(e) => { const n = Number(e.target.value); if (n >= 12 && n <= 24) onChange(n); }} />
+      ) : null}
+      <span className="theme-hint" style={{ margin: '4px 0 0', display: 'block' }}>Os títulos crescem a partir dele.</span>
+    </div>
+  );
+}
+
 /** Razão da escala: lista de escalas com nome + "Outra…" para um número próprio. */
 function RatioPicker({ value, onChange }: { value: number; onChange: (v: number) => void }): React.ReactElement {
   const id = useId();
@@ -272,10 +307,7 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
       <p className="theme-hint">Todas vêm do Google Fonts e são carregadas sozinhas no editor e no site. Em “Outra do Google Fonts…” dá para usar qualquer nome de lá.</p>
 
       <div className="panel-h">Escala tipográfica</div>
-      <label className="theme-font">
-        <span className="insp-label">Base (px)</span>
-        <input className="insp-input" type="number" value={theme.type.base} onChange={(e) => doc.updateTheme((t) => void (t.type.base = Number(e.target.value) || t.type.base), 'theme:base')} />
-      </label>
+      <BasePicker value={theme.type.base} onChange={(b) => doc.updateTheme((t) => void (t.type.base = b), 'theme:base')} />
       <RatioPicker value={theme.type.ratio} onChange={(r) => doc.updateTheme((t) => void (t.type.ratio = r), 'theme:ratio')} />
 
       {/* Opcionais: o site funciona sem nada disso. Ficam recolhidos para não pesar no painel. */}

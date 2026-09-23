@@ -146,3 +146,115 @@ export function RedesDatalist({ id }: { id: string }): React.ReactElement {
     </datalist>
   );
 }
+
+/** Anos oferecidos na lista: do próximo até 1990 (projeto em andamento entra também). */
+function anosDaLista(): number[] {
+  const agora = new Date().getFullYear();
+  return Array.from({ length: agora + 2 - 1990 }, (_, i) => agora + 1 - i);
+}
+
+/** Ano do projeto: lista de anos; "Outro…" para período ("2021–2023") ou texto próprio. */
+export function AnoRow({ value, onChange }: { value: I18n | undefined; onChange: (v: I18n | undefined) => void }): React.ReactElement {
+  const pt = (value?.pt || value?.en || '').trim();
+  const anos = anosDaLista();
+  const conhecido = /^\d{4}$/.test(pt) && anos.includes(Number(pt)) && (!value?.en || value.en.trim() === pt) ? pt : '';
+  const [digitando, setDigitando] = useState(false);
+  const outro = digitando || (!conhecido && !!pt);
+  return (
+    <>
+      <Row label="Ano">
+        <select
+          className="insp-input"
+          aria-label="Ano"
+          value={outro ? OUTRO : conhecido}
+          onChange={(e) => {
+            const v = e.target.value;
+            setDigitando(v === OUTRO);
+            if (v === OUTRO) return;
+            onChange(v ? { pt: v, en: v } : undefined);
+          }}
+        >
+          <option value="">— Não informar</option>
+          {anos.map((a) => <option key={a} value={String(a)}>{a}</option>)}
+          <option value={OUTRO}>Outro (ex.: 2021–2023)…</option>
+        </select>
+      </Row>
+      {outro ? (
+        <Row label="Ano (texto)">
+          <I18nInput value={value ?? { pt: '', en: '' }} onChange={(v) => onChange(v.pt || v.en ? v : undefined)} />
+        </Row>
+      ) : null}
+    </>
+  );
+}
+
+const MESES_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MESES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/**
+ * Lê uma data escrita como o editor escreve ("Setembro 2026", "September 2026",
+ * "2026"). Devolve mês (1–12, 0 = sem mês) e ano, ou null se for outro texto.
+ */
+export function lerMesAno(value: I18n | undefined): { mes: number; ano: number } | null {
+  const sem = (s: string): string => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  const txt = sem((value?.pt || value?.en || '').trim());
+  if (!txt) return null;
+  const soAno = txt.match(/^(\d{4})$/);
+  if (soAno) return { mes: 0, ano: Number(soAno[1]) };
+  const m = txt.match(/^([a-z]+)\s+(?:de\s+)?(\d{4})$/);
+  if (!m) return null;
+  const i = [...MESES_PT, ...MESES_EN].map(sem).indexOf(m[1]!);
+  return i < 0 ? null : { mes: (i % 12) + 1, ano: Number(m[2]) };
+}
+
+/** Escreve mês/ano nos dois idiomas: "Setembro 2026" / "September 2026". */
+export function escreverMesAno(mes: number, ano: number): I18n {
+  return mes ? { pt: `${MESES_PT[mes - 1]} ${ano}`, en: `${MESES_EN[mes - 1]} ${ano}` } : { pt: String(ano), en: String(ano) };
+}
+
+/**
+ * Data de uma nota: mês e ano em listas, escritos sozinhos em português e em
+ * inglês. "Escrever à mão" guarda qualquer outro texto (ex.: "Primavera 2024").
+ */
+export function DataRow({ value, onChange }: { value: I18n; onChange: (v: I18n) => void }): React.ReactElement {
+  const lida = lerMesAno(value);
+  const [digitando, setDigitando] = useState(false);
+  const temTexto = !!(value.pt || value.en);
+  const livre = digitando || (temTexto && !lida);
+  const mes = lida?.mes ?? 0;
+  const ano = lida?.ano ?? 0;
+  const anos = anosDaLista();
+  const gravar = (m: number, a: number): void => onChange(a ? escreverMesAno(m, a) : { pt: '', en: '' });
+  return (
+    <>
+      <Row label="Data">
+        <div className="insp-data-row">
+          <select className="insp-input" aria-label="Mês" value={livre ? '' : String(mes)} disabled={livre} onChange={(e) => gravar(Number(e.target.value), ano || new Date().getFullYear())}>
+            <option value="0">— Mês</option>
+            {MESES_PT.map((m, i) => <option key={m} value={String(i + 1)}>{m}</option>)}
+          </select>
+          <select
+            className="insp-input"
+            aria-label="Ano da nota"
+            value={livre ? OUTRO : String(ano)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setDigitando(v === OUTRO);
+              if (v === OUTRO) return;
+              gravar(mes, Number(v));
+            }}
+          >
+            <option value="0">— Ano</option>
+            {anos.map((a) => <option key={a} value={String(a)}>{a}</option>)}
+            <option value={OUTRO}>Escrever à mão…</option>
+          </select>
+        </div>
+      </Row>
+      {livre ? (
+        <Row label="Data (texto)">
+          <I18nInput value={value} onChange={onChange} />
+        </Row>
+      ) : null}
+    </>
+  );
+}

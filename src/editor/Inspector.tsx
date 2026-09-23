@@ -11,8 +11,9 @@ import { RichI18nInput } from './RichTextEditor';
 import { TYPE_LABEL } from '../renderer/preview';
 import { embedProvider } from '../embed/embedSource';
 import { resolveSpan } from '../renderer/responsive';
+import { itemWidth } from '../renderer/blocks';
 import { CATEGORY_LABEL, projectCategory, type ProjectCategory } from '../core/category';
-import { FormatoRow, LinkPicker, RedesDatalist, redeDoLink } from './choices';
+import { AnoRow, DataRow, FormatoRow, LinkPicker, RedesDatalist, redeDoLink } from './choices';
 
 const PROJECT_META_FIELDS = ['tag', 'year', 'client', 'role', 'category', 'skills', 'contribution', 'credits', 'sequenceLabel', 'storyType', 'processNotes'] as const;
 const META_LABEL: Record<string, string> = {
@@ -55,13 +56,8 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
   const uploadBtn = (apply: (aid: string) => void): React.ReactNode =>
     onUploadImage ? <ImageUploadButton onPick={(f) => void onUploadImage(f).then(apply)} /> : null;
 
-  // Mesma régua dos blocos: largura em 12 avos (vazio = automático pelas colunas da coleção).
-  const widthRow = (coll: CollectionName, it: { width?: number }): React.ReactNode => (
-    <Row label="Largura (de 12, vazio = automático)">
-      <input className="insp-input" type="number" min={1} max={12} value={it.width ?? ''} placeholder="auto"
-        onChange={(e) => { const n = Number(e.target.value); doc.updateItem(coll, id, (x) => void ((x as { width?: number }).width = e.target.value === '' ? undefined : Math.max(1, Math.min(12, n))), `${id}:width`); }} />
-    </Row>
-  );
+  // Mesma régua e mesmo controle dos blocos, nas três telas.
+  const widthRow = (coll: CollectionName, it: ItemComLargura): React.ReactNode => <LarguraItemPorDispositivo doc={doc} coll={coll} id={id} item={it} />;
   let fields: React.ReactNode = null;
   if (collection === 'projects') {
     const p = item as ProjectItem;
@@ -76,6 +72,8 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
         {PROJECT_META_FIELDS.map((f) =>
           f === 'category' ? (
             <CategoryRow key={f} value={p.meta[f]} onChange={(c) => doc.updateItem('projects', id, (it) => { if (c) it.meta[f] = { pt: c, en: c }; else delete it.meta[f]; })} />
+          ) : f === 'year' ? (
+            <AnoRow key={`${id}:${f}`} value={p.meta[f]} onChange={(v) => doc.updateItem('projects', id, (it) => { if (v) it.meta[f] = v; else delete it.meta[f]; }, `${id}:${f}`)} />
           ) : f === 'storyType' ? (
             <FormatoRow key={`${id}:${f}`} value={p.meta[f]} onChange={(v) => doc.updateItem('projects', id, (it) => { if (v) it.meta[f] = v; else delete it.meta[f]; }, `${id}:${f}`)} />
           ) : (
@@ -89,7 +87,7 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
     fields = (
       <>
         <Row label="Título"><I18nInput value={b.title} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.title = v), `${id}:title`)} /></Row>
-        <Row label="Data"><I18nInput value={b.date} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.date = v), `${id}:date`)} /></Row>
+        <DataRow key={`${id}:date`} value={b.date} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.date = v), `${id}:date`)} />
         <Row label="Resumo"><I18nInput multiline value={b.excerpt} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.excerpt = v), `${id}:exc`)} /></Row>
         {widthRow('blog', b)}
         <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('blog', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }))}</Row>
@@ -135,6 +133,56 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'style', label: 'Estilo' },
   { id: 'visibility', label: 'Visibilidade' },
 ];
+
+/** Colunas da primeira lista (bloco Coleção) que mostra esta coleção — base da largura automática. */
+function colsDaColecao(d: DocApi['state'], coll: CollectionName): number {
+  for (const p of d.pages) for (const s of p.sections) for (const b of s.blocks) if (b.type === 'collection' && b.content.collection === coll) return b.content.cols;
+  return 3;
+}
+
+type ItemComLargura = { width?: number; widthTablet?: number; widthMobile?: number; span?: number };
+
+/**
+ * Largura de um item de coleção nas três telas — o mesmo controle dos blocos
+ * (régua de 12, cascata computador → tablet → celular, "↺" volta a herdar).
+ * No computador, sem valor próprio o item segue as colunas da lista.
+ */
+function LarguraItemPorDispositivo({ doc, coll, id, item }: { doc: DocApi; coll: CollectionName; id: string; item: ItemComLargura }): React.ReactElement {
+  const cols = colsDaColecao(doc.state, coll);
+  const auto = itemWidth({ span: item.span }, cols);
+  const kind = coll === 'projects' || coll === 'blog' ? 'card' : 'media';
+  const spans = { desktop: item.width ?? auto, tablet: item.widthTablet, mobile: item.widthMobile };
+  const campo = { desktop: 'width', tablet: 'widthTablet', mobile: 'widthMobile' } as const;
+  const telas: { id: 'desktop' | 'tablet' | 'mobile'; nome: string }[] = [
+    { id: 'desktop', nome: 'Computador' },
+    { id: 'tablet', nome: 'Tablet' },
+    { id: 'mobile', nome: 'Celular' },
+  ];
+  const setar = (tela: 'desktop' | 'tablet' | 'mobile', v: number | undefined): void =>
+    doc.updateItem(coll, id, (x) => void ((x as ItemComLargura)[campo[tela]] = v), `${id}:${campo[tela]}`);
+  return (
+    <>
+      {telas.map((t) => {
+        const r = resolveSpan(spans, t.id, kind);
+        const proprio = t.id === 'desktop' ? item.width !== undefined : r.own;
+        const origem = t.id === 'desktop'
+          ? (proprio ? 'próprio' : `automático · ${cols} por linha`)
+          : r.own ? 'próprio' : r.floored ? 'ajustado' : `herdado do ${r.from === 'tablet' ? 'tablet' : 'computador'}`;
+        return (
+          <Row key={t.id} label={`Largura · ${t.nome}`}>
+            <div className="insp-span-row">
+              <RangeInput min={1} max={12} value={r.span} onChange={(v) => setar(t.id, v)} />
+              <span className={`insp-span-tag${proprio ? ' own' : ''}`}>{r.span}/12 · {origem}</span>
+              {proprio ? (
+                <button type="button" className="insp-span-reset" title={t.id === 'desktop' ? 'Voltar ao automático (pelas colunas da lista)' : 'Voltar ao valor herdado'} onClick={() => setar(t.id, undefined)}>↺</button>
+              ) : null}
+            </div>
+          </Row>
+        );
+      })}
+    </>
+  );
+}
 
 /** Existe, em alguma página publicada, a lista NDA (onde o visitante digita a senha)? */
 function temListaNda(d: DocApi['state']): boolean {

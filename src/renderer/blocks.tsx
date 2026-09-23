@@ -129,7 +129,7 @@ function ItemResize({ coll, id, span }: { coll: ItemColl; id: string; span: numb
 }
 
 /** Largura do item em 12 avos: `width` explícito, senão o legado (span em colunas da coleção). */
-function itemWidth(item: { width?: number; span?: number }, cols: number): number {
+export function itemWidth(item: { width?: number; span?: number }, cols: number): number {
   if (item.width) return item.width;
   const units = Math.max(1, Math.round(12 / Math.max(1, cols)));
   return Math.min(12, Math.min(item.span ?? 1, cols) * units);

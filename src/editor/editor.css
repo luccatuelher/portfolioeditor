@@ -553,3 +553,5 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .publish-notice-alerta { color: #8a2a12; font-weight: 600; }
 .publish-notice details summary { cursor: pointer; font-weight: 600; }
 .publish-notice details ul { margin: 4px 0 0; padding-left: 18px; }
+/* Data da nota: mês e ano lado a lado */
+.insp-data-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
