@@ -587,3 +587,29 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
   .tb-center button, .tb-btn, .left-tabs button, .insp-tab, .insp-lang, .lang-toggle button { min-height: 40px; }
   .tb-center button { min-width: 40px; }
 }
+
+/*
+ * Toque. O arrasto de largura usa eventos de ponteiro, mas sem touch-action o
+ * navegador tomava o gesto para rolar a página e cancelava o arrasto no meio.
+ * Os ícones de ação dos itens (card, nota, galeria, sketch, quadro) só
+ * apareciam no hover, que não existe no toque: sem mouse, ficam sempre à mostra
+ * e maiores; com mouse, aparecem também no item selecionado (como nos blocos).
+ */
+.editor-canvas .pe-span-handle { touch-action: none; }
+.editor-canvas .project-card.is-selected > .card-thumb-wrap > .pe-actions,
+.editor-canvas .blog-item.is-selected > .blog-thumb-wrap > .pe-actions,
+.editor-canvas .art-item.is-selected > .pe-actions,
+.editor-canvas .sketch-item.is-selected > .pe-actions { opacity: 1; pointer-events: auto; }
+@media (hover: none) {
+  .editor-canvas .card-thumb-wrap > .pe-actions,
+  .editor-canvas .blog-thumb-wrap > .pe-actions,
+  .editor-canvas .art-item > .pe-actions,
+  .editor-canvas .sketch-item > .pe-actions,
+  .editor-canvas .storyboard-cell > .pe-actions,
+  .editor-canvas .hdr-el > .pe-actions { opacity: 1; pointer-events: auto; }
+  .editor-canvas .pe-act { width: 36px; height: 36px; }
+}
+@media (pointer: coarse) {
+  /* Alça de largura com área de toque de verdade (a barra visível continua fina). */
+  .editor-canvas .pe-span-handle { width: 28px; right: -18px; }
+}
