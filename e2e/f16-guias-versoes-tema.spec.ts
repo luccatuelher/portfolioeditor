@@ -57,6 +57,7 @@ test.describe('Guias, versões, contraste e analytics', () => {
     await openEditor(page);
     await page.locator('.left-tabs button', { hasText: 'Tema' }).click();
     const snippet = '<script defer src="https://plausible.io/js/script.js"></script>';
+    await page.locator('.theme-advanced > summary').click(); // opcionais ficam recolhidos
     await page.locator('.analytics-input').fill(snippet);
     await page.locator('.left-tabs button', { hasText: 'Layers' }).click();
     await page.locator('.left-tabs button', { hasText: 'Tema' }).click();
@@ -69,6 +70,7 @@ test('o endereço do site fica guardado e é campo próprio (não se mistura com
   await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
   await page.locator('.left-tabs button', { hasText: 'Tema' }).click();
 
+  await page.locator('.theme-advanced > summary').click(); // opcionais ficam recolhidos
   await page.locator('.site-url-input').fill('https://luccatuelher.com');
   await page.locator('.analytics-input').fill('<script defer src="https://plausible.io/js/script.js"></script>');
 

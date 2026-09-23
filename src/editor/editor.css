@@ -530,3 +530,18 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 
 /* quadro de storyboard em foco (veio do ✎ no canvas) */
 .insp-quadro.em-foco { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+/* painel Tema: título da aba editável dentro da prévia da aba */
+.theme-fav-tab input.theme-fav-title { flex: 1; min-width: 0; font: inherit; font-size: 0.72rem; color: #33312c; background: transparent; border: 1px dashed transparent; border-radius: 3px; padding: 2px 4px; margin: -3px 0; }
+.theme-fav-tab input.theme-fav-title:hover { border-color: #cfcabf; }
+.theme-fav-tab input.theme-fav-title:focus { outline: none; border-color: var(--accent); border-style: solid; background: #fffdf8; }
+/* painel Tema: fontes em lista, com amostra */
+.theme-font-select { cursor: pointer; font-size: 0.95rem; }
+.theme-font > .insp-input + .insp-input { margin-top: 6px; }
+.theme-font-sample { display: block; margin-top: 6px; font-size: 1rem; color: #33312c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* painel Tema: opcionais recolhidos */
+.theme-advanced { border-top: 1px solid #e4e0d7; margin-top: 12px; }
+.theme-advanced > summary { list-style: none; cursor: pointer; padding: 12px 14px; font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: #5a574f; display: flex; align-items: center; gap: 8px; user-select: none; }
+.theme-advanced > summary::-webkit-details-marker { display: none; }
+.theme-advanced > summary::before { content: '▸'; font-size: 0.7rem; color: #a09c93; transition: transform 0.15s; }
+.theme-advanced[open] > summary::before { transform: rotate(90deg); }
+.theme-advanced > summary:hover { color: var(--accent); background: #efece5; }

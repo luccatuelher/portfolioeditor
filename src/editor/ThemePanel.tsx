@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { DEFAULT_LAYOUT, type Theme } from '../schema/v4';
 import type { AssetResolver } from '../renderer/context';
 import { emptyI18n } from '../core/i18n';
@@ -36,6 +36,78 @@ const COLOR_LABELS: Record<keyof Theme['colors'], string> = {
   accent2: 'Destaque 2',
 };
 
+type FontRole = 'display' | 'body' | 'mono';
+
+/** Sugestões por papel: nomes exatos do Google Fonts, das mais usadas em portfólio. */
+export const FONT_OPTIONS: Record<FontRole, string[]> = {
+  display: ['DM Serif Display', 'Playfair Display', 'Fraunces', 'Instrument Serif', 'Cormorant Garamond', 'EB Garamond', 'Libre Baskerville', 'Lora', 'Abril Fatface', 'Bebas Neue', 'Oswald', 'Anton', 'Archivo Black', 'Syne', 'Space Grotesk', 'Unbounded'],
+  body: ['DM Sans', 'Inter', 'Manrope', 'Work Sans', 'IBM Plex Sans', 'Source Sans 3', 'Nunito Sans', 'Plus Jakarta Sans', 'Outfit', 'Karla', 'Rubik', 'Lato', 'Open Sans', 'Roboto', 'Lora', 'Source Serif 4', 'Literata', 'Merriweather'],
+  mono: ['DM Mono', 'JetBrains Mono', 'IBM Plex Mono', 'Space Mono', 'Fira Code', 'Roboto Mono', 'Source Code Pro', 'Inconsolata', 'Courier Prime'],
+};
+const FONT_ROLE_LABEL: Record<FontRole, string> = { display: 'Títulos (display)', body: 'Texto corrido (body)', mono: 'Detalhes e menus (mono)' };
+const FONT_FALLBACK: Record<FontRole, string> = { display: 'serif', body: 'sans-serif', mono: 'monospace' };
+const OUTRA_FONTE = '__outra';
+
+/**
+ * Carrega, só enquanto o painel está aberto, um recorte mínimo de cada fonte
+ * sugerida (apenas as letras do próprio nome, via `text=`), para a lista
+ * mostrar cada nome na sua fonte. A folha entra no INÍCIO do <head>: as fontes
+ * completas do tema, carregadas depois, continuam valendo no canvas.
+ */
+function useFontPreviews(): void {
+  useEffect(() => {
+    const nomes = [...new Set(Object.values(FONT_OPTIONS).flat())].filter((n) => !n.startsWith('DM '));
+    const letras = [...new Set(nomes.join(''))].join('');
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?${nomes.map((n) => `family=${encodeURIComponent(n).replace(/%20/g, '+')}`).join('&')}&text=${encodeURIComponent(letras)}&display=swap`;
+    link.setAttribute('data-font-previews', '');
+    document.head.prepend(link);
+    return () => link.remove();
+  }, []);
+}
+
+/**
+ * Escolha de fonte: lista de sugestões (cada nome desenhado na própria fonte)
+ * + "Outra do Google Fonts…", que abre um campo para digitar qualquer nome.
+ * Embaixo, uma amostra com a fonte escolhida.
+ */
+function FontPicker({ role, value, onChange }: { role: FontRole; value: string; onChange: (v: string) => void }): React.ReactElement {
+  const lista = FONT_OPTIONS[role];
+  // "Outra" vale quando o nome não está na lista, ou enquanto a pessoa escolheu digitar.
+  const [digitando, setDigitando] = useState(false);
+  const outra = digitando || !lista.includes(value);
+  const id = useId();
+  const familia = (f: string): string => `'${f.replace(/'/g, '')}', ${FONT_FALLBACK[role]}`;
+  return (
+    <div className="theme-font">
+      <label className="insp-label" htmlFor={id}>{FONT_ROLE_LABEL[role]}</label>
+      <select
+        id={id}
+        className="insp-input theme-font-select"
+        value={outra ? OUTRA_FONTE : value}
+        style={{ fontFamily: familia(value) }}
+        onChange={(e) => {
+          const v = e.target.value;
+          setDigitando(v === OUTRA_FONTE);
+          if (v !== OUTRA_FONTE) onChange(v);
+        }}
+      >
+        {lista.map((f) => (
+          <option key={f} value={f} style={{ fontFamily: familia(f) }}>{f}</option>
+        ))}
+        <option value={OUTRA_FONTE}>{outra && value ? `Outra: ${value}` : 'Outra do Google Fonts…'}</option>
+      </select>
+      {outra ? (
+        <input className="insp-input" aria-label={`Nome da fonte (${FONT_ROLE_LABEL[role]})`} value={value} placeholder="Nome exato no Google Fonts, ex.: Poppins" spellCheck={false} onChange={(e) => onChange(e.target.value)} />
+      ) : null}
+      <span className="theme-font-sample" style={{ fontFamily: familia(value) }} aria-hidden="true">
+        {role === 'mono' ? 'PROJETOS · 2026 · 01/12' : role === 'display' ? 'Storyboard & animação' : 'O rato roeu a roupa do rei de Roma.'}
+      </span>
+    </div>
+  );
+}
+
 /** Editor de tokens globais (F5): mudar um token atualiza o site inteiro. */
 export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }: { doc: DocApi; onUploadImage?: (f: File) => Promise<string>; onUploadFavicon?: (f: File) => Promise<void>; resolveAsset?: AssetResolver }): React.ReactElement {
   const favFile = useRef<HTMLInputElement>(null);
@@ -48,6 +120,9 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
     doc.updateSite((s) => void (s.layout = { ...(s.layout ?? DEFAULT_LAYOUT), [k]: v }), `layout:${k}`);
   const colorKeys = Object.keys(theme.colors) as (keyof Theme['colors'])[];
   const analytics = doc.state.site.analytics ?? '';
+  useFontPreviews();
+  // Aberto de saída só se já houver algo preenchido (constante: não fecha enquanto se apaga o campo).
+  const [avancadoAberto] = useState(() => !!(doc.state.site.url || doc.state.site.analytics));
 
   return (
     <div className="panel">
@@ -55,8 +130,21 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
       <div className="theme-fav">
         <div className="theme-fav-tab" title="Prévia da aba">
           {fav && resolveAsset ? <img src={resolveAsset(fav)} alt="" /> : <span className="theme-fav-empty">?</span>}
-          <span className="theme-fav-title">{doc.state.site.name.pt || 'Portfolio'}</span>
+          {/* O título da aba É o nome do site: editar aqui muda também o cabeçalho. */}
+          <input
+            className="theme-fav-title"
+            aria-label="Título da aba (nome do site)"
+            value={doc.state.site.name.pt}
+            placeholder="Nome do site"
+            spellCheck={false}
+            onChange={(e) => {
+              const v = e.target.value;
+              // O inglês acompanha enquanto for igual ao português (nome próprio quase nunca muda).
+              doc.updateSite((s) => void (s.name = { pt: v, en: !s.name.en || s.name.en === s.name.pt ? v : s.name.en }), 'site:name');
+            }}
+          />
         </div>
+        <p className="theme-hint" style={{ margin: 0 }}>O título da aba é o nome do site, o mesmo do cabeçalho. Nas outras páginas ele vem depois do nome da página (“Projetos — {doc.state.site.name.pt || 'Nome'}”).</p>
         <div className="theme-bd-actions">
           <button type="button" className="add-block-btn" onClick={() => favFile.current?.click()} disabled={!onUploadFavicon}>{fav ? 'Trocar ícone' : '＋ Enviar ícone'}</button>
           {fav ? <button type="button" className="add-block-btn" onClick={() => doc.updateSite((s) => void delete s.favicon)}>Remover</button> : null}
@@ -142,13 +230,10 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
 
       <div className="panel-h">Fontes</div>
       {(['display', 'body', 'mono'] as const).map((f) => (
-        <label key={f} className="theme-font">
-          <span className="insp-label">{f}</span>
-          <input className="insp-input" value={theme.fonts[f]} onChange={(e) => doc.updateTheme((t) => void (t.fonts[f] = e.target.value), `theme:font:${f}`)} />
-        </label>
+        <FontPicker key={f} role={f} value={theme.fonts[f]} onChange={(v) => doc.updateTheme((t) => void (t.fonts[f] = v), `theme:font:${f}`)} />
       ))}
 
-      <p className="theme-hint">Use o nome exato de uma fonte do Google Fonts (ex.: Inter, Playfair Display) — ela é carregada automaticamente no editor e no site.</p>
+      <p className="theme-hint">Todas vêm do Google Fonts e são carregadas sozinhas no editor e no site. Em “Outra do Google Fonts…” dá para usar qualquer nome de lá.</p>
 
       <div className="panel-h">Escala tipográfica</div>
       <label className="theme-font">
@@ -160,6 +245,9 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
         <input className="insp-input" type="number" step="0.05" value={theme.type.ratio} onChange={(e) => doc.updateTheme((t) => void (t.type.ratio = Number(e.target.value) || t.type.ratio), 'theme:ratio')} />
       </label>
 
+      {/* Opcionais: o site funciona sem nada disso. Ficam recolhidos para não pesar no painel. */}
+      <details className="theme-advanced" open={avancadoAberto}>
+      <summary>Avançado (opcional)</summary>
       <div className="panel-h">Endereço do site</div>
       <input
         className="insp-input site-url-input"
@@ -169,7 +257,7 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
         placeholder="https://seusite.com"
         onChange={(e) => doc.updateSite((s) => void (s.url = e.target.value.trim() || undefined), 'site:url')}
       />
-      <p className="panel-hint">Usado no link canônico, no endereço de compartilhamento e para completar o caminho da imagem de preview. Deixe em branco se ainda não tem domínio.</p>
+      <p className="panel-hint">Não é obrigatório. Serve para a imagem de prévia aparecer quando alguém compartilha o link (WhatsApp, LinkedIn). No GitHub Pages, é o endereço que ele te dá, tipo https://seu-usuario.github.io/portfolio.</p>
 
       <div className="panel-h">Analytics</div>
       <textarea
@@ -181,6 +269,7 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
         onChange={(e) => doc.updateSite((s) => void (s.analytics = e.target.value.trim() ? e.target.value : undefined), 'site:analytics')}
       />
       <p className="panel-hint">Cole aqui o código que o Plausible, o Google Analytics ou o Fathom te dão. Ele entra no &lt;head&gt; do site publicado — e em nenhum outro lugar. Deixe vazio para não medir nada.</p>
+      </details>
     </div>
   );
 }
