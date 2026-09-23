@@ -44,6 +44,9 @@ export const EmbedRefSchema = z.strictObject({
   /** URL, id cru ou <iframe> — resolvido por embedSource() no render. */
   ref: z.string(),
   options: z.record(z.string(), z.string()).optional(),
+  /** Nome deste vídeo/apresentação ("Animatic", "Vídeo final"). Aparece na aba
+   *  do carrossel da prévia; sem ele vale o nome do provedor. */
+  label: I18nSchema.optional(),
 });
 
 // -------------------------------------------------------------------- estilo

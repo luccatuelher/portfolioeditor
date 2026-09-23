@@ -9,6 +9,7 @@ import { EditLangContext, I18nInput, NumberInput, Row, RangeInput, SelectInput, 
 import { LangFlag } from '../renderer/Flags';
 import { RichI18nInput } from './RichTextEditor';
 import { TYPE_LABEL } from '../renderer/preview';
+import { embedProvider } from '../embed/embedSource';
 import { resolveSpan } from '../renderer/responsive';
 
 const PROJECT_META_FIELDS = ['tag', 'year', 'client', 'role', 'category', 'skills', 'contribution', 'credits', 'sequenceLabel', 'storyType', 'processNotes'] as const;
@@ -627,7 +628,28 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
       return (
         <>
           <Row label="Provedor"><SelectInput value={block.content.provider} onChange={(v) => upd(refBlock, (b) => void (b.type === 'embed' && (b.content.provider = v)))} options={[{ value: 'youtube', label: 'YouTube' }, { value: 'vimeo', label: 'Vimeo' }, { value: 'speakerdeck', label: 'Speaker Deck' }]} /></Row>
-          <Row label="URL / ID / iframe"><TextInput value={block.content.ref} onChange={(v) => upd(refBlock, (b) => void (b.type === 'embed' && (b.content.ref = v)), gk('ref'))} /></Row>
+          <Row label="URL / ID / iframe">
+            <TextInput
+              value={block.content.ref}
+              onChange={(v) =>
+                upd(refBlock, (b) => {
+                  if (b.type !== 'embed') return;
+                  b.content.ref = v;
+                  // Colou um link de outro serviço: o provedor acompanha, senão o
+                  // campo passa a dizer uma coisa e o player mostrar outra.
+                  const real = embedProvider({ type: b.content.provider, id: v });
+                  if (real) b.content.provider = real;
+                }, gk('ref'))
+              }
+            />
+          </Row>
+          <Row label="Nome (aba do carrossel)">
+            <I18nInput
+              value={block.content.label ?? emptyI18n()}
+              onChange={(v) => upd(refBlock, (b) => void (b.type === 'embed' && (b.content.label = v.pt.trim() || v.en.trim() ? v : undefined)), gk('elabel'))}
+            />
+          </Row>
+          <div className="insp-note">Na prévia do projeto, os vídeos e apresentações viram um carrossel — este nome é o rótulo da aba. Sem nome, aparece o provedor.</div>
         </>
       );
     case 'collection':

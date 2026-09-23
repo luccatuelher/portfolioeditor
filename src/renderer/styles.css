@@ -467,3 +467,29 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* aviso de tradução pendente (só no editor) */
 .edit-badge.traducao { background: var(--surface); color: var(--ink-soft); border: 1px solid var(--rule); }
 .block.falta-traducao { outline: 1px dashed var(--rule); outline-offset: 3px; }
+
+/* ---- carrossel de vídeos/apresentações na prévia do projeto ---- */
+.pv-carrossel { display: flex; flex-direction: column; gap: 10px; }
+.pv-carrossel:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+.pv-carrossel-abas { display: flex; flex-wrap: wrap; gap: 4px; }
+.pv-carrossel-aba {
+  font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 7px 12px; border: 1px solid var(--rule); background: none; color: var(--ink-soft); cursor: pointer;
+  border-radius: var(--radius, 4px);
+}
+.pv-carrossel-aba:hover { color: var(--ink); border-color: var(--ink-pale); }
+.pv-carrossel-aba.on { background: var(--ink); border-color: var(--ink); color: var(--bg); }
+.pv-carrossel-palco { position: relative; }
+.pv-carrossel-seta {
+  position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border-radius: 50%;
+  border: none; background: rgba(24, 23, 21, 0.55); color: rgb(250, 249, 247); font-size: 1.5rem; line-height: 1;
+  cursor: pointer; display: grid; place-items: center; opacity: 0; transition: opacity 0.15s;
+}
+.pv-carrossel-palco:hover .pv-carrossel-seta, .pv-carrossel-seta:focus-visible { opacity: 1; }
+.pv-carrossel-seta.prev { left: 8px; }
+.pv-carrossel-seta.next { right: 8px; }
+.pv-carrossel-pontos { display: flex; gap: 6px; justify-content: center; }
+.pv-carrossel-pontos span { width: 6px; height: 6px; border-radius: 50%; background: var(--rule); }
+.pv-carrossel-pontos span.on { background: var(--accent); }
+/* No toque as setas ficam sempre visíveis (não há hover para revelá-las). */
+@media (hover: none) { .pv-carrossel-seta { opacity: 1; } }

@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { embedSource, motivoDoEmbedVazio } from '../embed/embedSource';
+import { embedProvider, embedSource, motivoDoEmbedVazio } from '../embed/embedSource';
 import { sobraDaLinha, spanVars } from './responsive';
 import { ErrorBoundary } from './ErrorBoundary';
 import type { Block, GalleryItem, HomePreview, ImageRef, ProjectItem, Section, SketchItem } from '../schema/v4';
 import { blockLabel, effectivePreview, projectBlocks } from './preview';
 import type { BlogItem } from '../schema/v4';
-import { RenderContext, useRender } from './context';
+import { RenderContext, useRender, type Lang } from './context';
 import { styleVars } from './css';
 import { pick, RichText } from './text';
 import { sanitizeRich } from '../core/sanitizeHtml';
@@ -184,6 +184,95 @@ function ProjectCard({ item, cols, onClick, selected }: { item: ProjectItem; col
   );
 }
 
+const NOME_PROVEDOR: Record<string, string> = { youtube: 'YouTube', vimeo: 'Vimeo', speakerdeck: 'Speaker Deck' };
+
+/**
+ * Carrossel dos vídeos e apresentações do projeto, dentro do popup.
+ *
+ * Um projeto costuma ter animatic, apresentação e vídeo final — empilhados,
+ * eles tornam o popup uma rolagem longa e o visitante não vê que existe mais
+ * de um. Aqui eles dividem o mesmo espaço, com abas nomeadas.
+ *
+ * Com um item só não há carrossel: sem abas, sem setas — seria moldura sem
+ * função.
+ */
+function EmbedCarousel({ blocos, lang }: { blocos: Block[]; lang: Lang }): React.ReactElement | null {
+  const [atual, setAtual] = useState(0);
+  const toque = useRef<{ x: number; y: number } | null>(null);
+  if (!blocos.length) return null;
+
+  const i = Math.min(atual, blocos.length - 1);
+  const unico = blocos.length === 1;
+  const ir = (d: number): void => setAtual((n) => (n + d + blocos.length) % blocos.length);
+  const nome = (bl: Block): string => {
+    const conteudo = bl.type === 'embed' ? bl.content : undefined;
+    const proprio = conteudo?.label ? pick(conteudo.label, lang) : '';
+    // O provedor real vem do link (o campo do inspector pode ter ficado para trás).
+    const real = conteudo ? embedProvider({ type: conteudo.provider, id: conteudo.ref }) : null;
+    return proprio || NOME_PROVEDOR[real ?? conteudo?.provider ?? ''] || 'Vídeo';
+  };
+
+  return (
+    <div
+      className={`pv-carrossel${unico ? ' unico' : ''}`}
+      onKeyDown={(e) => {
+        if (unico) return;
+        if (e.key === 'ArrowRight') { e.preventDefault(); ir(1); }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); ir(-1); }
+      }}
+      onTouchStart={(e) => {
+        const t = e.touches[0];
+        toque.current = t ? { x: t.clientX, y: t.clientY } : null;
+      }}
+      onTouchEnd={(e) => {
+        const ini = toque.current;
+        const t = e.changedTouches[0];
+        toque.current = null;
+        if (unico || !ini || !t) return;
+        const dx = t.clientX - ini.x;
+        const dy = t.clientY - ini.y;
+        if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.5) ir(dx < 0 ? 1 : -1);
+      }}
+      tabIndex={unico ? undefined : 0}
+      role={unico ? undefined : 'group'}
+      aria-label={unico ? undefined : 'Vídeos e apresentações do projeto'}
+    >
+      {unico ? null : (
+        <div className="pv-carrossel-abas" role="tablist">
+          {blocos.map((bl, n) => (
+            <button
+              key={bl.id}
+              type="button"
+              role="tab"
+              aria-selected={n === i}
+              className={`pv-carrossel-aba${n === i ? ' on' : ''}`}
+              onClick={() => setAtual(n)}
+            >
+              {nome(bl)}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="pv-carrossel-palco">
+        <BlockView block={{ ...blocos[i]!, span: 12 }} />
+        {unico ? null : (
+          <>
+            <button type="button" className="pv-carrossel-seta prev" onClick={() => ir(-1)} aria-label="Anterior">‹</button>
+            <button type="button" className="pv-carrossel-seta next" onClick={() => ir(1)} aria-label="Próximo">›</button>
+          </>
+        )}
+      </div>
+      {unico ? null : (
+        <div className="pv-carrossel-pontos" aria-hidden="true">
+          {blocos.map((bl, n) => (
+            <span key={bl.id} className={n === i ? 'on' : ''} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Prévia inline (popup) de um projeto na Home. Mostra os blocos escolhidos na
  * prévia do projeto (ordem/largura próprias); o conteúdo vem do bloco original.
@@ -205,6 +294,30 @@ function ProjectPreview({ item, onClose }: { item: ProjectItem; onClose: () => v
   const included = new Set(pv.items.map((i) => i.ref));
   const edit = onEditPreview ? (recipe: (p: HomePreview) => void) => onEditPreview(item.id, recipe) : undefined;
   const readOnly = { ...ctx, editing: false, selectedId: undefined };
+
+  /**
+   * Células da prévia: tudo na ordem escolhida, mas com os vídeos e
+   * apresentações reunidos num carrossel só, no lugar do primeiro deles.
+   * Vale também no editor: a prévia serve justamente para ver o que o
+   * visitante vê. Para mexer em cada embed, a página do projeto mostra todos.
+   */
+  const visiveis = pv.items.filter((it) => {
+    const bl = byId.get(it.ref);
+    return bl && (editing || bl.visibility === 'public');
+  });
+  const embeds = visiveis.filter((it) => byId.get(it.ref)?.type === 'embed');
+  const celulas: { ref: string; span: number; carrossel?: Block[] }[] = [];
+  let carrosselPosto = false;
+  for (const it of visiveis) {
+    const bl = byId.get(it.ref)!;
+    if (embeds.length > 1 && bl.type === 'embed') {
+      if (carrosselPosto) continue;
+      carrosselPosto = true;
+      celulas.push({ ref: 'carrossel', span: Math.max(...embeds.map((e) => e.span)), carrossel: embeds.map((e) => byId.get(e.ref)!) });
+      continue;
+    }
+    celulas.push({ ref: it.ref, span: it.span });
+  }
   const desc = pick(item.description, lang);
 
   return (
@@ -247,7 +360,17 @@ function ProjectPreview({ item, onClose }: { item: ProjectItem; onClose: () => v
       ) : null}
       {desc && !pv.hideDescription ? <p className="home-preview-desc">{desc}</p> : null}
       <div className="pv-grid">
-        {pv.items.map((it) => {
+        {celulas.map((it) => {
+          // Os embeds do projeto viram UM carrossel, na posição do primeiro deles.
+          if (it.carrossel) {
+            return (
+              <div key="carrossel" className="pv-cell" style={styleVars({ '--span': it.span })}>
+                <RenderContext.Provider value={readOnly}>
+                  <EmbedCarousel blocos={it.carrossel} lang={lang} />
+                </RenderContext.Provider>
+              </div>
+            );
+          }
           const bl = byId.get(it.ref);
           if (!bl || (!editing && bl.visibility !== 'public')) return null;
           return (
