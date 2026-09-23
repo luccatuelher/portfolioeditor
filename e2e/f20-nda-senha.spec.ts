@@ -41,7 +41,7 @@ test.describe('Senha da área NDA', () => {
     await page.locator('.tb-btn.primary', { hasText: 'Baixar site' }).click();
     const baixou = page.waitForEvent('download', { timeout: 15000 });
     await page.locator('.nda-modal-acoes .tb-btn', { hasText: 'Publicar sem os itens NDA' }).click();
-    expect((await baixou).suggestedFilename()).toBe('site.html');
+    expect((await baixou).suggestedFilename()).toBe('index.html');
     await expect(page.locator('.nda-modal')).toHaveCount(0);
   });
 
@@ -50,7 +50,7 @@ test.describe('Senha da área NDA', () => {
     await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
     const baixou = page.waitForEvent('download', { timeout: 15000 });
     await page.locator('.tb-btn.primary', { hasText: 'Baixar site' }).click();
-    expect((await baixou).suggestedFilename()).toBe('site.html');
+    expect((await baixou).suggestedFilename()).toBe('index.html');
     await expect(page.locator('.nda-modal')).toHaveCount(0);
   });
 });

@@ -4,7 +4,7 @@ import { migrate } from '../src/migrate/migrate';
 import { loadFixture } from './helpers/fixtures';
 import { SectionView } from '../src/renderer/blocks';
 import { RenderContext } from '../src/renderer/context';
-import { runPreflight } from '../src/publish/preflight';
+import { arquivosAoLado, runPreflight } from '../src/publish/preflight';
 import type { Block, PortfolioV4, Section } from '../src/schema/v4';
 
 const { data } = migrate(loadFixture('template-v3.json'));
@@ -98,5 +98,34 @@ describe('preflight avisa do CV que não vai funcionar', () => {
 
   it('sem CV, nada a avisar', () => {
     expect(runPreflight(comContato(''), {}).warnings.join(' | ')).not.toContain('CV aponta');
+  });
+});
+
+describe('arquivos que vão ao lado do index.html', () => {
+  const { data } = migrate(loadFixture('template-v3.json'));
+  const comBlocos = (blocos: Block[]): PortfolioV4 => {
+    const doc: PortfolioV4 = JSON.parse(JSON.stringify(data));
+    for (const pg of doc.pages) pg.sections = [];
+    for (const k of ['projects', 'blog'] as const) for (const it of doc.collections[k]) it.sections = [];
+    doc.pages[0]!.sections = [{ id: 's', style: { width: 'normal' }, blocks: blocos }];
+    return doc;
+  };
+  const botao = (href: string, visibility: Block['visibility'] = 'public'): Block =>
+    ({ id: `b${href}`, type: 'button', span: 4, visibility, content: { label: { pt: 'x', en: 'x' }, href, variant: 'solid' } }) as Block;
+
+  it('lista CV e botões com caminho relativo; ignora https, mailto, links internos e rascunhos', () => {
+    const doc = comBlocos([
+      contato({ cvHref: './cv.pdf' }),
+      botao('portfolio.pdf'),
+      botao('https://exemplo.com/a.pdf'),
+      botao('mailto:eu@exemplo.com'),
+      botao('#projects'),
+      botao('rascunho.pdf', 'draft'),
+    ]);
+    expect(arquivosAoLado(doc).sort()).toEqual(['cv.pdf', 'portfolio.pdf']);
+  });
+
+  it('sem nada relativo, lista vazia', () => {
+    expect(arquivosAoLado(comBlocos([botao('https://exemplo.com')]))).toEqual([]);
   });
 });

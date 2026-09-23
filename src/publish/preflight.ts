@@ -18,6 +18,37 @@ const hasImg = (r: ImageRef | undefined): boolean => !!r && (!!r.assetId || !!(r
 const i18nIncomplete = (v: I18n): boolean => (!!v.pt.trim() && !v.en.trim()) || (!v.pt.trim() && !!v.en.trim());
 const emailValid = (s: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
+/** Endereço que aponta para um arquivo ao lado do site (cv.pdf, img/foto.jpg), e não para fora nem para dentro dele. */
+const relativo = (href: string | undefined): string | null => {
+  const h = (href ?? '').trim();
+  if (!h || h === '#' || /^(https?:|mailto:|tel:|data:|#|\/\/)/i.test(h)) return null;
+  return h.replace(/^\.\//, '');
+};
+
+/**
+ * Arquivos que o site publicado espera encontrar AO LADO do index.html
+ * (CV em PDF, imagem por caminho). O site é um arquivo só: sem subir esses
+ * junto, o link baixa nada. Olha só o conteúdo que vai para o site.
+ */
+export function arquivosAoLado(data: PortfolioV4): string[] {
+  const out = new Set<string>();
+  const add = (h: string | undefined): void => {
+    const r = relativo(h);
+    if (r) out.add(r);
+  };
+  const walk = (b: Block): void => {
+    if (b.visibility !== 'public') return;
+    if (b.type === 'button') add(b.content.href);
+    else if (b.type === 'contact') {
+      add(b.content.cvHref);
+      for (const s of b.content.socials) add(s.href);
+    } else if (b.type === 'image') add(b.content.image.url);
+  };
+  for (const p of data.pages) for (const s of p.sections) s.blocks.forEach(walk);
+  for (const coll of [data.collections.projects, data.collections.blog]) for (const it of coll) for (const s of it.sections) s.blocks.forEach(walk);
+  return [...out];
+}
+
 /** Verificação de pré-publicação expandida (F7), pura e testável. */
 export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): PreflightResult {
   const errors: string[] = [];
@@ -29,9 +60,8 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
   // no LinkedIn ou no X. Imagem embutida (data:) nenhuma rede busca.
   const home = data.pages.find((pg) => pg.id === 'home');
   const socialImg = home?.seo?.image;
-  if (!data.site.url) {
-    warnings.push('Endereço do site em branco (Tema › Endereço): sem ele não há link canônico nem imagem de preview ao compartilhar.');
-  }
+  // (O endereço do site é opcional: no GitHub Pages o site funciona sem ele,
+  // e a imagem de compartilhamento já vai por URL completa. Não é aviso.)
   if (!socialImg) {
     warnings.push('Sem imagem de compartilhamento (inspector da Home › SEO): o link vai aparecer sem miniatura.');
   } else if (socialImg.assetId) {

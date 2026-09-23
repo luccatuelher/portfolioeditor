@@ -545,3 +545,11 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .theme-advanced > summary::before { content: '▸'; font-size: 0.7rem; color: #a09c93; transition: transform 0.15s; }
 .theme-advanced[open] > summary::before { transform: rotate(90deg); }
 .theme-advanced > summary:hover { color: var(--accent); background: #efece5; }
+/* aviso depois de "Baixar site": passos do GitHub Pages + o que subir junto */
+.publish-notice { align-items: flex-start; }
+.publish-notice-body { display: grid; gap: 6px; line-height: 1.5; }
+.publish-notice-body p { margin: 0; }
+.publish-notice-body code { background: #fbe7ae; padding: 0 4px; border-radius: 3px; }
+.publish-notice-alerta { color: #8a2a12; font-weight: 600; }
+.publish-notice details summary { cursor: pointer; font-weight: 600; }
+.publish-notice details ul { margin: 4px 0 0; padding-left: 18px; }

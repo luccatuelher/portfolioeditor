@@ -16,7 +16,7 @@ import { buildBackup, parseBackup, type Backup } from './backup';
 import siteShell from '../publish/site-shell.html?raw';
 import { assembleSiteHtml } from '../publish/assemble';
 import { buildPublishPayload } from '../publish/buildPayload';
-import { runPreflight } from '../publish/preflight';
+import { arquivosAoLado, runPreflight } from '../publish/preflight';
 import type { MigratedAsset } from '../migrate/migrate';
 import { importImage } from '../assets/importImage';
 import { makeFavicon } from '../assets/favicon';
@@ -67,6 +67,52 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+/** Resultado do "Baixar site", para o aviso com os passos de publicação. */
+interface Publicado {
+  /** Arquivos que o site espera ao lado do index.html (cv.pdf…). */
+  arquivos: string[];
+  avisos: string[];
+  /** Tamanho do index.html em MB. */
+  mb: number;
+}
+
+/** O upload pelo navegador do GitHub não aceita arquivo acima disso. */
+const LIMITE_UPLOAD_GITHUB_MB = 25;
+
+/**
+ * Depois de baixar: como pôr o site no ar pelo GitHub Pages, o que mais subir
+ * junto e o que vale revisar (recolhido, para não esconder os passos).
+ */
+function AvisoPublicado({ p, onClose }: { p: Publicado; onClose: () => void }): React.ReactElement {
+  const grande = p.mb > LIMITE_UPLOAD_GITHUB_MB;
+  return (
+    <div className="editor-notice publish-notice" role="status">
+      <div className="publish-notice-body">
+        <p>
+          <strong>index.html baixado ({p.mb < 0.1 ? '<0,1' : p.mb.toFixed(1).replace('.', ',')} MB).</strong> Para pôr no ar no GitHub Pages: abra o repositório do site, clique em <b>Add file → Upload files</b>, arraste o index.html (ele substitui o anterior) e clique em <b>Commit changes</b>. Em cerca de um minuto o site atualiza.
+        </p>
+        {grande ? (
+          <p className="publish-notice-alerta">
+            ⚠ O arquivo passou de {LIMITE_UPLOAD_GITHUB_MB} MB, o limite do upload pelo navegador do GitHub. Diminua imagens grandes (ou use vídeos por link) e gere de novo.
+          </p>
+        ) : null}
+        {p.arquivos.length ? (
+          <p>
+            Suba também, na mesma pasta do index.html: {p.arquivos.map((a, i) => <span key={a}>{i ? ', ' : ''}<code>{a}</code></span>)}. Sem eles, esses links não abrem nada.
+          </p>
+        ) : null}
+        {p.avisos.length ? (
+          <details>
+            <summary>Vale revisar ({p.avisos.length})</summary>
+            <ul>{p.avisos.map((w) => <li key={w}>{w}</li>)}</ul>
+          </details>
+        ) : null}
+      </div>
+      <button type="button" onClick={onClose} aria-label="Fechar aviso">✕</button>
+    </div>
+  );
+}
+
 type Clip =
   | { kind: 'block'; block: Block }
   | { kind: 'section'; section: Section }
@@ -108,7 +154,7 @@ function resolveView(doc: PortfolioV4, c: Container): { page: Page; item?: Proje
 export function Editor({ initial, assets, onImport, onAddAsset, persist = true, notice }: EditorProps): React.ReactElement {
   const [showNotice, setShowNotice] = useState(!!notice);
   // Avisos da última publicação ("Baixar site"), mostrados na barra de aviso.
-  const [publishNotice, setPublishNotice] = useState<string | null>(null);
+  const [publishNotice, setPublishNotice] = useState<Publicado | null>(null);
   const doc = useDocument(initial);
   const resolveAsset = useMemo(() => mapResolver(assets), [assets]);
   const saveStatus = useLocalDraft(doc.state, assets, persist);
@@ -878,12 +924,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           <button type="button" onClick={() => setShowNotice(false)} aria-label="Fechar aviso">✕</button>
         </div>
       ) : null}
-      {publishNotice ? (
-        <div className="editor-notice" role="status">
-          <span>{publishNotice}</span>
-          <button type="button" onClick={() => setPublishNotice(null)} aria-label="Fechar aviso">✕</button>
-        </div>
-      ) : null}
+      {publishNotice ? <AvisoPublicado p={publishNotice} onClose={() => setPublishNotice(null)} /> : null}
       <div className="editor-main">
         <div className="editor-left">
           <div className="left-tabs">
@@ -1005,7 +1046,7 @@ const DEVICES = [
   { id: 'mobile', label: 'Celular (390px)', curto: 'Celular' },
 ] as const;
 
-function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (msg: string | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
+function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pedirSenha, setPedirSenha] = useState(false);
 
@@ -1055,18 +1096,20 @@ function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onIm
     const payload = await buildPublishPayload({ data: doc0, assets: migratedAssets }, password);
     const pf = runPreflight(payload.publicData, { assetSizes: payload.assetSizes });
     if (pf.errors.length && !confirm(`Há ${pf.errors.length} bloqueio(s) no preflight:\n\n${pf.errors.join('\n')}\n\nBaixar mesmo assim?`)) return;
-    const w = pf.warnings;
-    onPublished?.(w.length ? `Site gerado. Vale revisar (${w.length}): ${w.slice(0, 6).join(' · ')}${w.length > 6 ? ` · e mais ${w.length - 6}` : ''}` : null);
-
     // Toda publicação vira um ponto de retorno (automático) no histórico.
     void saveVersion(`Publicado em ${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}`, doc0, true).catch(() => {});
 
     const html = assembleSiteHtml(siteShell, payload);
     const blob = new Blob([html], { type: 'text/html' });
+    // Os arquivos relativos já aparecem na lista própria do aviso: não repetem nos avisos.
+    const arquivos = arquivosAoLado(payload.publicData);
+    const avisos = pf.warnings.filter((w) => !arquivos.some((a) => w.includes(`"${a}"`)));
+    onPublished?.({ arquivos, avisos, mb: blob.size / (1024 * 1024) });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'site.html';
+    // index.html: é o arquivo que o GitHub Pages (e qualquer hospedagem) abre sozinho no endereço do site.
+    a.download = 'index.html';
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -1112,7 +1155,7 @@ function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onIm
         <button type="button" className="tb-btn" onClick={onVersions} title="Histórico de versões salvas neste navegador">Versões</button>
         <button type="button" className="tb-btn" onClick={download} title="Baixar backup (doc + imagens)">Backup</button>
         <button type="button" className="tb-btn" onClick={() => fileRef.current?.click()} title="Importar backup">Importar</button>
-        <button type="button" className="tb-btn primary" onClick={() => (itensNda ? setPedirSenha(true) : void publishSite())} title="Gerar o site.html pronto para subir">Baixar site</button>
+        <button type="button" className="tb-btn primary" onClick={() => (itensNda ? setPedirSenha(true) : void publishSite())} title="Gera o index.html do site, pronto para subir no GitHub Pages">Baixar site</button>
         {pedirSenha ? (
           <NdaPasswordModal
             quantidade={itensNda}
