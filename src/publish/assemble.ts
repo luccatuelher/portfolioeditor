@@ -86,5 +86,23 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
   // Home pré-renderizada: nunca uma página branca, mesmo sem JavaScript.
   const home = prerenderHome(payload.publicData);
   if (home) html = html.replace('<div id="root"></div>', () => `<div id="root">${home}</div>`);
-  return html;
+  return runtimeNoFim(html);
+}
+
+/**
+ * O Vite põe o runtime do site (centenas de KB de JavaScript embutido) no
+ * <head>. Aí o navegador precisava baixar tudo isso antes de chegar à Home
+ * pré-renderizada, e a primeira pintura esperava o JavaScript inteiro (~2 s
+ * numa 4G lenta). No fim do <body>, o conteúdo aparece antes. Script de módulo
+ * só roda depois que a página foi lida de qualquer jeito: a ordem não muda.
+ */
+export function runtimeNoFim(html: string): string {
+  const fimHead = html.indexOf('</head>');
+  const fimBody = html.lastIndexOf('</body>');
+  if (fimHead < 0 || fimBody < fimHead) return html;
+  const modulo = /<script type="module"[^>]*>[\s\S]*?<\/script>/g;
+  const cabeca = html.slice(0, fimHead);
+  const scripts = cabeca.match(modulo);
+  if (!scripts) return html;
+  return cabeca.replace(modulo, '') + html.slice(fimHead, fimBody) + scripts.join('') + html.slice(fimBody);
 }

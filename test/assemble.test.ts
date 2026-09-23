@@ -15,6 +15,21 @@ describe('assembleSiteHtml', () => {
     expect(html).toMatch(/<div id="root"><div class="site"/);
   });
 
+  it('o runtime vem depois do conteúdo: a Home pinta sem esperar o JavaScript baixar', async () => {
+    const payload = await buildPublishPayload(migrate(loadFixture('template-v3.json')));
+    const html = assembleSiteHtml(shell, payload);
+    const head = html.slice(0, html.indexOf('</head>'));
+    expect(head).not.toContain('<script type="module"');
+    const root = html.indexOf('<div id="root">');
+    const dados = html.indexOf('window.__PORTFOLIO_DATA__');
+    const runtime = html.indexOf('<script type="module"');
+    expect(runtime).toBeGreaterThan(root);
+    expect(runtime).toBeGreaterThan(dados);
+    expect(runtime).toBeLessThan(html.lastIndexOf('</body>'));
+    // O CSS continua no <head>: a Home pré-renderizada já pinta com estilo.
+    expect(head).toContain('<style');
+  });
+
   it('dados com "$&" e "$\'" não corrompem o HTML', async () => {
     const mig = migrate(loadFixture('template-v3.json'));
     mig.data.site.role = { pt: "Preço R$& e $' teste", en: 'x' };
