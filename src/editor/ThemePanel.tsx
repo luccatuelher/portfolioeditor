@@ -108,6 +108,42 @@ function FontPicker({ role, value, onChange }: { role: FontRole; value: string; 
   );
 }
 
+/** Escalas tipográficas clássicas, descritas pelo efeito (a razão entre um tamanho de texto e o seguinte). */
+export const RATIOS: { value: number; label: string }[] = [
+  { value: 1.125, label: '1,125 — sutil' },
+  { value: 1.2, label: '1,2 — suave' },
+  { value: 1.25, label: '1,25 — equilibrada' },
+  { value: 1.333, label: '1,333 — marcante' },
+  { value: 1.414, label: '1,414 — forte' },
+  { value: 1.5, label: '1,5 — dramática' },
+  { value: 1.618, label: '1,618 — áurea (contraste máximo)' },
+];
+
+/** Razão da escala: lista de escalas com nome + "Outra…" para um número próprio. */
+function RatioPicker({ value, onChange }: { value: number; onChange: (v: number) => void }): React.ReactElement {
+  const id = useId();
+  const conhecida = RATIOS.find((r) => Math.abs(r.value - value) < 0.0005);
+  const [digitando, setDigitando] = useState(false);
+  const outra = digitando || !conhecida;
+  return (
+    <div className="theme-font">
+      <label className="insp-label" htmlFor={id}>Contraste entre tamanhos</label>
+      <select id={id} className="insp-input" value={outra ? OUTRA_FONTE : String(conhecida!.value)} onChange={(e) => {
+        const v = e.target.value;
+        setDigitando(v === OUTRA_FONTE);
+        if (v !== OUTRA_FONTE) onChange(Number(v));
+      }}>
+        {RATIOS.map((r) => <option key={r.value} value={String(r.value)}>{r.label}</option>)}
+        <option value={OUTRA_FONTE}>{outra ? `Outra: ${value}` : 'Outra…'}</option>
+      </select>
+      {outra ? (
+        <input className="insp-input" aria-label="Razão da escala (número)" type="number" step="0.01" min={1} max={2} value={value} onChange={(e) => { const n = Number(e.target.value); if (n >= 1 && n <= 2) onChange(n); }} />
+      ) : null}
+      <span className="theme-hint" style={{ margin: '4px 0 0', display: 'block' }}>Quanto maior, mais os títulos se destacam do texto.</span>
+    </div>
+  );
+}
+
 /** Editor de tokens globais (F5): mudar um token atualiza o site inteiro. */
 export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }: { doc: DocApi; onUploadImage?: (f: File) => Promise<string>; onUploadFavicon?: (f: File) => Promise<void>; resolveAsset?: AssetResolver }): React.ReactElement {
   const favFile = useRef<HTMLInputElement>(null);
@@ -240,10 +276,7 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
         <span className="insp-label">Base (px)</span>
         <input className="insp-input" type="number" value={theme.type.base} onChange={(e) => doc.updateTheme((t) => void (t.type.base = Number(e.target.value) || t.type.base), 'theme:base')} />
       </label>
-      <label className="theme-font">
-        <span className="insp-label">Razão</span>
-        <input className="insp-input" type="number" step="0.05" value={theme.type.ratio} onChange={(e) => doc.updateTheme((t) => void (t.type.ratio = Number(e.target.value) || t.type.ratio), 'theme:ratio')} />
-      </label>
+      <RatioPicker value={theme.type.ratio} onChange={(r) => doc.updateTheme((t) => void (t.type.ratio = r), 'theme:ratio')} />
 
       {/* Opcionais: o site funciona sem nada disso. Ficam recolhidos para não pesar no painel. */}
       <details className="theme-advanced" open={avancadoAberto}>

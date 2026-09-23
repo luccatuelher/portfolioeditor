@@ -71,13 +71,15 @@ export function Row({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-export function TextInput({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }): React.ReactElement {
+export function TextInput({ value, onChange, placeholder, list, label }: { value: string; onChange: (v: string) => void; placeholder?: string; /** id de um <datalist> com sugestões. */ list?: string; label?: string }): React.ReactElement {
   const t = useTextoAdiado(value, onChange);
   return (
     <input
       className="insp-input"
       value={t.valorLocal}
       placeholder={placeholder}
+      list={list}
+      aria-label={label}
       onChange={(e) => t.aoDigitar(e.target.value)}
       onBlur={t.aoSair}
       onKeyDown={t.aoTeclar}

@@ -12,6 +12,7 @@ import { TYPE_LABEL } from '../renderer/preview';
 import { embedProvider } from '../embed/embedSource';
 import { resolveSpan } from '../renderer/responsive';
 import { CATEGORY_LABEL, projectCategory, type ProjectCategory } from '../core/category';
+import { FormatoRow, LinkPicker, RedesDatalist, redeDoLink } from './choices';
 
 const PROJECT_META_FIELDS = ['tag', 'year', 'client', 'role', 'category', 'skills', 'contribution', 'credits', 'sequenceLabel', 'storyType', 'processNotes'] as const;
 const META_LABEL: Record<string, string> = {
@@ -75,6 +76,8 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
         {PROJECT_META_FIELDS.map((f) =>
           f === 'category' ? (
             <CategoryRow key={f} value={p.meta[f]} onChange={(c) => doc.updateItem('projects', id, (it) => { if (c) it.meta[f] = { pt: c, en: c }; else delete it.meta[f]; })} />
+          ) : f === 'storyType' ? (
+            <FormatoRow key={`${id}:${f}`} value={p.meta[f]} onChange={(v) => doc.updateItem('projects', id, (it) => { if (v) it.meta[f] = v; else delete it.meta[f]; }, `${id}:${f}`)} />
           ) : (
             <Row key={f} label={META_LABEL[f] ?? f}><I18nInput value={p.meta[f] ?? emptyI18n()} onChange={(v) => doc.updateItem('projects', id, (it) => { it.meta[f] = v; }, `${id}:${f}`)} /></Row>
           ),
@@ -736,14 +739,27 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
             </Row>
           ) : null}
           <div className="insp-sub">Redes sociais</div>
+          <RedesDatalist id="redes-sociais" />
           {c.socials.map((s, i) => (
             <div key={i} className="insp-social">
-              <TextInput value={s.label} placeholder="Rótulo" onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.socials[i]!.label = v)), gk(`sl${i}`))} />
-              <TextInput value={s.href} placeholder="URL" onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.socials[i]!.href = v)), gk(`sh${i}`))} />
+              <TextInput label={`Nome da rede ${i + 1}`} list="redes-sociais" value={s.label} placeholder="Instagram, Behance…" onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.socials[i]!.label = v)), gk(`sl${i}`))} />
+              <TextInput
+                label={`Link da rede ${i + 1}`}
+                value={s.href}
+                placeholder="Cole o link do perfil"
+                onChange={(v) => upd(refBlock, (b) => {
+                  if (b.type !== 'contact') return;
+                  const soc = b.content.socials[i]!;
+                  soc.href = v;
+                  // Colou o link de uma rede conhecida e o nome ainda é o provisório: preenche sozinho.
+                  const rede = redeDoLink(v);
+                  if (rede && (!soc.label.trim() || soc.label === 'Rede')) soc.label = rede;
+                }, gk(`sh${i}`))}
+              />
               <button type="button" className="insp-social-del" onClick={() => upd(refBlock, (b) => { if (b.type === 'contact') b.content.socials.splice(i, 1); })}>✕</button>
             </div>
           ))}
-          <button type="button" className="add-block-btn additem" onClick={() => upd(refBlock, (b) => { if (b.type === 'contact') b.content.socials.push({ label: 'Rede', href: '#' }); })}>＋ Rede social</button>
+          <button type="button" className="add-block-btn additem" onClick={() => upd(refBlock, (b) => { if (b.type === 'contact') b.content.socials.push({ label: '', href: '' }); })}>＋ Rede social</button>
         </>
       );
     }
@@ -752,7 +768,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
       return (
         <>
           <Row label="Texto do botão"><I18nInput value={c.label} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.label = v)), gk('lbl'))} /></Row>
-          <Row label="Link (URL, mailto:, arquivo.pdf)"><TextInput value={c.href} placeholder="https://… ou cv.pdf" onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.href = v)), gk('href'))} /></Row>
+          <LinkPicker key={block.id} doc={doc.state} href={c.href} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.href = v)), gk('href'))} />
           <Row label="Estilo"><SelectInput value={c.variant} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.variant = v)))} options={[{ value: 'solid', label: 'Cheio' }, { value: 'outline', label: 'Contorno' }, { value: 'link', label: 'Link' }]} /></Row>
           <label className="insp-check"><input type="checkbox" checked={!!c.newTab} onChange={(e) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.newTab = e.target.checked || undefined)))} /> Abrir em nova aba</label>
         </>

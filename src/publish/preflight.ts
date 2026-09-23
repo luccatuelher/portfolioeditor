@@ -92,7 +92,7 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
       if (b.visibility !== 'public') continue;
       if (b.type === 'contact') {
         if (!emailValid(b.content.email)) warnings.push('Contato: e-mail ausente ou inválido.');
-        for (const soc of b.content.socials) if (!soc.href || soc.href === '#') warnings.push(`Social "${soc.label}": link ausente (não aparece no site).`);
+        for (const soc of b.content.socials) if (!soc.href || soc.href === '#') warnings.push(`Rede social "${soc.label || 'sem nome'}": link ausente (não aparece no site).`);
         // O site publicado é UM arquivo. Um caminho relativo (cv.pdf) só funciona
         // se você subir o arquivo junto, no mesmo lugar — senão o botão baixa nada.
         if (b.content.cvHref.trim() && !/^(https?:|mailto:|tel:)/i.test(b.content.cvHref.trim())) {
