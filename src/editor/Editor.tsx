@@ -678,7 +678,45 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     e.dataTransfer.effectAllowed = 'move';
     try { e.dataTransfer.setData('text/plain', 'pe'); } catch { /* ignore */ }
   }, []);
+  /**
+   * Rolagem automática enquanto arrasta.
+   *
+   * Numa página longa só dava para soltar no que já estava na tela: levar um
+   * elemento do topo para o fim era impossível pelo arrasto, porque o canvas
+   * não acompanhava o ponteiro. Aqui, chegando perto da borda de cima ou de
+   * baixo, a área do canvas rola sozinha — mais rápido quanto mais perto da
+   * borda. Precisa de um laço próprio: parado na borda, o navegador deixa de
+   * disparar "dragover".
+   */
+  const autoScroll = useRef<{ vel: number; raf: number | null }>({ vel: 0, raf: null });
+  const pararAutoScroll = useCallback(() => {
+    if (autoScroll.current.raf !== null) cancelAnimationFrame(autoScroll.current.raf);
+    autoScroll.current = { vel: 0, raf: null };
+  }, []);
+  const ajustarAutoScroll = useCallback((clientY: number) => {
+    const area = document.querySelector<HTMLElement>('.editor-canvas-wrap');
+    if (!area) return;
+    const r = area.getBoundingClientRect();
+    const margem = 70; // faixa sensível junto de cada borda
+    const acima = clientY - r.top;
+    const abaixo = r.bottom - clientY;
+    let vel = 0;
+    if (acima < margem) vel = -Math.ceil(((margem - acima) / margem) * 22);
+    else if (abaixo < margem) vel = Math.ceil(((margem - abaixo) / margem) * 22);
+    autoScroll.current.vel = vel;
+    if (vel === 0) return pararAutoScroll();
+    if (autoScroll.current.raf !== null) return;
+    const passo = (): void => {
+      const v = autoScroll.current.vel;
+      if (!v) return pararAutoScroll();
+      area.scrollTop += v;
+      autoScroll.current.raf = requestAnimationFrame(passo);
+    };
+    autoScroll.current.raf = requestAnimationFrame(passo);
+  }, [pararAutoScroll]);
+
   const onCanvasDragOver = (e: React.DragEvent): void => {
+    ajustarAutoScroll(e.clientY);
     const hit = dropTarget(e);
     if (!hit) return mark(null);
     e.preventDefault();
@@ -686,6 +724,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     mark(hit.el, hit.zone);
   };
   const onCanvasDrop = (e: React.DragEvent): void => {
+    pararAutoScroll();
     const hit = dropTarget(e);
     const src = drag.current;
     drag.current = null;
@@ -747,6 +786,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     }
   };
   const onDragEnd = (): void => {
+    pararAutoScroll();
     drag.current = null;
     setDragging(false);
     mark(null);
@@ -870,7 +910,17 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           ) : null}
         </div>
 
-        <div className="editor-canvas-wrap">
+        {/* O arrasto é ouvido NA ÁREA QUE ROLA: parado na borda de baixo, o
+            ponteiro já saiu do canvas, e sem isso a rolagem automática nunca
+            entraria em ação justamente onde ela é necessária. */}
+        <div className="editor-canvas-wrap" onDragOver={(ev) => ajustarAutoScroll(ev.clientY)} onDrop={pararAutoScroll} onDragLeave={(ev) => {
+            // Junto da borda o navegador dispara "leave" a toda hora, mesmo com o
+            // ponteiro dentro (ele troca de elemento por baixo). Conferir pelo
+            // PONTO, e não pelo elemento, evita matar a rolagem em curso.
+            const r = (ev.currentTarget as HTMLElement).getBoundingClientRect();
+            const dentro = ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom;
+            if (!dentro) pararAutoScroll();
+          }}>
           <div className={`editor-canvas pv-${device}${dragging ? ' dragging' : ''}`} onClickCapture={onCanvasClick} onDragStart={onCanvasDragStart} onDragOver={onCanvasDragOver} onDrop={onCanvasDrop} onDragEnd={onDragEnd} onDragLeave={(e) => { if (!(e.currentTarget as HTMLElement).contains(e.relatedTarget as Node)) mark(null); }}>
             <RenderContext.Provider value={ctx}>
               <div className={`site canvas-site${frame.className}`} style={styleVars(frame.vars)}>
