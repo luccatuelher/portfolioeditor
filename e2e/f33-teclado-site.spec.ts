@@ -60,4 +60,25 @@ test.describe('Site pelo teclado', () => {
     await page.keyboard.press('Enter');
     await expect(page.locator('main[data-route]')).toHaveAttribute('data-route', 'home');
   });
+
+  test('cards de projeto e de nota são links: clique navega, Ctrl+clique abre em nova aba', async ({ page, context }) => {
+    for (const [rota, seletor, prefixo] of [['projects', 'a.project-card', 'project/'], ['blog', 'a.blog-item', 'blog/']] as const) {
+      await page.goto(`/preview.html?route=${rota}`, { waitUntil: 'load' });
+      const card = page.locator(seletor).first();
+      await expect(card).toBeVisible();
+      const href = (await card.getAttribute('href'))!;
+      expect(href).toMatch(new RegExp(`^#${prefixo}`));
+
+      // Ctrl+clique: nova aba, e esta página não sai do lugar.
+      const nova = context.waitForEvent('page');
+      await card.click({ modifiers: ['Control'] });
+      await (await nova).close();
+      await expect(page.locator('main[data-route]')).toHaveAttribute('data-route', rota);
+
+      // Clique comum (ou Enter pelo teclado): abre a página do item sem recarregar.
+      await card.focus();
+      await page.keyboard.press('Enter');
+      await expect(page.locator('main[data-route]')).toHaveAttribute('data-route', href.slice(1));
+    }
+  });
 });

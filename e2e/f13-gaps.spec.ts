@@ -5,7 +5,8 @@ test.describe('Lacunas do portfolio.html', () => {
     await page.route(/youtube|vimeo|speakerdeck/, (r) => r.abort());
     await page.goto('/preview.html?route=projects', { waitUntil: 'load' });
     const card = page.locator('.project-card', { hasText: 'A Travessia' });
-    await expect(card).toHaveAttribute('role', 'button');
+    // Card que leva à página do projeto é link de verdade (Tab, Enter, nova aba).
+    await expect(card).toHaveAttribute('href', /^#project\//);
     await card.focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('.detail-title', { hasText: 'A Travessia' })).toBeVisible();

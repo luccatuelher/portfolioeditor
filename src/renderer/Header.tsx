@@ -7,6 +7,7 @@ import { HEADER_MOBILE_DEFAULT, spanVars } from './responsive';
 import { styleVars } from './css';
 import { pick } from './text';
 import { LangFlag } from './Flags';
+import { linkInterno } from './links';
 
 /** Itens do menu: páginas marcadas no menu (sem NDA) + páginas NDA (com cadeado). */
 function menuPages(data: PortfolioV4): { nav: Page[]; nda: Page[] } {
@@ -30,13 +31,8 @@ function PageLink({ route, onNavigate, editing, className, children, ...rest }: 
       </button>
     );
   }
-  const onClick = (e: React.MouseEvent): void => {
-    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    e.preventDefault();
-    onNavigate(route);
-  };
   return (
-    <a href={route && route !== 'home' ? `#${route}` : '#'} className={className} onClick={onClick} {...rest}>
+    <a {...linkInterno(route, onNavigate)} className={className} {...rest}>
       {children}
     </a>
   );

@@ -11,6 +11,7 @@ import { pick, RichText } from './text';
 import { sanitizeRich } from '../core/sanitizeHtml';
 import { layoutGrid, type Placement } from './gridLayout';
 import { projectCategory } from '../core/category';
+import { linkInterno } from './links';
 
 // ----------------------------------------------------------------- primitivos
 function Img({ image, className, eager }: { image: ImageRef; className?: string; eager?: boolean }): React.ReactElement | null {
@@ -183,11 +184,23 @@ function onCardKey(onClick?: () => void): ((e: React.KeyboardEvent) => void) | u
  * painel: anuncia `aria-expanded`, aponta o painel em `aria-controls` e fecha
  * com Esc também quando o foco está nele.
  */
-function ProjectCard({ item, cols, onClick, selected, previewId, onEscape }: { item: ProjectItem; cols: number; onClick?: () => void; selected?: boolean; previewId?: string; onEscape?: () => void }): React.ReactElement {
+function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link }: { item: ProjectItem; cols: number; onClick?: () => void; selected?: boolean; previewId?: string; onEscape?: () => void; link?: ReturnType<typeof linkInterno> }): React.ReactElement {
   const { lang, editing } = useRender();
   const span = itemWidth(item, cols);
   const onKey = onCardKey(onClick);
   const aria = previewId ? { 'aria-expanded': !!selected, 'aria-controls': selected ? previewId : undefined } : {};
+  const estilo = styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'));
+  // No site, o card que leva à página do projeto é um link de verdade (nova aba, copiar endereço).
+  if (link && !editing) {
+    return (
+      <a className="project-card" style={estilo} data-card={item.id} {...link}>
+        <div className="card-thumb-wrap">
+          <Img image={item.thumb} className="card-thumb" />
+        </div>
+        <div className="card-title">{pick(item.title, lang)}</div>
+      </a>
+    );
+  }
   return (
     <div
       className={`project-card ${selected ? 'is-open' : ''}${useItemSel(item.id)}`}
@@ -436,6 +449,19 @@ function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () 
 function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.ReactElement {
   const { lang, onNavigate, editing } = useRender();
   const span = itemWidth(item, cols);
+  // No site, a nota é um link de verdade para a página dela (nova aba, copiar endereço).
+  if (onNavigate && !editing) {
+    return (
+      <a className="blog-item" style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))} {...linkInterno(`blog/${item.id}`, onNavigate)}>
+        <span className="blog-date">{pick(item.date, lang)}</span>
+        <div className="blog-thumb-wrap">
+          <Img image={item.thumb} className="blog-thumb" />
+        </div>
+        <div className="blog-title">{pick(item.title, lang)}</div>
+        <p className="blog-excerpt">{pick(item.excerpt, lang)}</p>
+      </a>
+    );
+  }
   return (
     <div className={`blog-item${useItemSel(item.id)}`} style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))} onClick={onNavigate ? () => onNavigate(`blog/${item.id}`) : undefined} role={onNavigate ? 'button' : undefined} tabIndex={onNavigate ? 0 : undefined} onKeyDown={onCardKey(onNavigate ? () => onNavigate(`blog/${item.id}`) : undefined)} {...itemDrag(editing, 'blog', item.id)}>
       <EditBadges visibility={item.visibility} />
@@ -546,6 +572,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
         selected={expandedId === p.id}
         previewId={preview ? previewId : undefined}
         onEscape={closePreview}
+        link={!preview && onNavigate && !editing ? linkInterno(`project/${p.id}`, onNavigate) : undefined}
         onClick={preview ? () => setExpandedId((cur) => (cur === p.id ? null : p.id)) : onNavigate ? () => onNavigate(`project/${p.id}`) : undefined}
       />
     ));
