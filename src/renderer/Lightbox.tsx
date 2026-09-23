@@ -6,7 +6,8 @@ import { cropImgStyle } from './blocks';
  * Visualizador de imagem (storyboard, galeria, sketches): overlay escuro sobre
  * a página, imagem centralizada e ajustada à tela, sem barra de comandos.
  * Fecha clicando fora, com Esc, com o ✕ (no toque) ou com o "voltar" do
- * navegador (quem abre cuida do histórico). Setas laterais e ← → só quando há
+ * navegador (quem abre cuida do histórico); ao fechar, o foco volta para quem
+ * abriu. Setas laterais e ← → só quando há
  * mais de uma imagem; no celular, deslizar para o lado também troca.
  */
 export function Lightbox({ items, index, onIndex, onClose }: { items: LightItem[]; index: number; onIndex: (i: number) => void; onClose: () => void }): React.ReactElement | null {
@@ -17,12 +18,16 @@ export function Lightbox({ items, index, onIndex, onClose }: { items: LightItem[
   const step = useCallback((d: number) => onIndex((clamped + d + items.length) % items.length), [clamped, items.length, onIndex]);
 
   useEffect(() => {
+    // Quem abriu (a miniatura, o quadro) recebe o foco de volta ao fechar;
+    // sem isso, quem navega pelo teclado recomeça do topo da página.
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     boxRef.current?.focus();
     // Trava a rolagem da página enquanto o overlay está aberto.
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, []);
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { embedProvider, embedSource, motivoDoEmbedVazio } from '../embed/embedSource';
 import { sobraDaLinha, spanVars } from './responsive';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -168,11 +168,31 @@ function onCardKey(onClick?: () => void): ((e: React.KeyboardEvent) => void) | u
   };
 }
 
-function ProjectCard({ item, cols, onClick, selected }: { item: ProjectItem; cols: number; onClick?: () => void; selected?: boolean }): React.ReactElement {
+/**
+ * Card de projeto. Com prévia (`previewId`), ele é um botão que abre/fecha um
+ * painel: anuncia `aria-expanded`, aponta o painel em `aria-controls` e fecha
+ * com Esc também quando o foco está nele.
+ */
+function ProjectCard({ item, cols, onClick, selected, previewId, onEscape }: { item: ProjectItem; cols: number; onClick?: () => void; selected?: boolean; previewId?: string; onEscape?: () => void }): React.ReactElement {
   const { lang, editing } = useRender();
   const span = itemWidth(item, cols);
+  const onKey = onCardKey(onClick);
+  const aria = previewId ? { 'aria-expanded': !!selected, 'aria-controls': selected ? previewId : undefined } : {};
   return (
-    <div className={`project-card ${selected ? 'is-open' : ''}${useItemSel(item.id)}`} style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))} onClick={onClick} role={onClick ? 'button' : undefined} tabIndex={onClick ? 0 : undefined} onKeyDown={onCardKey(onClick)} {...itemDrag(editing, 'projects', item.id)}>
+    <div
+      className={`project-card ${selected ? 'is-open' : ''}${useItemSel(item.id)}`}
+      style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))}
+      onClick={onClick}
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      data-card={item.id}
+      {...aria}
+      onKeyDown={onKey ? (e) => {
+        if (e.key === 'Escape' && selected && onEscape && !editing) { e.preventDefault(); onEscape(); return; }
+        onKey(e);
+      } : undefined}
+      {...itemDrag(editing, 'projects', item.id)}
+    >
       <div className="card-thumb-wrap">
         <Img image={item.thumb} className="card-thumb" />
         <EditBadges visibility={item.visibility} featured={item.featured} />
@@ -279,7 +299,7 @@ function EmbedCarousel({ blocos, lang }: { blocos: Block[]; lang: Lang }): React
  * No editor: chips para incluir/tirar elementos + alça de largura, arrastar em
  * grade e ocultar — os mesmos gestos do resto do editor, valendo só no popup.
  */
-function ProjectPreview({ item, onClose }: { item: ProjectItem; onClose: () => void }): React.ReactElement {
+function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () => void; id?: string }): React.ReactElement {
   const ctx = useRender();
   const panel = useRef<HTMLDivElement>(null);
   // Abriu: traz a prévia para a tela. Sem isso, no celular ela nasce abaixo do
@@ -321,9 +341,18 @@ function ProjectPreview({ item, onClose }: { item: ProjectItem; onClose: () => v
   const desc = pick(item.description, lang);
 
   return (
-    <div className="home-preview" data-pv-project={item.id} ref={panel}>
+    <div
+      className="home-preview"
+      data-pv-project={item.id}
+      ref={panel}
+      id={id}
+      role="region"
+      aria-labelledby={id ? `${id}-t` : undefined}
+      // Esc de qualquer ponto do painel fecha (no editor o Esc é da seleção).
+      onKeyDown={editing ? undefined : (e) => { if (e.key === 'Escape') { e.preventDefault(); onClose(); } }}
+    >
       <div className="home-preview-head">
-        <h3 className="home-preview-title">{pick(item.title, lang)}</h3>
+        <h3 className="home-preview-title" id={id ? `${id}-t` : undefined}>{pick(item.title, lang)}</h3>
         <div className="home-preview-actions">
           {onNavigate ? (
             <button type="button" className="home-preview-go" onClick={() => onNavigate(`project/${item.id}`)}>
@@ -455,6 +484,17 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
   const { collection, cols, filter, showFilter, preview } = block.content;
   const [uiFilter, setUiFilter] = useState<'all' | 'professional' | 'personal'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const previewId = `pv-${useId().replace(/:/g, '')}`;
+  // Fechar a prévia devolve o foco ao card que a abriu: o ✕ some junto com o
+  // painel e, sem isso, o teclado recomeçaria do topo da página.
+  const closePreview = (): void => {
+    const id = expandedId;
+    setExpandedId(null);
+    if (!id) return;
+    const card = [...(gridRef.current?.querySelectorAll<HTMLElement>('[data-card]') ?? [])].find((el) => el.dataset.card === id);
+    card?.focus({ preventScroll: true });
+  };
   // NDA é um mundo à parte: listas públicas nunca mostram NDA; a lista 'nda' só mostra NDA.
   // Rascunhos aparecem (esmaecidos) só no editor.
   const ndaOnly = filter === 'nda';
@@ -476,7 +516,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
     const fixedCategory = filter === 'professional' || filter === 'personal';
     if (showFilter && !fixedCategory) byCategory(uiFilter);
     const expanded = preview && expandedId ? items.find((p) => p.id === expandedId) : undefined;
-    if (expanded) previewPanel = <ProjectPreview key="__preview" item={expanded} onClose={() => setExpandedId(null)} />;
+    if (expanded) previewPanel = <ProjectPreview key="__preview" id={previewId} item={expanded} onClose={closePreview} />;
     if (showFilter && !fixedCategory) {
       filterBar = (
         <div className="project-filter" role="group" aria-label="Filtrar projetos">
@@ -494,6 +534,8 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
         item={p}
         cols={cols}
         selected={expandedId === p.id}
+        previewId={preview ? previewId : undefined}
+        onEscape={closePreview}
         onClick={preview ? () => setExpandedId((cur) => (cur === p.id ? null : p.id)) : onNavigate ? () => onNavigate(`project/${p.id}`) : undefined}
       />
     ));
@@ -541,7 +583,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
           )
         )
       ) : (
-        <div className={`collection-grid collection-${collection}`} style={styleVars({ '--cols': cols, '--coll-gap': rem(block.content.gap) })}>
+        <div ref={gridRef} className={`collection-grid collection-${collection}`} style={styleVars({ '--cols': cols, '--coll-gap': rem(block.content.gap) })}>
           {body}
         </div>
       )}

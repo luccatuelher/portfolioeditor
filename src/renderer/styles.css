@@ -32,6 +32,8 @@ body { margin: 0; }
   gap: 20px;
 }
 .site-header-left { cursor: pointer; }
+/* No site o nome é um link para a Home: sem cor nem sublinhado de link. */
+a.site-header-left { display: block; color: inherit; text-decoration: none; }
 .header-name { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1; letter-spacing: -0.02em; }
 .header-role { font-family: var(--font-body); font-size: 0.78rem; color: var(--ink-soft); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 6px; }
 .site-header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
@@ -39,7 +41,7 @@ body { margin: 0; }
 .flag-btn { background: none; border: none; cursor: pointer; font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em; color: var(--ink-pale); padding: 4px 6px; opacity: 0.5; }
 .flag-btn.is-on { opacity: 1; color: var(--ink); }
 nav { display: flex; gap: 0; flex-wrap: wrap; }
-.nav-link { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; color: var(--ink-soft); background: none; cursor: pointer; padding: 6px 14px; border: 1px solid transparent; letter-spacing: 0.08em; text-transform: uppercase; }
+.nav-link { font-family: var(--font-mono); font-size: 0.72rem; font-weight: 500; color: var(--ink-soft); background: none; cursor: pointer; padding: 6px 14px; border: 1px solid transparent; letter-spacing: 0.08em; text-transform: uppercase; text-decoration: none; line-height: normal; }
 .nav-link:hover { color: var(--ink); border-color: var(--rule); }
 
 /* ------------------------------------------------------------------ grid */
@@ -155,7 +157,7 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 .social-link { font-family: var(--font-mono); font-size: 0.68rem; color: var(--ink-soft); text-decoration: none; letter-spacing: 0.08em; text-transform: uppercase; }
 .social-link:hover { color: var(--accent); }
 .contact-img { width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block; background: transparent; margin-bottom: 20px; filter: grayscale(30%); }
-.btn-cv { display: inline-block; padding: 12px 28px; background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; }
+.btn-cv { display: inline-block; padding: 12px 28px; background: var(--ink); color: var(--bg); font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; text-decoration: none; line-height: normal; }
 .btn-cv:hover { background: var(--accent); }
 
 /* ------------------------------------------------------------- detalhe */

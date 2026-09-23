@@ -27,7 +27,7 @@ test.describe.serial('F7 — site publicado (self-contained)', () => {
     await page.goto(DIST, { waitUntil: 'load' });
 
     // Vai para Projetos: só o público (Projeto A) aparece.
-    await page.locator('.site-header nav button', { hasText: 'Projetos' }).click();
+    await page.locator('.site-header nav .nav-link', { hasText: 'Projetos' }).click();
     await expect(page.locator('.project-card', { hasText: 'Projeto A' })).toBeVisible();
     await expect(page.locator('.project-card', { hasText: 'Projeto B' })).toHaveCount(0);
 
@@ -42,7 +42,7 @@ test.describe.serial('F7 — site publicado (self-contained)', () => {
 
     // O projeto NDA aparece na página NDA — e continua fora da lista pública.
     await expect(page.locator('.project-card', { hasText: 'Projeto B' })).toBeVisible();
-    await page.locator('.site-header nav button', { hasText: 'Projetos' }).click();
+    await page.locator('.site-header nav .nav-link', { hasText: 'Projetos' }).click();
     await expect(page.locator('.project-card', { hasText: 'Projeto B' })).toHaveCount(0);
   });
 

@@ -17,6 +17,32 @@ function menuPages(data: PortfolioV4): { nav: Page[]; nda: Page[] } {
 }
 
 /**
+ * Link para uma página do site. No site é um <a href="#rota"> de verdade:
+ * alcançável pelo Tab, abre em nova aba (Ctrl/⌘/botão do meio) e dá para copiar
+ * o endereço; o clique comum navega sem recarregar. No editor, onde o item é
+ * arrastável e o clique só troca a página do canvas, continua sendo botão.
+ */
+function PageLink({ route, onNavigate, editing, className, children, ...rest }: { route: string; onNavigate?: (r: string) => void; editing: boolean; className: string; children: React.ReactNode } & Record<string, unknown>): React.ReactElement {
+  if (editing || !onNavigate) {
+    return (
+      <button type="button" className={className} onClick={onNavigate ? () => onNavigate(route) : undefined} {...rest}>
+        {children}
+      </button>
+    );
+  }
+  const onClick = (e: React.MouseEvent): void => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    onNavigate(route);
+  };
+  return (
+    <a href={route && route !== 'home' ? `#${route}` : '#'} className={className} onClick={onClick} {...rest}>
+      {children}
+    </a>
+  );
+}
+
+/**
  * Cabeçalho do site (público e canvas do editor). A ordem, os elementos ocultos
  * e o layout vêm de `site.header`; no editor cada elemento ganha ações de hover
  * e pode ser arrastado (`data-header-el`), assim como os itens do menu.
@@ -46,12 +72,22 @@ export function SiteHeader({ data, lang, onLang, onNavigate, current }: { data: 
 
   const render = (el: HeaderElement): React.ReactElement => {
     if (el === 'brand') {
-      return wrap(
-        'brand',
-        <div className="site-header-left" onClick={onNavigate && !editing ? () => onNavigate('') : undefined}>
+      const brand = (
+        <>
           <div className="header-name">{pick(data.site.name, lang)}</div>
           {!hidden.has('role') || editing ? <div className={`header-role${hidden.has('role') ? ' hdr-hidden' : ''}`}>{pick(data.site.role, lang)}</div> : null}
-        </div>,
+        </>
+      );
+      // No site, o nome leva à Home (link de verdade); no editor, o clique edita.
+      return wrap(
+        'brand',
+        onNavigate && !editing ? (
+          <PageLink route="" onNavigate={onNavigate} editing={false} className="site-header-left">
+            {brand}
+          </PageLink>
+        ) : (
+          <div className="site-header-left">{brand}</div>
+        ),
       );
     }
     if (el === 'lang') {
@@ -70,21 +106,22 @@ export function SiteHeader({ data, lang, onLang, onNavigate, current }: { data: 
       'nav',
       <nav>
         {navPages.map((p) => (
-          <button
-            type="button"
+          <PageLink
             key={p.id}
+            route={p.slug || p.id}
+            onNavigate={onNavigate}
+            editing={editing}
             className={`nav-link${isCur(p) ? ' is-current' : ''}`}
             aria-current={isCur(p) ? 'page' : undefined}
-            onClick={onNavigate ? () => onNavigate(p.slug || p.id) : undefined}
             {...(editing ? { 'data-nav-page': p.id, 'data-nav-drag': p.id, draggable: true, title: 'Clique para abrir · arraste para reordenar' } : {})}
           >
             {pick(p.title, lang)}
-          </button>
+          </PageLink>
         ))}
         {ndaPages.map((p) => (
-          <button type="button" key={p.id} className={`nav-link nav-nda${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined} onClick={onNavigate ? () => onNavigate(p.slug || p.id) : undefined} {...(editing ? { 'data-nav-page': p.id } : {})}>
+          <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={editing} className={`nav-link nav-nda${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined} {...(editing ? { 'data-nav-page': p.id } : {})}>
             {pick(p.title, lang)} 🔒
-          </button>
+          </PageLink>
         ))}
       </nav>,
     );
@@ -128,14 +165,14 @@ export function StickyNav({ data, lang, onLang, onNavigate, current }: { data: P
     <div className={`sticky-nav${show ? ' is-on' : ''}`} aria-hidden={!show}>
       <nav>
         {navPages.map((p) => (
-          <button type="button" key={p.id} tabIndex={show ? 0 : -1} className={`nav-link${isCur(p) ? ' is-current' : ''}`} onClick={() => onNavigate(p.slug || p.id)}>
+          <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={false} tabIndex={show ? 0 : -1} className={`nav-link${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined}>
             {pick(p.title, lang)}
-          </button>
+          </PageLink>
         ))}
         {ndaPages.map((p) => (
-          <button type="button" key={p.id} tabIndex={show ? 0 : -1} className={`nav-link nav-nda${isCur(p) ? ' is-current' : ''}`} onClick={() => onNavigate(p.slug || p.id)}>
+          <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={false} tabIndex={show ? 0 : -1} className={`nav-link nav-nda${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined}>
             {pick(p.title, lang)} 🔒
-          </button>
+          </PageLink>
         ))}
       </nav>
       <div className="lang-icons">
