@@ -766,6 +766,13 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
       return wrap(<hr className="block-divider" />);
     case 'contact': {
       const c = block.content;
+      // Link para fora tira o visitante do portfólio se abrir na mesma aba; e
+      // um link vazio ('#') vira um link que não leva a lugar nenhum. No editor
+      // ele continua aparecendo, para o dono ver que falta preencher.
+      const externo = (href: string): boolean => /^https?:\/\//i.test(href);
+      const paraFora = (href: string): Record<string, string> =>
+        externo(href) ? { target: '_blank', rel: 'noopener noreferrer' } : {};
+      const vale = (href: string): boolean => !!href.trim() && href.trim() !== '#';
       return wrap(
         <div className={`contact-layout${c.image || c.cvHref ? '' : ' no-aside'}`}>
           <div className="contact-main">
@@ -782,18 +789,24 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
               </a>
             ) : null}
             <div className="social-row">
-              {c.socials.map((s, i) => (
-                <a key={i} className="social-link" href={s.href}>
-                  {s.label}
-                </a>
-              ))}
+              {c.socials.map((s, i) =>
+                vale(s.href) ? (
+                  <a key={i} className="social-link" href={s.href} {...paraFora(s.href)}>
+                    {s.label}
+                  </a>
+                ) : editing ? (
+                  <span key={i} className="social-link sem-link" title="Sem link — preencha no inspector">
+                    {s.label}
+                  </span>
+                ) : null,
+              )}
             </div>
           </div>
           {c.image || c.cvHref ? (
             <div className="contact-aside">
               {c.image ? <Img image={c.image} className="contact-img" /> : null}
               {c.cvHref ? (
-                <a className="btn-cv" href={c.cvHref}>
+                <a className="btn-cv" href={c.cvHref} {...paraFora(c.cvHref)} {...(externo(c.cvHref) ? { download: '' } : {})}>
                   {pick(c.cvLabel, lang)}
                 </a>
               ) : null}

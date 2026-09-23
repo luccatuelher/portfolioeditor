@@ -493,3 +493,6 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .pv-carrossel-pontos span.on { background: var(--accent); }
 /* No toque as setas ficam sempre visíveis (não há hover para revelá-las). */
 @media (hover: none) { .pv-carrossel-seta { opacity: 1; } }
+
+/* rede social sem link: visível só no editor, para o dono completar */
+.social-link.sem-link { opacity: 0.45; text-decoration: line-through; cursor: default; }

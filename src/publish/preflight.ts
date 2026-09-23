@@ -92,9 +92,17 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
       if (b.visibility !== 'public') continue;
       if (b.type === 'contact') {
         if (!emailValid(b.content.email)) warnings.push('Contato: e-mail ausente ou inválido.');
-        for (const soc of b.content.socials) if (!soc.href || soc.href === '#') warnings.push(`Social "${soc.label}": link ausente.`);
+        for (const soc of b.content.socials) if (!soc.href || soc.href === '#') warnings.push(`Social "${soc.label}": link ausente (não aparece no site).`);
+        // O site publicado é UM arquivo. Um caminho relativo (cv.pdf) só funciona
+        // se você subir o arquivo junto, no mesmo lugar — senão o botão baixa nada.
+        if (b.content.cvHref.trim() && !/^(https?:|mailto:|tel:)/i.test(b.content.cvHref.trim())) {
+          warnings.push(`CV aponta para "${b.content.cvHref}": como o site é um arquivo só, suba o PDF no mesmo lugar ou use um endereço https completo.`);
+        }
       } else if (b.type === 'button') {
         if (!b.content.href.trim() || b.content.href.trim() === '#') warnings.push(`Botão "${b.content.label.pt || b.content.label.en}": sem link.`);
+        else if (!/^(https?:|mailto:|tel:|#)/i.test(b.content.href.trim())) {
+          warnings.push(`Botão "${b.content.label.pt || b.content.label.en}" aponta para "${b.content.href}": arquivo relativo só funciona se for publicado junto do site.`);
+        }
       }
     }
   }
