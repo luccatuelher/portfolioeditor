@@ -1,6 +1,7 @@
 /**
  * Pipeline de importação de imagem: decodifica → redimensiona (lado máx.
- * configurável) → recodifica em WebP, gerando também um thumbnail.
+ * configurável) → recodifica em WebP. (Não gera miniatura: o site e o editor
+ * usam a imagem em si — codificar uma segunda cópia a cada envio era custo à toa.)
  *
  * A matemática de redimensionamento (`computeTargetSize`) é pura e testável.
  * A parte de canvas depende do browser (`createImageBitmap`/`OffscreenCanvas`)
@@ -8,7 +9,6 @@
  */
 
 export const DEFAULT_MAX_SIDE = 2400;
-export const DEFAULT_THUMB_SIDE = 480;
 export const DEFAULT_QUALITY = 0.82;
 
 export interface TargetSize {
@@ -27,7 +27,6 @@ export function computeTargetSize(w: number, h: number, maxSide: number): Target
 
 export interface ImportedImage {
   blob: Blob;
-  thumb: Blob;
   w: number;
   h: number;
   mime: 'image/webp';
@@ -35,7 +34,6 @@ export interface ImportedImage {
 
 export interface ImportOptions {
   maxSide?: number;
-  thumbSide?: number;
   quality?: number;
 }
 
@@ -85,16 +83,13 @@ export async function importImage(
   env: CanvasEnv = defaultEnv(),
 ): Promise<ImportedImage> {
   const maxSide = options.maxSide ?? DEFAULT_MAX_SIDE;
-  const thumbSide = options.thumbSide ?? DEFAULT_THUMB_SIDE;
   const quality = options.quality ?? DEFAULT_QUALITY;
 
   const bmp = await env.createImageBitmap(source);
   const full = computeTargetSize(bmp.width, bmp.height, maxSide);
-  const thumbSize = computeTargetSize(bmp.width, bmp.height, thumbSide);
   const blob = await encode(env, bmp, full, quality);
-  const thumb = await encode(env, bmp, thumbSize, quality);
   bmp.close?.();
-  return { blob, thumb, w: full.w, h: full.h, mime: 'image/webp' };
+  return { blob, w: full.w, h: full.h, mime: 'image/webp' };
 }
 
 /** Converte uma data: URL (usada pela migração) em Blob, para ingestão. */

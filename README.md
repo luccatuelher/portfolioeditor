@@ -40,8 +40,7 @@ src/
   embed/embedSource.ts   # porta pura do normalizador de embeds do v3
   schema/v4.ts           # schema Zod v4 + tipos + tema padrão
   migrate/               # migrate(v3)→v4 puro/determinístico + normalização de legado
-  assets/                # asset store (IDB Blobs) + importImage (WebP)
-  persistence/           # rascunho com debounce (sem assets)
+  assets/                # conexão IndexedDB + importImage (WebP) + favicon
   state/store.ts         # Immer produceWithPatches + undo/redo
 test/                    # Vitest
 ```

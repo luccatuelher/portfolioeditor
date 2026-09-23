@@ -1,19 +1,18 @@
 /**
- * Asset store em IndexedDB: os Blobs das imagens vivem em object stores
- * separadas do rascunho JSON, para nunca passarem por JSON.stringify a cada
- * edição/undo. Injeta-se `factory` (IDBFactory) para testar com fake-indexeddb.
+ * Banco local (IndexedDB) do editor: a conexão e a store `drafts`, onde o
+ * rascunho, as imagens (data URLs, em registro separado do documento) e as
+ * versões ficam guardados — ver editor/localDraft.ts e editor/versions.ts.
+ * Injeta-se `factory` (IDBFactory) para testar com fake-indexeddb.
  */
 
 export const DB_NAME = 'portfolio-v4';
 export const DB_VERSION = 1;
 export const STORE_DRAFTS = 'drafts';
-export const STORE_ASSETS = 'assets';
-export const STORE_THUMBS = 'thumbs';
-
-export interface StoredAsset {
-  blob: Blob;
-  thumb?: Blob;
-}
+// Stores de uma versão antiga (imagens como Blob + miniatura). Nada mais grava
+// nelas, mas continuam sendo criadas: sumir com elas exigiria migrar o banco
+// de quem já usa o editor, sem ganho nenhum.
+const STORE_ASSETS = 'assets';
+const STORE_THUMBS = 'thumbs';
 
 function getFactory(factory?: IDBFactory): IDBFactory {
   if (factory) return factory;
@@ -70,38 +69,4 @@ function openAt(idb: IDBFactory, version?: number): Promise<IDBDatabase> {
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
   });
-}
-
-function tx<T>(db: IDBDatabase, store: string, mode: IDBTransactionMode, run: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const t = db.transaction(store, mode);
-    const req = run(t.objectStore(store));
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-    t.onabort = () => reject(t.error ?? new Error('Transação abortada'));
-  });
-}
-
-export async function putAsset(db: IDBDatabase, id: string, blob: Blob, thumb?: Blob): Promise<void> {
-  await tx(db, STORE_ASSETS, 'readwrite', (s) => s.put(blob, id));
-  if (thumb) await tx(db, STORE_THUMBS, 'readwrite', (s) => s.put(thumb, id));
-}
-
-export async function getAsset(db: IDBDatabase, id: string): Promise<Blob | undefined> {
-  return tx<Blob | undefined>(db, STORE_ASSETS, 'readonly', (s) => s.get(id) as IDBRequest<Blob | undefined>);
-}
-
-export async function getThumb(db: IDBDatabase, id: string): Promise<Blob | undefined> {
-  return tx<Blob | undefined>(db, STORE_THUMBS, 'readonly', (s) => s.get(id) as IDBRequest<Blob | undefined>);
-}
-
-export async function deleteAsset(db: IDBDatabase, id: string): Promise<void> {
-  await tx(db, STORE_ASSETS, 'readwrite', (s) => s.delete(id));
-  await tx(db, STORE_THUMBS, 'readwrite', (s) => s.delete(id));
-}
-
-export function listAssetIds(db: IDBDatabase): Promise<string[]> {
-  return tx<IDBValidKey[]>(db, STORE_ASSETS, 'readonly', (s) => s.getAllKeys()).then((keys) =>
-    keys.map((k) => String(k)),
-  );
 }
