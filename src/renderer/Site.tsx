@@ -42,6 +42,20 @@ export function resolveRoute(data: PortfolioV4, route: string): Resolved {
   return { page: page ?? home };
 }
 
+/**
+ * Rota que está no endereço (#projects, #project/<id>…). Um "%" solto num link
+ * colado (`#100%`) fazia o decodeURIComponent lançar erro na montagem — e o
+ * site inteiro caía na tela de erro. Aí vale o texto cru (que cai na Home).
+ */
+export function rotaDoHash(hash: string): string {
+  const cru = hash.replace(/^#\/?/, '');
+  try {
+    return decodeURIComponent(cru);
+  } catch {
+    return cru;
+  }
+}
+
 export interface SiteProps {
   data: PortfolioV4;
   resolveAsset: AssetResolver;
@@ -76,7 +90,7 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
     }
   }, []);
   // A rota vive no endereço (#projects, #project/<id>…): voltar/avançar do navegador funcionam, inclusive em file://.
-  const hashRoute = (): string => (typeof location !== 'undefined' ? decodeURIComponent(location.hash.replace(/^#\/?/, '')) : '');
+  const hashRoute = (): string => (typeof location !== 'undefined' ? rotaDoHash(location.hash) : '');
   const [route, setRouteState] = useState(() => (editing ? initialRoute : hashRoute() || initialRoute));
   const [lightbox, setLightbox] = useState<{ items: LightItem[]; index: number } | null>(null);
   const lbPushed = useRef(false);

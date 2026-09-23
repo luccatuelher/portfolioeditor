@@ -63,7 +63,7 @@ export function embedSource(embed: EmbedInput | null | undefined): string {
         id = mm[1]!;
         hash = u.searchParams.get('h') || mm[2] || '';
       } else if (
-        ['youtube.com', 'www.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com', 'youtu.be'].includes(host)
+        ['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtube-nocookie.com', 'www.youtube-nocookie.com', 'youtu.be'].includes(host)
       ) {
         type = 'youtube';
         id = host === 'youtu.be' ? u.pathname.slice(1) : u.searchParams.get('v') || u.pathname.split('/').pop() || '';

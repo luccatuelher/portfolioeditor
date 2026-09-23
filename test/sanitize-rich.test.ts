@@ -13,4 +13,28 @@ describe('sanitizeRich', () => {
   it('texto puro passa intacto', () => {
     expect(sanitizeRich('Rocky & Nutes')).toBe('Rocky & Nutes');
   });
+  it('remover uma tag do meio não cola os pedaços numa tag nova (XSS)', () => {
+    for (const evil of ['<<x>img src=x onerror=alert(1)>', '<<<x>x>img src=x onerror=alert(1)>', '<p><<svg>img src=x onerror=alert(1)></p>', '<a<x> href=x onclick=alert(1)>y</a>']) {
+      const out = sanitizeRich(evil);
+      expect(out, evil).not.toMatch(/<(img|svg|script)/i);
+      expect(out, evil).not.toMatch(/<[^>]*\bon[a-z]+\s*=/i);
+    }
+  });
+  it('link com "&" continua funcionando, por quantas vezes passar pelo sanitizador', () => {
+    // É assim que o navegador serializa o link criado no canvas.
+    const salvo = '<a href="https://x.com/?a=1&amp;b=2">x</a>';
+    const uma = sanitizeRich(salvo);
+    expect(uma).toBe('<a href="https://x.com/?a=1&amp;b=2" target="_blank" rel="noopener noreferrer">x</a>');
+    expect(sanitizeRich(uma)).toBe(uma);
+  });
+  it('entidade no href não esconde um javascript:', () => {
+    for (const evil of ['<a href="javascript&#58;alert(1)">x</a>', '<a href="javascript&#x3A;alert(1)">x</a>', '<a href="jav&#x09;ascript:alert(1)">x</a>']) {
+      expect(sanitizeRich(evil), evil).toBe('<a>x</a>');
+    }
+  });
+  it('estilo com aspas codificadas (fonte) é mantido e estável', () => {
+    const uma = sanitizeRich('<span style="font-family: &quot;DM Sans&quot;">a</span>');
+    expect(uma).toBe('<span style="font-family: &quot;DM Sans&quot;">a</span>');
+    expect(sanitizeRich(uma)).toBe(uma);
+  });
 });

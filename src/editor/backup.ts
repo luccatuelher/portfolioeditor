@@ -17,7 +17,8 @@ export interface Backup {
   assets: Record<string, string>;
 }
 
-function collectAssetIds(node: unknown, out: Set<string>): void {
+/** Todos os assetIds referenciados em qualquer lugar de `node` (doc, versão, trecho). */
+export function collectAssetIds(node: unknown, out: Set<string>): void {
   if (Array.isArray(node)) node.forEach((n) => collectAssetIds(n, out));
   else if (node && typeof node === 'object') {
     const r = node as Record<string, unknown>;

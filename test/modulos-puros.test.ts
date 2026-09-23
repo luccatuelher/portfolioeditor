@@ -3,6 +3,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { sanitizeInlineHtml } from '../src/editor/sanitize';
+import { rotaDoHash } from '../src/renderer/Site';
 import { ADDABLE_BLOCKS, makeDefaultBlock } from '../src/editor/blockFactory';
 import { SECTION_PRESETS } from '../src/editor/sectionPresets';
 import { themeFontUrls } from '../src/renderer/fonts';
@@ -118,5 +119,15 @@ describe('texto bilíngue e hash', () => {
     expect(cyrb53('abc')).toBe(cyrb53('abc'));
     expect(cyrb53('abc')).not.toBe(cyrb53('abd'));
     expect(hashHex('abc')).toMatch(/^[0-9a-f]+$/);
+  });
+});
+
+describe('rota que vem no endereço do site', () => {
+  it('decodifica o normal e não derruba o site com "%" solto', () => {
+    expect(rotaDoHash('#project/proj%C3%A9')).toBe('project/projé');
+    expect(rotaDoHash('#/projects')).toBe('projects');
+    expect(rotaDoHash('#100%')).toBe('100%');
+    expect(rotaDoHash('#%E0%A4%A')).toBe('%E0%A4%A');
+    expect(rotaDoHash('')).toBe('');
   });
 });

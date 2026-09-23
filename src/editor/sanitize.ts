@@ -31,7 +31,10 @@ function cleanStyle(el: HTMLElement): string {
  * Usa DOM (roda no navegador, no editor). Portado do `richText` do v3.
  */
 export function sanitizeInlineHtml(html: string): string {
-  const box = document.createElement('div');
+  // Documento inerte: num <div> do documento vivo, um <img onerror> colado
+  // chegava a carregar (e rodar) antes de ser removido logo abaixo.
+  const inerte = document.implementation.createHTMLDocument('');
+  const box = inerte.createElement('div');
   box.innerHTML = String(html || '');
   box.querySelectorAll('script,style,iframe,object,embed,link,meta,svg,math,img,video,audio,input,button,textarea,select').forEach((el) => el.remove());
   for (const el of Array.from(box.querySelectorAll<HTMLElement>('*'))) {
@@ -42,7 +45,7 @@ export function sanitizeInlineHtml(html: string): string {
     // <font> (execCommand) → <span style> equivalente.
     let node: HTMLElement = el;
     if (el.tagName === 'FONT') {
-      const span = document.createElement('span');
+      const span = inerte.createElement('span');
       const color = el.getAttribute('color');
       const face = el.getAttribute('face');
       if (color) span.style.color = color;

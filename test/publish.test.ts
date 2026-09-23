@@ -25,6 +25,28 @@ describe('publicSnapshot', () => {
     expect(nda.sketches.map((s) => s.id)).toEqual(['sk-2']);
   });
 
+  it('bloco NDA ou rascunho dentro de projeto/nota pública não vai para o site', () => {
+    const doc = structuredClone(data);
+    const proj = doc.collections.projects.find((p) => p.visibility === 'public')!;
+    const nota = doc.collections.blog.find((b) => b.visibility === 'public')!;
+    const texto = (id: string, vis: 'nda' | 'draft', t: string) => ({ id, type: 'text' as const, span: 12, visibility: vis, content: { html: { pt: t, en: '' } } });
+    proj.sections.push({ id: 's_seg', style: {}, blocks: [texto('b_nda', 'nda', 'SEGREDO-NDA'), texto('b_rasc', 'draft', 'RASCUNHO-PROJ')] });
+    nota.sections.push({ id: 's_seg2', style: {}, blocks: [texto('b_nda2', 'nda', 'SEGREDO-NOTA')] });
+    const json = JSON.stringify(publicSnapshot(doc).data);
+    expect(json).not.toContain('SEGREDO-NDA');
+    expect(json).not.toContain('RASCUNHO-PROJ');
+    expect(json).not.toContain('SEGREDO-NOTA');
+  });
+
+  it('página em rascunho não vai para o site (a Home fica sempre)', () => {
+    const doc = structuredClone(data);
+    doc.pages.push({ id: 'pg_oculta', slug: 'oculta', title: { pt: 'Oculta', en: '' }, kind: 'static', visibility: 'draft', sections: [{ id: 's_o', style: {}, blocks: [{ id: 'b_o', type: 'text', span: 12, visibility: 'public', content: { html: { pt: 'PAGINA-OCULTA', en: '' } } }] }] });
+    doc.pages.find((p) => p.id === 'home')!.visibility = 'draft';
+    const out = publicSnapshot(doc).data;
+    expect(JSON.stringify(out)).not.toContain('PAGINA-OCULTA');
+    expect(out.pages.some((p) => p.id === 'home')).toBe(true);
+  });
+
   it('mantém a página NDA só como casca (sem itens) e poda assets', () => {
     // A página NDA continua (título + lista 'nda'), mas nenhum item NDA vai em claro.
     expect(JSON.stringify(pub)).not.toContain('proj-b');

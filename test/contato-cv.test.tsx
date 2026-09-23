@@ -48,6 +48,19 @@ describe('links do bloco de contato', () => {
     expect(noEditor).toContain('sem-link');
   });
 
+  it('botão sem link segue a mesma regra: some do site, aparece riscado no editor', () => {
+    const botao = (href: string): Block => ({ id: 'bt', type: 'button', visibility: 'public', span: 4, content: { label: { pt: 'Baixar CV', en: '' }, href, variant: 'solid' } });
+    for (const vazio of ['', '#', '  ']) {
+      const site = render(botao(vazio));
+      expect(site, `href "${vazio}"`).not.toContain('Baixar CV');
+      expect(site).not.toContain('href="#"');
+      const noEditor = render(botao(vazio), true);
+      expect(noEditor).toContain('Baixar CV');
+      expect(noEditor).toContain('sem-link');
+    }
+    expect(render(botao('https://exemplo.com/cv.pdf'))).toContain('href="https://exemplo.com/cv.pdf"');
+  });
+
   it('e-mail e telefone continuam na mesma aba (é o app do aparelho que abre)', () => {
     const html = render(contato());
     const mail = html.match(/<a[^>]*mailto:[^>]*>/)?.[0] ?? '';

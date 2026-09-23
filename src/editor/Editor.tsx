@@ -377,6 +377,9 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       if (e.key === 'Escape') setAddMenu(null);
       return;
     }
+    // Diálogo aberto (Versões, senha NDA): o teclado é dele. Sem isso, um Delete
+    // ou Ctrl+Z com o diálogo na frente apagava/desfazia no documento por trás.
+    if (document.querySelector('.modal-backdrop')) return;
     if (mod && key === 's') {
       // Ctrl+S: baixa o backup (o rascunho já é salvo sozinho no navegador).
       e.preventDefault();
@@ -1043,7 +1046,13 @@ function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onIm
   const itensNda = (['projects', 'blog', 'gallery', 'sketches'] as const)
     .reduce((n, k) => n + doc.state.collections[k].filter((i) => i.visibility === 'nda').length, 0);
 
-  const publishSite = async (password?: string): Promise<void> => {
+  // Uma falha ao gerar (cifrar o NDA, montar o arquivo) não pode ser silêncio:
+  // o botão parecia simplesmente não fazer nada.
+  const publishSite = (password?: string): Promise<void> =>
+    gerarSite(password).catch((err: unknown) => {
+      alert(`Não consegui gerar o site: ${err instanceof Error ? err.message : String(err)}\n\nSeu rascunho não foi afetado.`);
+    });
+  const gerarSite = async (password?: string): Promise<void> => {
     const doc0 = doc.state;
     const migratedAssets: MigratedAsset[] = Object.entries(assets).map(([id, dataUrl]) => ({ id, dataUrl, mime: '' }));
     const payload = await buildPublishPayload({ data: doc0, assets: migratedAssets }, password);

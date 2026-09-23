@@ -495,4 +495,4 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 @media (hover: none) { .pv-carrossel-seta { opacity: 1; } }
 
 /* rede social sem link: visível só no editor, para o dono completar */
-.social-link.sem-link { opacity: 0.45; text-decoration: line-through; cursor: default; }
+.social-link.sem-link, .btn.sem-link { opacity: 0.45; text-decoration: line-through; cursor: default; }

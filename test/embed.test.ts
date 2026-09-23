@@ -18,6 +18,11 @@ describe('embedSource — porta pura do v3', () => {
     expect(embedSource({ id: 'https://youtu.be/aqz-KE-bpKQ' })).toContain('/embed/aqz-KE-bpKQ');
   });
 
+  it('YouTube copiado do celular (m.youtube.com) e do YouTube Music', () => {
+    expect(embedSource({ id: 'https://m.youtube.com/watch?v=aqz-KE-bpKQ&t=90' })).toBe('https://www.youtube-nocookie.com/embed/aqz-KE-bpKQ?rel=0&start=90');
+    expect(embedSource({ id: 'https://music.youtube.com/watch?v=aqz-KE-bpKQ' })).toContain('/embed/aqz-KE-bpKQ');
+  });
+
   it('Vimeo por id numérico', () => {
     expect(embedSource({ type: 'vimeo', id: '76979871' })).toContain('player.vimeo.com/video/76979871');
   });

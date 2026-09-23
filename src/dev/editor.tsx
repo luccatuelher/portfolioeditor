@@ -8,7 +8,7 @@ import { migrate } from '../migrate/migrate';
 import { Editor } from '../editor/Editor';
 import { ErrorBoundary } from '../renderer/ErrorBoundary';
 import type { Backup } from '../editor/backup';
-import { loadLocalDraft, saveLocalDraft, saveRescueCopy } from '../editor/localDraft';
+import { loadLocalDraft, manterImagensEmUso, saveLocalDraft, saveRescueCopy } from '../editor/localDraft';
 import { repairDoc } from '../migrate/repair';
 import { PortfolioV4Schema, type PortfolioV4 } from '../schema/v4';
 import { upgradeDoc } from '../migrate/upgrade';
@@ -35,13 +35,16 @@ function Root(): React.ReactElement {
         const saved = await loadLocalDraft();
         if (saved) {
           const parsed = PortfolioV4Schema.safeParse(saved.doc);
-          if (parsed.success) return { doc: upgradeDoc(parsed.data), assets: saved.assets ?? {}, version: 0 };
+          if (parsed.success) {
+            const doc = upgradeDoc(parsed.data);
+            return { doc, assets: await manterImagensEmUso(doc, saved.assets ?? {}), version: 0 };
+          }
           // Formato mudou: guarda a cópia intacta e conserta só o incompatível (nunca descarta em silêncio).
           await saveRescueCopy(saved.doc).catch(() => {});
           const { doc, fixes } = repairDoc(saved.doc);
           console.warn('[rascunho] ajustes ao carregar:', fixes);
           if (doc) {
-            return { doc, assets: saved.assets ?? {}, version: 0, notice: `Seu rascunho foi recuperado com ${fixes.length} ajuste(s) de formato. Uma cópia do original ficou guardada neste navegador.` };
+            return { doc, assets: await manterImagensEmUso(doc, saved.assets ?? {}), version: 0, notice: `Seu rascunho foi recuperado com ${fixes.length} ajuste(s) de formato. Uma cópia do original ficou guardada neste navegador.` };
           }
           const fx = fromFixture();
           return { ...fx, notice: 'Não foi possível ler o rascunho salvo — uma cópia intacta ficou guardada neste navegador. Não edite: importe seu backup (Importar) ou me avise.' };

@@ -21,8 +21,35 @@ function getFactory(factory?: IDBFactory): IDBFactory {
   throw new Error('IndexedDB indisponível neste ambiente.');
 }
 
+/**
+ * Conexão reaproveitada do navegador. Cada gravação automática abria uma
+ * conexão nova e nunca a fechava — dezenas por minuto de edição. Se outra aba
+ * precisar atualizar o banco, esta fecha e a próxima chamada reabre.
+ */
+let compartilhada: Promise<IDBDatabase> | null = null;
+
 export function openDb(factory?: IDBFactory): Promise<IDBDatabase> {
-  const idb = getFactory(factory);
+  if (factory) return abrir(factory);
+  compartilhada ??= abrir(getFactory()).then(
+    (db) => {
+      db.onversionchange = () => {
+        db.close();
+        compartilhada = null;
+      };
+      db.onclose = () => {
+        compartilhada = null;
+      };
+      return db;
+    },
+    (err: unknown) => {
+      compartilhada = null;
+      throw err;
+    },
+  );
+  return compartilhada;
+}
+
+function abrir(idb: IDBFactory): Promise<IDBDatabase> {
   return openAt(idb, DB_VERSION).catch((err: unknown) => {
     // Banco já está numa versão mais nova (ex.: aberto por outra versão do editor):
     // abre na versão atual em vez de falhar — os stores são os mesmos.

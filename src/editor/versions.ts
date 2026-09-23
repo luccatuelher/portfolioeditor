@@ -68,6 +68,11 @@ export async function saveVersion(name: string, doc: PortfolioV4, auto = false):
   return { id, name: entry.name, savedAt, auto };
 }
 
+/** Documentos de todas as versões (para saber que imagens elas ainda usam). */
+export async function loadVersionDocs(): Promise<PortfolioV4[]> {
+  return (await readAll(await openDb())).map((v) => v.doc);
+}
+
 /** Documento de uma versão (para restaurar). */
 export async function loadVersion(id: string): Promise<PortfolioV4 | null> {
   const all = await readAll(await openDb());

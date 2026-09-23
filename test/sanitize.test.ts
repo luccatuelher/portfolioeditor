@@ -23,6 +23,12 @@ describe('sanitizeHtml (ingestão de HTML não confiável)', () => {
   it('remove iframe e style', () => {
     expect(sanitizeHtml('<iframe src="evil"></iframe><style>body{}</style>ok')).toBe('ok');
   });
+  it('remover uma tag do meio não cola os pedaços numa tag nova', () => {
+    for (const evil of ['<<x>img src=x onerror=alert(1)>', '<<<x>x>img src=x onerror=alert(1)>', '<scr<!-- -->ipt>alert(1)</script>', '<img src=x onerror=alert(1)']) {
+      const out = sanitizeHtml(evil);
+      expect(out, evil).not.toMatch(/<(img|script)/i);
+    }
+  });
 });
 
 describe('migrate sanitiza backup malicioso', () => {

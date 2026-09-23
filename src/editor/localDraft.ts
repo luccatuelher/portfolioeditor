@@ -1,5 +1,7 @@
 import { openDb, STORE_DRAFTS } from '../assets/assetStore';
 import type { PortfolioV4 } from '../schema/v4';
+import { collectAssetIds } from './backup';
+import { loadVersionDocs } from './versions';
 
 /**
  * Rascunho local do EDITOR no IndexedDB.
@@ -76,6 +78,27 @@ export async function saveRescueCopy(raw: unknown): Promise<void> {
 export async function loadRescueCopy(): Promise<{ doc: unknown; savedAt: number } | undefined> {
   const db = await openDb();
   return get(db, RESCUE_KEY);
+}
+
+/**
+ * Poda o mapa de imagens ao abrir o editor: fica o que o documento, alguma
+ * versão salva ou a cópia de resgate ainda usam. Durante a sessão o mapa só
+ * cresce (o desfazer precisa das imagens trocadas); aqui ele volta ao tamanho
+ * do que pode ser pedido de novo. Se não der para ler as versões, não poda
+ * nada — sobrar imagem custa espaço, faltar custa trabalho.
+ */
+export async function manterImagensEmUso(doc: PortfolioV4, assets: Record<string, string>): Promise<Record<string, string>> {
+  let fontes: unknown[];
+  try {
+    fontes = [doc, ...(await loadVersionDocs()), (await loadRescueCopy())?.doc];
+  } catch {
+    return assets;
+  }
+  const usados = new Set<string>();
+  for (const f of fontes) collectAssetIds(f, usados);
+  const out: Record<string, string> = {};
+  for (const id of usados) if (assets[id]) out[id] = assets[id];
+  return out;
 }
 
 export async function clearLocalDraft(): Promise<void> {

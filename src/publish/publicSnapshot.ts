@@ -1,5 +1,5 @@
 import { safeClone } from '../core/access';
-import type { AssetMeta, BlogItem, GalleryItem, PortfolioV4, ProjectItem, SketchItem } from '../schema/v4';
+import type { AssetMeta, BlogItem, GalleryItem, PortfolioV4, ProjectItem, Section, SketchItem } from '../schema/v4';
 
 /**
  * Separa o documento em conteúdo PÚBLICO (visibility 'public') e conteúdo NDA
@@ -28,33 +28,43 @@ function collectAssetIds(node: unknown, out: Set<string>): void {
   }
 }
 
+/**
+ * Só blocos públicos saem do editor. O site esconde os demais na tela, mas o
+ * que está nos dados vai inteiro para o código da página — um bloco marcado
+ * NDA dentro de um projeto público seria lido por qualquer um no "ver código".
+ */
+function soBlocosPublicos(sections: Section[]): Section[] {
+  return sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => b.visibility === 'public') }));
+}
+
 export function publicSnapshot(input: PortfolioV4): PublicResult {
   const d = safeClone(input);
 
   const splitPublic = <T extends { visibility: string }>(items: T[]): T[] => items.filter((i) => i.visibility === 'public');
   const splitNda = <T extends { visibility: string }>(items: T[]): T[] => items.filter((i) => i.visibility === 'nda');
+  const limparSecoes = <T extends { sections: Section[] }>(items: T[]): T[] => items.map((it) => ({ ...it, sections: soBlocosPublicos(it.sections) }));
 
   const nda: NdaBundle = {
-    projects: splitNda(d.collections.projects),
-    blog: splitNda(d.collections.blog),
+    projects: limparSecoes(splitNda(d.collections.projects)),
+    blog: limparSecoes(splitNda(d.collections.blog)),
     gallery: splitNda(d.collections.gallery),
     sketches: splitNda(d.collections.sketches),
   };
 
   d.collections = {
-    projects: splitPublic(d.collections.projects),
-    blog: splitPublic(d.collections.blog),
+    projects: limparSecoes(splitPublic(d.collections.projects)),
+    blog: limparSecoes(splitPublic(d.collections.blog)),
     gallery: splitPublic(d.collections.gallery),
     sketches: splitPublic(d.collections.sketches),
   };
 
   // Páginas: mantém a página NDA (só casca: título + lista 'nda', sem itens —
-  // estes vão cifrados) e remove blocos não-públicos.
+  // estes vão cifrados), descarta as páginas em rascunho e remove blocos
+  // não-públicos.
   d.pages = d.pages
-    .map((p) => ({
-      ...p,
-      sections: p.sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => b.visibility === 'public') })),
-    }));
+    // (A Home e os modelos de detalhe ficam sempre: sem eles o site não abre.)
+    .filter((p) => p.visibility !== 'draft' || p.id === 'home' || p.kind === 'template')
+    .map((p) => ({ ...p, sections: soBlocosPublicos(p.sections) }));
 
   // Poda assets: mantém só os referenciados pelo conteúdo público.
   const used = new Set<string>();

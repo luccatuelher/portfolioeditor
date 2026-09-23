@@ -817,8 +817,15 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
     }
     case 'button': {
       const c = block.content;
+      // Sem link, o botão não leva a lugar nenhum: no site ele não aparece (ver
+      // SectionView); no editor aparece riscado, como a rede social sem link.
+      if (botaoSemLink(block)) {
+        return editing
+          ? wrap(<span className={`btn btn-${c.variant} sem-link`} title="Sem link — preencha no inspector">{pick(c.label, lang)}</span>)
+          : null;
+      }
       return wrap(
-        <a className={`btn btn-${c.variant}`} href={c.href || '#'} {...(c.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})} onClick={editing ? (e) => e.preventDefault() : undefined}>
+        <a className={`btn btn-${c.variant}`} href={c.href} {...(c.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})} onClick={editing ? (e) => e.preventDefault() : undefined}>
           {pick(c.label, lang)}
         </a>,
       );
@@ -830,12 +837,20 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
   }
 }
 
+/** Botão cujo link está vazio ou é só "#": clicar não levaria a lugar nenhum. */
+export function botaoSemLink(b: Block): boolean {
+  if (b.type !== 'button') return false;
+  const h = b.content.href.trim();
+  return !h || h === '#';
+}
+
 // ------------------------------------------------------------------- seção
 export function SectionView({ section, primeira }: { section: Section; primeira?: boolean }): React.ReactElement | null {
   const { editing } = useRender();
   const width = section.style.width ?? 'normal';
   // Posição de cada bloco (linhas × colunas, com pilhas) — só dos que aparecem.
-  const shown = section.blocks.filter((b) => editing || b.visibility === 'public');
+  // (Fora do editor, um botão sem link também não aparece: não ocupa lugar na linha.)
+  const shown = section.blocks.filter((b) => editing || (b.visibility === 'public' && !botaoSemLink(b)));
   if (!editing && shown.length === 0) return null;
   const { places, rows } = layoutGrid(shown);
   // A sobra de cada linha muda de tela para tela: no celular o texto ocupa a
