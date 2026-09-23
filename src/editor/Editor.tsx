@@ -1035,9 +1035,13 @@ function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onIm
     }
   };
 
-  // Quantos itens confidenciais existem (0 = nem pergunta a senha).
-  const itensNda = (['projects', 'blog', 'gallery', 'sketches'] as const)
-    .reduce((n, k) => n + doc.state.collections[k].filter((i) => i.visibility === 'nda').length, 0);
+  // Quantos itens confidenciais existem (0 = nem pergunta a senha): itens NDA
+  // e blocos NDA soltos em páginas e itens públicos (vão cifrados também).
+  const blocosNda = (secs: Section[]): number => secs.reduce((n, s) => n + s.blocks.filter((b) => b.visibility === 'nda').length, 0);
+  const itensNda =
+    (['projects', 'blog', 'gallery', 'sketches'] as const).reduce((n, k) => n + doc.state.collections[k].filter((i) => i.visibility === 'nda').length, 0) +
+    doc.state.pages.filter((p) => p.visibility !== 'draft' || p.id === 'home' || p.kind === 'template').reduce((n, p) => n + blocosNda(p.sections), 0) +
+    [...doc.state.collections.projects, ...doc.state.collections.blog].filter((i) => i.visibility === 'public').reduce((n, i) => n + blocosNda(i.sections), 0);
 
   // Uma falha ao gerar (cifrar o NDA, montar o arquivo) não pode ser silêncio:
   // o botão parecia simplesmente não fazer nada.

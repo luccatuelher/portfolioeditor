@@ -1,7 +1,7 @@
 import type { MigratedAsset } from '../migrate/migrate';
 import type { PortfolioV4 } from '../schema/v4';
 import { encryptNda, type EncryptedNda } from './nda';
-import { publicSnapshot, type NdaBundle } from './publicSnapshot';
+import { ndaCount, publicSnapshot, type NdaBundle } from './publicSnapshot';
 import { repairDoc } from '../migrate/repair';
 
 export interface PublishPayload {
@@ -45,7 +45,7 @@ export async function buildPublishPayload(
     }
   }
 
-  const hasNda = nda.projects.length + nda.blog.length + nda.gallery.length + nda.sketches.length > 0;
+  const hasNda = ndaCount(nda) > 0;
   let ndaBlob: EncryptedNda | null = null;
   if (hasNda && ndaPassword) {
     // Inclui os data URLs dos assets NDA dentro do bundle cifrado.

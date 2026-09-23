@@ -46,6 +46,41 @@ test.describe.serial('F7 — site publicado (self-contained)', () => {
     await expect(page.locator('.project-card', { hasText: 'Projeto B' })).toHaveCount(0);
   });
 
+  test('bloco NDA solto: fora do código público, volta no mesmo lugar depois da senha', async ({ page }) => {
+    await page.route(/youtube|youtu\.be|vimeo|speakerdeck|ytimg/, (r) => r.abort());
+    await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
+    const titulo = page.locator('.editor-canvas main .block-heading').first();
+    const id = (await titulo.getAttribute('data-block-id'))!;
+    const vizinhoAntes = await titulo.evaluate((el) => el.previousElementSibling?.getAttribute('data-block-id') ?? null);
+    await titulo.click();
+    await page.locator('.insp-tab', { hasText: 'Visibilidade' }).click();
+    await page.locator('.insp-body select').selectOption('nda');
+    await expect(page.locator('.insp-body .insp-note').first()).toContainText('senha');
+
+    const [download] = await Promise.all([page.waitForEvent('download'), page.locator('.tb-btn', { hasText: 'Backup' }).click()]);
+    const backupPath = resolve(tmpdir(), `portfolio-nda-bloco-${Date.now()}.json`);
+    await download.saveAs(backupPath);
+    publish({ PUBLISH_INPUT: backupPath, PUBLISH_NDA_PASSWORD: 'segredo-longo-123' });
+
+    // Público: nem o id do bloco está no arquivo (vai cifrado).
+    const [dados] = readFileSync(resolve('dist/site.html'), 'utf8').match(/window\.__PORTFOLIO_DATA__[^<]*/) ?? [''];
+    expect(dados.length).toBeGreaterThan(100);
+    expect(dados).not.toContain(id);
+
+    await page.goto(DIST, { waitUntil: 'load' });
+    await expect(page.locator(`[data-block-id="${id}"]`)).toHaveCount(0);
+    await page.locator('.site-header nav .nav-nda').click();
+    await page.locator('.nda-unlock input').fill('segredo-longo-123');
+    await page.locator('.nda-unlock button').click();
+    await expect(page.locator('.nda-unlock')).toHaveCount(0);
+
+    // Desbloqueado: o título volta à Home, no mesmo lugar.
+    await page.locator('.site-header a.site-header-left').click();
+    const volta = page.locator(`[data-block-id="${id}"]`);
+    await expect(volta).toBeVisible();
+    expect(await volta.evaluate((el) => el.previousElementSibling?.getAttribute('data-block-id') ?? null)).toBe(vizinhoAntes);
+  });
+
   test('ciclo completo: exportar backup do editor → publicar esse backup', async ({ page }) => {
     await page.goto('/editor.html', { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);

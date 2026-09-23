@@ -6,7 +6,7 @@ import type { AssetResolver } from '../renderer/context';
 import { Site } from '../renderer/Site';
 import { ErrorBoundary } from '../renderer/ErrorBoundary';
 import { decryptNda, type EncryptedNda } from '../publish/nda';
-import type { NdaBundle } from '../publish/publicSnapshot';
+import { mergeNda, type NdaBundle } from '../publish/publicSnapshot';
 import type { PortfolioV4 } from '../schema/v4';
 import { repairDoc } from '../migrate/repair';
 
@@ -24,20 +24,6 @@ if (repaired.fixes.length) console.warn('[site] dados ajustados:', repaired.fixe
 const publicData: PortfolioV4 = repaired.doc ?? (window.__PORTFOLIO_DATA__ as PortfolioV4);
 const assets: Record<string, string> = { ...(window.__ASSETS__ ?? {}) };
 const resolver: AssetResolver = (ref) => (ref.assetId ? assets[ref.assetId] ?? '' : ref.url ?? '');
-
-function mergeNda(base: PortfolioV4, bundle: NdaBundle): PortfolioV4 {
-  // Após desbloqueio, os itens entram no documento mantendo visibility 'nda':
-  // só aparecem nas listas NDA (página confidencial) e nas próprias páginas de detalhe.
-  return {
-    ...base,
-    collections: {
-      projects: [...base.collections.projects, ...bundle.projects],
-      blog: [...base.collections.blog, ...bundle.blog],
-      gallery: [...base.collections.gallery, ...bundle.gallery],
-      sketches: [...base.collections.sketches, ...bundle.sketches],
-    },
-  };
-}
 
 function App(): React.ReactElement {
   const [data, setData] = useState<PortfolioV4>(publicData);

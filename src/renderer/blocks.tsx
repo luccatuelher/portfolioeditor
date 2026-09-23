@@ -5,7 +5,7 @@ import { ErrorBoundary } from './ErrorBoundary';
 import type { Block, GalleryItem, HomePreview, ImageRef, ProjectItem, Section, SketchItem } from '../schema/v4';
 import { blockLabel, effectivePreview, projectBlocks } from './preview';
 import type { BlogItem } from '../schema/v4';
-import { RenderContext, useRender, type Lang } from './context';
+import { RenderContext, useRender, type Lang, type RenderContextValue } from './context';
 import { styleVars } from './css';
 import { pick, RichText } from './text';
 import { sanitizeRich } from '../core/sanitizeHtml';
@@ -138,6 +138,15 @@ function itemWidth(item: { width?: number; span?: number }, cols: number): numbe
 /** Atributos de arrastar para itens de coleção (reordenar no canvas). */
 function itemDrag(editing: boolean, coll: string, id: string): Record<string, string | boolean> {
   return editing ? { draggable: true, 'data-item-coll': coll, 'data-item-id': id } : {};
+}
+
+/**
+ * O visitante vê este bloco? Público sempre; NDA só depois que a senha da
+ * área NDA desbloqueou o site (antes disso ele nem está nos dados publicados).
+ * Rascunho, nunca.
+ */
+export function blocoNoSite(b: { visibility: string }, nda: RenderContextValue['nda']): boolean {
+  return b.visibility === 'public' || (b.visibility === 'nda' && !!nda && !nda.locked);
 }
 
 /** Classe de destaque quando o item está selecionado no editor. */
@@ -324,7 +333,7 @@ function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () 
    */
   const visiveis = pv.items.filter((it) => {
     const bl = byId.get(it.ref);
-    return bl && (editing || bl.visibility === 'public');
+    return bl && (editing || blocoNoSite(bl, ctx.nda));
   });
   const embeds = visiveis.filter((it) => byId.get(it.ref)?.type === 'embed');
   const celulas: { ref: string; span: number; carrossel?: Block[] }[] = [];
@@ -402,7 +411,7 @@ function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () 
             );
           }
           const bl = byId.get(it.ref);
-          if (!bl || (!editing && bl.visibility !== 'public')) return null;
+          if (!bl || (!editing && !blocoNoSite(bl, ctx.nda))) return null;
           return (
             <div
               key={it.ref}
@@ -713,8 +722,8 @@ function faltaTraduzir(block: Block, lang: 'pt' | 'en'): boolean {
 }
 
 export function BlockView({ block, place, sobra, topo }: { block: Block; place?: Placement; sobra?: { tablet: number | null; mobile: number | null }; topo?: boolean }): React.ReactElement | null {
-  const { lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan } = useRender();
-  if (!editing && block.visibility !== 'public') return null;
+  const { lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan, nda } = useRender();
+  if (!editing && !blocoNoSite(block, nda)) return null;
 
   const bgToken = block.style?.bg;
   const rm = block.responsive?.mobile;
@@ -889,11 +898,11 @@ export function botaoSemLink(b: Block): boolean {
 
 // ------------------------------------------------------------------- seção
 export function SectionView({ section, primeira }: { section: Section; primeira?: boolean }): React.ReactElement | null {
-  const { editing } = useRender();
+  const { editing, nda } = useRender();
   const width = section.style.width ?? 'normal';
   // Posição de cada bloco (linhas × colunas, com pilhas) — só dos que aparecem.
   // (Fora do editor, um botão sem link também não aparece: não ocupa lugar na linha.)
-  const shown = section.blocks.filter((b) => editing || (b.visibility === 'public' && !botaoSemLink(b)));
+  const shown = section.blocks.filter((b) => editing || (blocoNoSite(b, nda) && !botaoSemLink(b)));
   if (!editing && shown.length === 0) return null;
   const { places, rows } = layoutGrid(shown);
   // A sobra de cada linha muda de tela para tela: no celular o texto ocupa a

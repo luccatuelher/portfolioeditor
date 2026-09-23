@@ -1,5 +1,5 @@
 import type { BlogItem, I18n, Page, ProjectItem } from '../schema/v4';
-import { SectionView } from './blocks';
+import { blocoNoSite, SectionView } from './blocks';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useRender } from './context';
 import { pick } from './text';
@@ -26,7 +26,7 @@ const META_ORDER = ['year', 'client', 'role', 'category', 'skills', 'contributio
 
 /** Renderiza uma página estática, ou o detalhe de um item numa página template. */
 export function PageView({ page, item }: { page: Page; item?: ProjectItem | BlogItem }): React.ReactElement {
-  const { lang, data } = useRender();
+  const { lang, data, nda } = useRender();
 
   if (page.kind === 'template' && item) {
     const isProject = 'meta' in item;
@@ -61,7 +61,7 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
 
   // Uma página precisa de exatamente um h1. Se nenhum título do conteúdo é nível 1,
   // entra um invisível com o nome da página — não muda nada na tela.
-  const temH1 = page.sections.some((s) => s.blocks.some((bl) => bl.type === 'heading' && (bl.content.level ?? 2) === 1 && bl.visibility === 'public'));
+  const temH1 = page.sections.some((s) => s.blocks.some((bl) => bl.type === 'heading' && (bl.content.level ?? 2) === 1 && blocoNoSite(bl, nda)));
   // Na Home, o h1 é quem o site é — não a palavra "Home".
   const h1 = page.id === 'home' ? [pick(data.site.name, lang), pick(data.site.role, lang)].filter(Boolean).join(' — ') : pick(page.title, lang);
 

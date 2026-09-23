@@ -133,10 +133,15 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'visibility', label: 'Visibilidade' },
 ];
 
+/** Existe, em alguma página publicada, a lista NDA (onde o visitante digita a senha)? */
+function temListaNda(d: DocApi['state']): boolean {
+  return d.pages.some((p) => p.visibility !== 'draft' && p.sections.some((s) => s.blocks.some((b) => b.type === 'collection' && b.content.filter === 'nda' && b.visibility === 'public')));
+}
+
 const VIS: { value: Visibility; label: string }[] = [
   { value: 'public', label: 'Público' },
-  { value: 'draft', label: 'Rascunho' },
-  { value: 'nda', label: 'NDA' },
+  { value: 'draft', label: 'Rascunho (só no editor)' },
+  { value: 'nda', label: 'NDA (só com a senha)' },
 ];
 
 export type UploadImage = (file: File) => Promise<string>;
@@ -596,9 +601,21 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
         {tab === 'layout' && <LayoutTab doc={doc} block={block} refBlock={selection.ref} />}
         {tab === 'style' && <StyleTab doc={doc} block={block} refBlock={selection.ref} />}
         {tab === 'visibility' && (
-          <Row label="Visibilidade">
-            <SelectInput value={block.visibility} onChange={(v) => doc.updateBlock(selection.ref, (b) => void (b.visibility = v))} options={VIS} />
-          </Row>
+          <>
+            <Row label="Visibilidade">
+              <SelectInput value={block.visibility} onChange={(v) => doc.updateBlock(selection.ref, (b) => void (b.visibility = v))} options={VIS} />
+            </Row>
+            <div className="insp-note">
+              {block.visibility === 'public'
+                ? 'Aparece para todo mundo.'
+                : block.visibility === 'draft'
+                  ? 'Fica só aqui no editor: não vai para o site publicado.'
+                  : 'Vai cifrado no site e aparece neste mesmo lugar depois que o visitante digita a senha da área NDA. Antes disso, nem o código da página mostra que ele existe.'}
+            </div>
+            {block.visibility === 'nda' && !temListaNda(doc.state) ? (
+              <div className="insp-note insp-warn">Nenhuma página tem a lista confidencial (coleção com filtro NDA), que é onde o visitante digita a senha. Sem ela, este elemento não tem como aparecer.</div>
+            ) : null}
+          </>
         )}
       </div>
     </>
