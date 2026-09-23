@@ -136,9 +136,6 @@ textarea.insp-input { resize: vertical; line-height: 1.5; }
 .tiptap-input p { margin: 0 0 0.4em; }
 .tiptap-input:focus { outline: none; }
 
-@media (max-width: 1000px) {
-  .editor-main { grid-template-columns: 200px 1fr 280px; }
-}
 .insp-social { display: flex; gap: 4px; margin-bottom: 6px; align-items: center; }
 .insp-social .insp-input { font-size: 0.72rem; }
 .insp-social-del { background: none; border: none; color: #a09c93; cursor: pointer; padding: 4px; }
@@ -559,3 +556,34 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .crop-rect:focus-visible { outline: 3px solid var(--accent); outline-offset: 0; }
 .crop-hint { margin: 0; font-size: 0.7rem; color: #6f6c64; line-height: 1.5; }
 .crop-hint kbd { font-family: var(--font-mono); font-size: 0.64rem; padding: 0 4px; border: 1px solid #cfcabf; border-bottom-width: 2px; border-radius: 3px; background: #fff; }
+
+/* Painel da direita: o Inspector dentro de um invólucro (para virar gaveta na tela estreita). */
+.editor-right { display: flex; flex-direction: column; min-height: 0; }
+.editor-right > .inspector { flex: 1 1 auto; min-height: 0; }
+.editor-gavetas, .gaveta-fechar, .editor-scrim { display: none; }
+
+/*
+ * Tela estreita (tablet, celular): o canvas fica com a largura toda e os
+ * painéis viram gavetas por cima dele, abertas pela faixa logo abaixo da
+ * barra. Antes, com três colunas fixas, o canvas ficava com ~230px no tablet
+ * em pé e sumia no celular.
+ */
+@media (max-width: 1099px) {
+  .editor-topbar { display: flex; flex-wrap: wrap; row-gap: 6px; }
+  .tb-right { flex-wrap: wrap; margin-left: auto; }
+  .editor-gavetas { display: flex; gap: 8px; padding: 6px 12px; background: #2a2925; flex-shrink: 0; }
+  .editor-gavetas button { flex: 1; min-height: 40px; padding: 6px 10px; border: 1px solid #4a4843; border-radius: 6px; background: none; color: #faf9f7; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .editor-gavetas button.on { background: #faf9f7; color: #1c1b18; border-color: #faf9f7; }
+  .editor-main { grid-template-columns: 1fr; position: relative; overflow: hidden; }
+  .editor-left, .editor-right { position: absolute; top: 0; bottom: 0; z-index: 40; width: min(340px, 88vw); box-shadow: 0 0 40px rgba(0, 0, 0, 0.25); visibility: hidden; transition: transform 0.2s ease, visibility 0s linear 0.2s; }
+  .editor-left { left: 0; transform: translateX(-102%); }
+  .editor-right { right: 0; transform: translateX(102%); background: #f4f2ec; }
+  .gaveta-esquerda .editor-left, .gaveta-direita .editor-right { transform: none; visibility: visible; transition: transform 0.2s ease; }
+  .editor-scrim { display: block; position: absolute; inset: 0; z-index: 30; border: 0; padding: 0; background: rgba(20, 19, 17, 0.35); cursor: pointer; }
+  .gaveta-fechar { display: block; flex-shrink: 0; width: 100%; min-height: 40px; padding: 8px 14px; border: 0; border-bottom: 1px solid #d3cfc6; background: #ebe8e0; color: #5a574f; text-align: right; font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }
+  .gaveta-fechar::before { content: 'Fechar '; }
+  .editor-canvas-wrap { padding: 12px; }
+  /* Toque: nada menor que 40px nos controles da barra e das abas. */
+  .tb-center button, .tb-btn, .left-tabs button, .insp-tab, .insp-lang, .lang-toggle button { min-height: 40px; }
+  .tb-center button { min-width: 40px; }
+}

@@ -3,7 +3,7 @@ import type { Lang, RenderContextValue } from '../renderer/context';
 import { RenderContext } from '../renderer/context';
 import { PageView } from '../renderer/Page';
 import { SiteHeader } from '../renderer/Header';
-import { defaultPreview } from '../renderer/preview';
+import { defaultPreview, TYPE_LABEL } from '../renderer/preview';
 import { DEFAULT_HEADER, headerSpan, type HeaderElement } from '../schema/v4';
 import { detachBlock, placeBlock } from './gridOps';
 import { pick } from '../renderer/text';
@@ -65,6 +65,18 @@ function blobToDataUrl(blob: Blob): Promise<string> {
     r.onerror = () => reject(r.error);
     r.readAsDataURL(blob);
   });
+}
+
+/** Nome curto do que está selecionado, para o botão que abre o Inspector na tela estreita. */
+function rotuloDaSelecao(doc: PortfolioV4, sel: NonNullable<Selection>): string {
+  if (sel.kind === 'block') {
+    const b = findSection(doc, sel.ref)?.blocks.find((x) => x.id === sel.ref.blockId);
+    return (b && TYPE_LABEL[b.type]) || 'Elemento';
+  }
+  if (sel.kind === 'section') return 'Seção';
+  if (sel.kind === 'item') return { projects: 'Projeto', blog: 'Nota', gallery: 'Imagem', sketches: 'Sketch' }[sel.collection];
+  if (sel.kind === 'site') return 'Cabeçalho';
+  return 'Página';
 }
 
 /** Resultado do "Baixar site", para o aviso com os passos de publicação. */
@@ -210,6 +222,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [cropping, setCropping] = useState<{ image: ImageRef; lock?: number; apply: (c: ImageCrop | undefined) => void } | null>(null);
   // Guias de alinhamento: enquanto arrasta, o canvas mostra as 12 colunas da grade.
   const [dragging, setDragging] = useState(false);
+  // Tela estreita (tablet, celular): os painéis viram gavetas por cima do canvas.
+  const [gaveta, setGaveta] = useState<'esquerda' | 'direita' | null>(null);
   const [showVersions, setShowVersions] = useState(false);
   // Quadro de storyboard que o ✎ pediu para editar (destaca o campo dele).
   const [quadroEmFoco, setQuadroEmFoco] = useState<{ blockId: string; idx: number } | null>(null);
@@ -414,6 +428,11 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     // Popup "adicionar bloco" / recortador abertos: só o Esc (fechar) importa aqui.
     if (addMenu || cropping) {
       if (e.key === 'Escape') setAddMenu(null);
+      return;
+    }
+    // Gaveta aberta (tela estreita): o Esc fecha a gaveta antes de mexer na seleção.
+    if (gaveta && e.key === 'Escape' && !typing) {
+      setGaveta(null);
       return;
     }
     // Diálogo aberto (Versões, senha NDA): o teclado é dele. Sem isso, um Delete
@@ -925,8 +944,19 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         </div>
       ) : null}
       {publishNotice ? <AvisoPublicado p={publishNotice} onClose={() => setPublishNotice(null)} /> : null}
-      <div className="editor-main">
+      {/* Só em tela estreita (CSS): abre os painéis, que viram gavetas por cima do canvas. */}
+      <div className="editor-gavetas" role="group" aria-label="Painéis">
+        <button type="button" className={gaveta === 'esquerda' ? 'on' : ''} aria-expanded={gaveta === 'esquerda'} onClick={() => setGaveta((g) => (g === 'esquerda' ? null : 'esquerda'))}>
+          ☰ Páginas e painéis
+        </button>
+        <button type="button" className={gaveta === 'direita' ? 'on' : ''} aria-expanded={gaveta === 'direita'} onClick={() => setGaveta((g) => (g === 'direita' ? null : 'direita'))}>
+          ✎ Editar{selection ? ` · ${rotuloDaSelecao(doc.state, selection)}` : ''}
+        </button>
+      </div>
+      <div className={`editor-main${gaveta ? ` gaveta-${gaveta}` : ''}`}>
+        {gaveta ? <button type="button" className="editor-scrim" aria-label="Fechar painel" onClick={() => setGaveta(null)} /> : null}
         <div className="editor-left">
+          <button type="button" className="gaveta-fechar" aria-label="Fechar painel" onClick={() => setGaveta(null)}>✕</button>
           <div className="left-tabs">
             <button type="button" className={leftTab === 'pages' ? 'active' : ''} onClick={() => setLeftTab('pages')}>Páginas</button>
             <button type="button" className={leftTab === 'layers' ? 'active' : ''} onClick={() => setLeftTab('layers')}>Layers</button>
@@ -970,7 +1000,10 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           </div>
         </div>
 
-        <Inspector doc={doc} selection={selection} onUploadImage={uploadImage} onSelect={setSelection} lang={lang} onLang={setLang} quadroEmFoco={quadroEmFoco} />
+        <div className="editor-right">
+          <button type="button" className="gaveta-fechar" aria-label="Fechar painel" onClick={() => setGaveta(null)}>✕</button>
+          <Inspector doc={doc} selection={selection} onUploadImage={uploadImage} onSelect={setSelection} lang={lang} onLang={setLang} quadroEmFoco={quadroEmFoco} />
+        </div>
       </div>
       <FloatingToolbar fonts={doc.state.theme.fonts} colors={doc.state.theme.colors} />
       {addMenu ? (
