@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { DEFAULT_HEADER, type Block, type BlogItem, type GalleryItem, type HeaderConfig, type ProjectItem, type SketchItem, type Visibility } from '../schema/v4';
+import { DEFAULT_HEADER, type Block, type BlogItem, type GalleryItem, type HeaderConfig, type I18n, type ProjectItem, type SketchItem, type Visibility } from '../schema/v4';
 import { reorderArray } from '../core/array';
 import { computeRowColumns, rowHeadId } from './gridOps';
 import { emptyI18n } from '../core/i18n';
@@ -11,12 +11,35 @@ import { RichI18nInput } from './RichTextEditor';
 import { TYPE_LABEL } from '../renderer/preview';
 import { embedProvider } from '../embed/embedSource';
 import { resolveSpan } from '../renderer/responsive';
+import { CATEGORY_LABEL, projectCategory, type ProjectCategory } from '../core/category';
 
 const PROJECT_META_FIELDS = ['tag', 'year', 'client', 'role', 'category', 'skills', 'contribution', 'credits', 'sequenceLabel', 'storyType', 'processNotes'] as const;
 const META_LABEL: Record<string, string> = {
-  tag: 'Tag', year: 'Ano', client: 'Cliente', role: 'Papel', category: 'Categoria (personal/professional)', skills: 'Competências',
+  tag: 'Tag', year: 'Ano', client: 'Cliente', role: 'Papel', skills: 'Competências',
   contribution: 'Contribuição', credits: 'Créditos', sequenceLabel: 'Sequência', storyType: 'Formato', processNotes: 'Processo',
 };
+/**
+ * Categoria do projeto: escolha fechada, porque é ela que alimenta o filtro
+ * "Profissionais / Pessoais" do site. Um texto antigo que não é nenhuma das
+ * duas aparece como opção própria (avisando que fica fora do filtro) em vez
+ * de ser apagado sem pedir.
+ */
+function CategoryRow({ value, onChange }: { value: I18n | undefined; onChange: (c: ProjectCategory | undefined) => void }): React.ReactElement {
+  const cat = projectCategory(value);
+  const texto = (value?.pt || value?.en || '').trim();
+  const solto = !cat && texto ? texto : '';
+  return (
+    <Row label="Categoria (filtro do site)">
+      <select className="insp-input" aria-label="Categoria" value={cat ?? (solto ? '__texto' : '')} onChange={(e) => { const v = e.target.value; if (v !== '__texto') onChange(v ? (v as ProjectCategory) : undefined); }}>
+        <option value="">— Sem categoria</option>
+        <option value="professional">{CATEGORY_LABEL.professional.pt}</option>
+        <option value="personal">{CATEGORY_LABEL.personal.pt}</option>
+        {solto ? <option value="__texto">“{solto}” — fica fora do filtro</option> : null}
+      </select>
+    </Row>
+  );
+}
+
 const COLL_LABEL: Record<CollectionName, string> = { projects: 'Projeto', blog: 'Nota', gallery: 'Imagem da galeria', sketches: 'Sketch' };
 
 function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc: DocApi; collection: CollectionName; id: string; onUploadImage?: UploadImage; onDeleted: () => void }): React.ReactElement {
@@ -49,9 +72,13 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
         {widthRow('projects', p)}
         <label className="insp-check"><input type="checkbox" checked={p.featured} onChange={(e) => doc.updateItem('projects', id, (it) => void (it.featured = e.target.checked))} /> Destaque na Home</label>
         <div className="insp-sub">Ficha técnica</div>
-        {PROJECT_META_FIELDS.map((f) => (
-          <Row key={f} label={META_LABEL[f] ?? f}><I18nInput value={p.meta[f] ?? emptyI18n()} onChange={(v) => doc.updateItem('projects', id, (it) => { it.meta[f] = v; }, `${id}:${f}`)} /></Row>
-        ))}
+        {PROJECT_META_FIELDS.map((f) =>
+          f === 'category' ? (
+            <CategoryRow key={f} value={p.meta[f]} onChange={(c) => doc.updateItem('projects', id, (it) => { if (c) it.meta[f] = { pt: c, en: c }; else delete it.meta[f]; })} />
+          ) : (
+            <Row key={f} label={META_LABEL[f] ?? f}><I18nInput value={p.meta[f] ?? emptyI18n()} onChange={(v) => doc.updateItem('projects', id, (it) => { it.meta[f] = v; }, `${id}:${f}`)} /></Row>
+          ),
+        )}
       </>
     );
   } else if (collection === 'blog') {

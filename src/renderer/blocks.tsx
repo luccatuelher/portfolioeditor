@@ -10,6 +10,7 @@ import { styleVars } from './css';
 import { pick, RichText } from './text';
 import { sanitizeRich } from '../core/sanitizeHtml';
 import { layoutGrid, type Placement } from './gridLayout';
+import { projectCategory } from '../core/category';
 
 // ----------------------------------------------------------------- primitivos
 function Img({ image, className, eager }: { image: ImageRef; className?: string; eager?: boolean }): React.ReactElement | null {
@@ -509,7 +510,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
     // O filtro fixo vale sempre; os botões do visitante filtram DENTRO dele.
     const byCategory = (f: string | undefined): void => {
       if (f === 'featured') items = items.filter((p) => p.featured);
-      else if (f === 'professional' || f === 'personal') items = items.filter((p) => pick(p.meta['category'], 'pt') === f);
+      else if (f === 'professional' || f === 'personal') items = items.filter((p) => projectCategory(p.meta['category']) === f);
     };
     byCategory(filter);
     // Com filtro fixo de categoria, os botões de categoria não fazem sentido (dariam lista vazia).

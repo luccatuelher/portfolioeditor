@@ -3,6 +3,7 @@ import { SectionView } from './blocks';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useRender } from './context';
 import { pick } from './text';
+import { CATEGORY_LABEL, projectCategory } from '../core/category';
 
 const META_LABELS: Record<string, I18n> = {
   year: { pt: 'Ano', en: 'Year' },
@@ -18,7 +19,7 @@ const META_LABELS: Record<string, I18n> = {
 };
 /** Valores internos (usados nos filtros) exibidos com rótulo legível. */
 const META_VALUES: Record<string, Record<string, I18n>> = {
-  category: { professional: { pt: 'Profissional', en: 'Professional' }, personal: { pt: 'Pessoal', en: 'Personal' } },
+  category: CATEGORY_LABEL,
   storyType: { storyboard: { pt: 'Storyboard', en: 'Storyboard' }, animatic: { pt: 'Animatic', en: 'Animatic' } },
 };
 const META_ORDER = ['year', 'client', 'role', 'category', 'skills', 'contribution', 'credits', 'sequenceLabel', 'storyType', 'processNotes'];
@@ -31,7 +32,9 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
     const isProject = 'meta' in item;
     const meta = isProject ? (item as ProjectItem).meta : {};
     const tag = pick(meta['tag'], lang);
-    const metaRows = META_ORDER.map((k) => ({ k, label: pick(META_LABELS[k], lang), value: pick(META_VALUES[k]?.[pick(meta[k], 'pt')] ?? meta[k], lang) })).filter((r) => r.value);
+    // A categoria aceita o texto livre antigo ("Profissional", "Personal"…) e mostra o rótulo do idioma.
+    const chave = (k: string): string => (k === 'category' ? projectCategory(meta[k]) ?? '' : pick(meta[k], 'pt'));
+    const metaRows = META_ORDER.map((k) => ({ k, label: pick(META_LABELS[k], lang), value: pick(META_VALUES[k]?.[chave(k)] ?? meta[k], lang) })).filter((r) => r.value);
     return (
       <article className="detail" data-page-id={page.id}>
         <header className="detail-header">
