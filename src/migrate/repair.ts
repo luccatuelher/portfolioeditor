@@ -91,6 +91,25 @@ function desduplicarIds(doc: PortfolioV4, fixes: string[]): void {
   for (const nome of ['projects', 'blog', 'gallery', 'sketches'] as const) {
     for (const item of doc.collections[nome]) item.id = unico(item.id, 'item');
   }
+  // Seções e blocos dos projetos e notas também. Uma cópia de projeto feita
+  // antes desta correção dividia esses ids com o original; o bloco renomeado
+  // leva junto a referência da prévia do projeto (que aponta blocos pelo id).
+  for (const item of [...doc.collections.projects, ...doc.collections.blog]) {
+    const renomeados = new Map<string, string>();
+    const doItem = new Set<string>();
+    for (const s of item.sections) {
+      s.id = unico(s.id, 'seção');
+      for (const b of s.blocks) {
+        const antigo = b.id;
+        b.id = unico(antigo, 'elemento');
+        // Repetido DENTRO do mesmo item: a prévia continua apontando o primeiro.
+        if (b.id !== antigo && !doItem.has(antigo)) renomeados.set(antigo, b.id);
+        doItem.add(antigo);
+      }
+    }
+    const pv = 'preview' in item ? item.preview : undefined;
+    if (pv && renomeados.size) for (const it of pv.items) it.ref = renomeados.get(it.ref) ?? it.ref;
+  }
 }
 
 export function repairDoc(raw: unknown): RepairResult {

@@ -1,9 +1,44 @@
 import { bi, emptyI18n } from '../core/i18n';
-import type { Block, BlockType } from '../schema/v4';
+import type { Block, BlockType, Section } from '../schema/v4';
 
-function newId(): string {
+/** Id novo de bloco (`b_…`); seções e itens usam o mesmo sorteio com outro prefixo. */
+export function newBlockId(): string {
   const rnd = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
   return `b_${rnd.replace(/-/g, '').slice(0, 12)}`;
+}
+const newId = newBlockId;
+
+export function newSectionId(): string {
+  return `s_${newBlockId().slice(2)}`;
+}
+
+/**
+ * Dá ids novos a uma seção copiada e aos blocos dela (no lugar). Devolve
+ * antigo → novo dos blocos, para quem guarda referências a eles (a prévia do
+ * projeto na Home aponta blocos pelo id).
+ */
+export function renewSectionIds(section: Section): Map<string, string> {
+  const map = new Map<string, string>();
+  section.id = newSectionId();
+  for (const b of section.blocks) {
+    const novo = newBlockId();
+    if (!map.has(b.id)) map.set(b.id, novo);
+    b.id = novo;
+  }
+  return map;
+}
+
+/**
+ * Ids novos para a cópia de um item de coleção (colar, Ctrl+D): o item, as
+ * seções e os blocos. Sem isso a cópia de um projeto dividia os ids de seção
+ * e bloco com o original. A prévia do projeto é remapeada junto.
+ */
+export function renewItemIds<T extends { id: string; sections?: Section[]; preview?: { items: { ref: string }[] } }>(item: T, collection: string): T {
+  item.id = `${collection.slice(0, 4)}_${newBlockId().slice(2)}`;
+  const map = new Map<string, string>();
+  for (const s of item.sections ?? []) for (const [a, b] of renewSectionIds(s)) if (!map.has(a)) map.set(a, b);
+  for (const it of item.preview?.items ?? []) it.ref = map.get(it.ref) ?? it.ref;
+  return item;
 }
 
 /** Bloco padrão para inserção pela paleta de "adicionar bloco". */

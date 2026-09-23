@@ -77,6 +77,28 @@ describe('robustez do rascunho salvo', () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
+  it('cópia de projeto com os ids de seção e bloco do original é separada, e a prévia acompanha', () => {
+    const d = base();
+    const original = d.collections.projects.find((p: any) => p.sections.some((s: any) => s.blocks.length));
+    const copia = JSON.parse(JSON.stringify(original));
+    copia.id = `${original.id}-copia`;
+    const bloco = copia.sections.flatMap((s: any) => s.blocks)[0];
+    copia.preview = { items: [{ ref: bloco.id, span: 6 }] };
+    d.collections.projects.push(copia);
+
+    const r = consertar(d);
+    const todos = [...r.pages.flatMap((p) => p.sections), ...r.collections.projects.flatMap((p) => p.sections), ...r.collections.blog.flatMap((b) => b.sections)];
+    const secoes = todos.map((s) => s.id);
+    const blocosIds = todos.flatMap((s) => s.blocks.map((b) => b.id));
+    expect(new Set(secoes).size).toBe(secoes.length);
+    expect(new Set(blocosIds).size).toBe(blocosIds.length);
+    // A prévia da cópia aponta o bloco DA CÓPIA, com o id novo.
+    const c = r.collections.projects.find((p) => p.id === copia.id)!;
+    const ref = c.preview!.items[0]!.ref;
+    expect(ref).not.toBe(bloco.id);
+    expect(c.sections.flatMap((s) => s.blocks).some((b) => b.id === ref)).toBe(true);
+  });
+
   it('bloco de tipo desconhecido sai sozinho, sem levar a seção junto', () => {
     const d = base();
     d.pages[0].sections[0].blocks.push({ id: 'x', type: 'carrossel-3d', visibility: 'public', span: 12, content: {} });

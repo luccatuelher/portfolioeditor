@@ -4,6 +4,7 @@ import type { AssetMeta, Block, Page, PortfolioV4, Section } from '../schema/v4'
 import { findBlock, findSection, getSections, type BlockRef, type CollectionName, type Container, type SectionRef } from './paths';
 import { bi, emptyI18n } from '../core/i18n';
 import { reorderArray } from '../core/array';
+import { newBlockId, newSectionId, renewSectionIds } from './blockFactory';
 import { columnIds, detachBlock, placeBlock, rowHeadId, unstackBlock, type DropZone } from './gridOps';
 
 export interface DocApi {
@@ -63,11 +64,6 @@ export interface DocApi {
  */
 function cloneDraft<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function newBlockId(): string {
-  const rnd = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
-  return `b_${rnd.replace(/-/g, '').slice(0, 12)}`;
 }
 
 /** Retira um bloco de qualquer seção (reequilibrando a linha que ele deixou). */
@@ -253,7 +249,7 @@ export function useDocument(initial: PortfolioV4): DocApi {
       }, groupKey ? { groupKey } : undefined);
     },
     addSection(container, atIndex) {
-      const id = `s_${newBlockId().slice(2)}`;
+      const id = newSectionId();
       let ok = false;
       store.update((d) => {
         const secs = getSections(d, container);
@@ -293,8 +289,7 @@ export function useDocument(initial: PortfolioV4): DocApi {
         const i = secs?.findIndex((s) => s.id === sectionId) ?? -1;
         if (!secs || i < 0) return;
         const clone = cloneDraft(secs[i]!);
-        clone.id = `s_${newBlockId().slice(2)}`;
-        clone.blocks.forEach((b) => (b.id = newBlockId()));
+        renewSectionIds(clone);
         secs.splice(i + 1, 0, clone);
       });
     },
@@ -317,7 +312,7 @@ export function useDocument(initial: PortfolioV4): DocApi {
           title: { pt: title || 'Nova página', en: title || 'New page' },
           kind: 'static',
           visibility: 'public',
-          sections: [{ id: `s_${newBlockId().slice(2)}`, style: { width: 'normal' }, blocks: [] }],
+          sections: [{ id: newSectionId(), style: { width: 'normal' }, blocks: [] }],
         });
         d.site.nav.push(id);
       });
@@ -332,10 +327,7 @@ export function useDocument(initial: PortfolioV4): DocApi {
         if (!src || src.kind !== 'static') return;
         const copy = cloneDraft(src);
         copy.id = id;
-        copy.sections.forEach((s) => {
-          s.id = `s_${newBlockId().slice(2)}`;
-          s.blocks.forEach((b) => (b.id = newBlockId()));
-        });
+        copy.sections.forEach(renewSectionIds);
         copy.title = { pt: `${src.title.pt} (cópia)`, en: `${src.title.en} (copy)` };
         let slug = `${src.slug || 'pagina'}-copia`;
         let n = 1;

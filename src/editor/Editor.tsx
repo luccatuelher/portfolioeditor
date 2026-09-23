@@ -22,7 +22,7 @@ import { importImage } from '../assets/importImage';
 import { makeFavicon } from '../assets/favicon';
 import { assetIdFromContent } from '../core/ids';
 import { emptyI18n } from '../core/i18n';
-import { makeDefaultBlock } from './blockFactory';
+import { makeDefaultBlock, newBlockId, renewItemIds, renewSectionIds } from './blockFactory';
 import { FloatingToolbar } from './FloatingToolbar';
 import { sanitizeInlineHtml } from './sanitize';
 import type { Block, BlogItem, Page, PortfolioV4, ProjectItem, Section } from '../schema/v4';
@@ -65,11 +65,6 @@ function blobToDataUrl(blob: Blob): Promise<string> {
     r.onerror = () => reject(r.error);
     r.readAsDataURL(blob);
   });
-}
-
-function newBlockId(): string {
-  const rnd = globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2);
-  return `b_${rnd.replace(/-/g, '').slice(0, 12)}`;
 }
 
 type Clip =
@@ -336,8 +331,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const pasteClip = (clip: Clip): void => {
     const d = docRef.current;
     if (clip.kind === 'item') {
-      const it = structuredClone(clip.item);
-      it.id = `${clip.coll.slice(0, 4)}_${newBlockId().slice(2)}`;
+      const it = renewItemIds(structuredClone(clip.item), clip.coll);
       const after = selection?.kind === 'item' && selection.collection === clip.coll ? selection.itemId : clip.item.id;
       d.insertItem(clip.coll, it, after);
       setSelection({ kind: 'item', collection: clip.coll, itemId: it.id });
@@ -347,8 +341,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     const selSec = selection && (selection.kind === 'block' || selection.kind === 'section') && sameContainer(selection.ref.container, container) ? selection.ref.sectionId : undefined;
     if (clip.kind === 'section') {
       const s = structuredClone(clip.section);
-      s.id = `s_${newBlockId().slice(2)}`;
-      s.blocks.forEach((b) => (b.id = newBlockId()));
+      renewSectionIds(s);
       const i = selSec ? secs.findIndex((x) => x.id === selSec) + 1 : secs.length;
       d.insertSection(container, s, i);
       setSelection({ kind: 'section', ref: { container, sectionId: s.id } });
