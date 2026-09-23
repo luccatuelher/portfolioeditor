@@ -63,9 +63,22 @@ function Root(): React.ReactElement {
 
   if (!state) return <div style={{ padding: 40, fontFamily: 'system-ui', color: '#5a574f' }}>Carregando editor…</div>;
 
+  /**
+   * Importar backup (e restaurar versão, que passa por aqui) SOMA as imagens em
+   * vez de trocar o conjunto.
+   *
+   * Uma versão guarda só o documento — as imagens ficam no mapa do editor. Se
+   * importar um backup apagasse as imagens que ele não traz, restaurar uma
+   * versão anterior mostraria os elementos sem imagem nenhuma, sem aviso. O
+   * custo de somar é espaço no navegador; o de trocar seria trabalho perdido.
+   * No site publicado entram só as imagens realmente usadas.
+   */
   const onImport = (b: Backup): void => {
-    void saveLocalDraft(b.doc, b.assets).catch(() => {});
-    setState((s) => ({ doc: b.doc, assets: b.assets, version: (s?.version ?? 0) + 1, persist: true }));
+    setState((s) => {
+      const assets = { ...(s?.assets ?? {}), ...b.assets };
+      void saveLocalDraft(b.doc, assets).catch(() => {});
+      return { doc: b.doc, assets, version: (s?.version ?? 0) + 1, persist: true };
+    });
   };
   // Adiciona imagem sem remontar (mantém seleção/undo).
   const onAddAsset = (id: string, dataUrl: string): void => setState((s) => (s ? { ...s, assets: { ...s.assets, [id]: dataUrl } } : s));
