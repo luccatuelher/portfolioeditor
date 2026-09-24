@@ -1,4 +1,4 @@
-import type { Block, BlogItem, I18n, PortfolioV4, ProjectItem, Section } from '../schema/v4';
+import type { Block, BlogItem, I18n, ImageRef, PortfolioV4, ProjectItem, Section } from '../schema/v4';
 
 /**
  * Os textos bilíngues do documento, num lugar só.
@@ -32,6 +32,8 @@ export interface CampoDoBloco {
   campo: CampoId;
   rotulo: string;
   valor: I18n;
+  /** Campo de descrição (alt): a imagem que ele descreve — a lista de imagens sem descrição sai daqui. */
+  imagem?: { ref: ImageRef; nome: string };
 }
 
 /** Os textos bilíngues que um bloco mostra no site. */
@@ -40,13 +42,14 @@ export function camposDoBloco(b: Block): CampoDoBloco[] {
     case 'heading': return [{ campo: 'content.text', rotulo: 'Título', valor: b.content.text }];
     case 'text': return [{ campo: 'content.html', rotulo: 'Texto', valor: b.content.html }];
     case 'button': return [{ campo: 'content.label', rotulo: 'Botão', valor: b.content.label }];
-    case 'image': return [{ campo: 'content.image.alt', rotulo: 'Descrição da imagem', valor: b.content.image.alt }];
+    case 'image': return [{ campo: 'content.image.alt', rotulo: 'Descrição da imagem', valor: b.content.image.alt, imagem: { ref: b.content.image, nome: 'Imagem' } }];
     // Nome da aba do vídeo no carrossel da prévia do projeto.
     case 'embed': return b.content.label ? [{ campo: 'content.label', rotulo: 'Nome do vídeo', valor: b.content.label }] : [];
-    case 'storyboard': return b.content.frames.map((f, i) => ({ campo: `frames.${i}.alt` as const, rotulo: `Quadro ${i + 1} (descrição)`, valor: f.alt }));
+    case 'storyboard': return b.content.frames.map((f, i) => ({ campo: `frames.${i}.alt` as const, rotulo: `Quadro ${i + 1} (descrição)`, valor: f.alt, imagem: { ref: f, nome: `Quadro ${i + 1} do storyboard` } }));
     case 'contact': return [
       { campo: 'content.heading', rotulo: 'Contato (título)', valor: b.content.heading },
       { campo: 'content.body', rotulo: 'Contato (texto)', valor: b.content.body },
+      ...(b.content.image ? [{ campo: 'content.image.alt' as const, rotulo: 'Foto do Contato (descrição)', valor: b.content.image.alt, imagem: { ref: b.content.image, nome: 'Foto do Contato' } }] : []),
     ];
     default: return [];
   }
@@ -124,10 +127,10 @@ export function camposDeTexto(doc: PortfolioV4): CampoTexto[] {
     const dono: Dono = { tipo: 'item', colecao: 'gallery', itemId: g.id };
     const publicado = g.visibility !== 'draft';
     out.push({ campo: 'caption', rotulo: 'legenda', valor: g.caption, dono, lugar: 'galeria', publicado });
-    out.push({ campo: 'image.alt', rotulo: 'descrição da imagem', valor: g.image.alt, dono, lugar: 'galeria', publicado });
+    out.push({ campo: 'image.alt', rotulo: 'descrição da imagem', valor: g.image.alt, imagem: { ref: g.image, nome: 'Imagem' }, dono, lugar: nome(g.caption) ? `galeria “${nome(g.caption)}”` : 'galeria', publicado });
   }
   for (const s of doc.collections.sketches) {
-    out.push({ campo: 'image.alt', rotulo: 'descrição da imagem', valor: s.image.alt, dono: { tipo: 'item', colecao: 'sketches', itemId: s.id }, lugar: 'sketch', publicado: s.visibility !== 'draft' });
+    out.push({ campo: 'image.alt', rotulo: 'descrição da imagem', valor: s.image.alt, imagem: { ref: s.image, nome: 'Imagem' }, dono: { tipo: 'item', colecao: 'sketches', itemId: s.id }, lugar: 'sketch', publicado: s.visibility !== 'draft' });
   }
   return out;
 }

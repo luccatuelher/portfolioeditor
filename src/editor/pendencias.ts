@@ -1,6 +1,5 @@
-import type { Block, ImageRef, PortfolioV4, Section } from '../schema/v4';
-import { pick } from '../renderer/text';
-import type { Container, Selection } from './paths';
+import type { ImageRef, PortfolioV4 } from '../schema/v4';
+import type { Selection } from './paths';
 import { camposDeTexto, textoLimpo, type CampoId, type Dono } from '../core/camposTexto';
 
 /**
@@ -18,38 +17,26 @@ export interface ImagemSemDescricao {
   quadro?: number;
 }
 
-const temImagem = (r: ImageRef | undefined): boolean => !!r && (!!r.assetId || !!(r.url && r.url.trim()));
-const semDescricao = (r: ImageRef): boolean => temImagem(r) && !r.alt.pt.trim() && !r.alt.en.trim();
+const temImagem = (r: ImageRef): boolean => !!r.assetId || !!(r.url && r.url.trim());
 
-/** As imagens que vão para o site (rascunho não) e ainda não têm descrição. */
+/**
+ * As imagens que vão para o site (rascunho não) e ainda não têm descrição.
+ * Sai da lista única de campos (camposTexto) — o aviso de publicação conta
+ * pela mesma função, e uma imagem nova no schema entra nas duas de uma vez.
+ */
 export function imagensSemDescricao(doc: PortfolioV4): ImagemSemDescricao[] {
   const out: ImagemSemDescricao[] = [];
-  const blocos = (sections: Section[], container: Container, lugar: string): void => {
-    for (const s of sections) {
-      for (const b of s.blocks as Block[]) {
-        if (b.visibility === 'draft') continue;
-        const ref = { container, sectionId: s.id, blockId: b.id };
-        if (b.type === 'image' && semDescricao(b.content.image)) out.push({ onde: `Imagem · ${lugar}`, imagem: b.content.image, alvo: { kind: 'block', ref }, campo: 'content.image.alt' });
-        if (b.type === 'storyboard') {
-          b.content.frames.forEach((f, i) => {
-            if (semDescricao(f)) out.push({ onde: `quadro ${i + 1} do Storyboard · ${lugar}`, imagem: f, alvo: { kind: 'block', ref }, campo: `frames.${i}.alt`, quadro: i });
-          });
-        }
-      }
-    }
-  };
-  for (const p of doc.pages) if (p.visibility !== 'draft') blocos(p.sections, { on: 'page', pageId: p.id }, `página ${pick(p.title, 'pt') || p.slug}`);
-  for (const coll of ['projects', 'blog'] as const) {
-    for (const it of doc.collections[coll]) {
-      if (it.visibility === 'draft') continue;
-      blocos(it.sections, { on: 'item', collection: coll, itemId: it.id }, `${coll === 'projects' ? 'projeto' : 'nota'} “${pick(it.title, 'pt')}”`);
-    }
-  }
-  for (const g of doc.collections.gallery) {
-    if (g.visibility !== 'draft' && semDescricao(g.image)) out.push({ onde: pick(g.caption, 'pt') ? `galeria “${pick(g.caption, 'pt')}”` : 'imagem da galeria', imagem: g.image, alvo: { kind: 'item', collection: 'gallery', itemId: g.id }, campo: 'image.alt' });
-  }
-  for (const s of doc.collections.sketches) {
-    if (s.visibility !== 'draft' && semDescricao(s.image)) out.push({ onde: 'sketch', imagem: s.image, alvo: { kind: 'item', collection: 'sketches', itemId: s.id }, campo: 'image.alt' });
+  for (const c of camposDeTexto(doc)) {
+    if (!c.publicado || !c.imagem || !temImagem(c.imagem.ref)) continue;
+    if (textoLimpo(c.valor.pt) || textoLimpo(c.valor.en)) continue;
+    const quadro = c.campo.match(/^frames\.(\d+)\.alt$/);
+    out.push({
+      onde: `${c.imagem.nome} · ${c.lugar}`,
+      imagem: c.imagem.ref,
+      alvo: selecaoDoDono(c.dono),
+      campo: c.campo,
+      ...(quadro ? { quadro: Number(quadro[1]) } : {}),
+    });
   }
   return out;
 }

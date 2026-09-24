@@ -1,6 +1,6 @@
 import { embedSource } from '../embed/embedSource';
 import type { Block, ImageRef, PortfolioV4 } from '../schema/v4';
-import { textosSemTraducao } from '../editor/pendencias';
+import { imagensSemDescricao, textosSemTraducao } from '../editor/pendencias';
 import { linksDoDocumento, problemaDoLink, type LinkNoDocumento } from '../core/links';
 
 export interface PreflightResult {
@@ -53,7 +53,8 @@ export function arquivosAoLado(data: PortfolioV4): string[] {
 export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): PreflightResult {
   const errors: string[] = [];
   const warnings: string[] = [];
-  let missingAlt = 0;
+  // Mesma lista do painel Dados › Descrição das imagens (sai de camposTexto).
+  const missingAlt = imagensSemDescricao(data).length;
 
   // Compartilhamento: o que aparece quando alguém manda o link no WhatsApp,
   // no LinkedIn ou no X. Imagem embutida (data:) nenhuma rede busca.
@@ -67,13 +68,8 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
     warnings.push('A imagem de compartilhamento está embutida no arquivo — WhatsApp, LinkedIn e X só buscam imagem por endereço http. Use uma URL pública no campo de imagem do SEO.');
   }
 
-  const checkImg = (r: ImageRef): void => {
-    if (hasImg(r) && !r.alt.pt.trim() && !r.alt.en.trim()) missingAlt++;
-  };
   const walkBlock = (b: Block): void => {
-    if (b.type === 'image') checkImg(b.content.image);
-    else if (b.type === 'storyboard') b.content.frames.forEach(checkImg);
-    else if (b.type === 'embed' && b.visibility === 'public' && b.content.ref && !embedSource({ type: b.content.provider, id: b.content.ref })) {
+    if (b.type === 'embed' && b.visibility === 'public' && b.content.ref && !embedSource({ type: b.content.provider, id: b.content.ref })) {
       errors.push(`Embed inválido em um bloco (${b.content.provider}).`);
     }
   };
@@ -95,8 +91,6 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
   for (const b of data.collections.blog.filter((x) => x.visibility === 'public')) {
     for (const s of b.sections) for (const bl of s.blocks) walkBlock(bl);
   }
-  for (const g of data.collections.gallery.filter((x) => x.visibility === 'public')) checkImg(g.image);
-  for (const s of data.collections.sketches.filter((x) => x.visibility === 'public')) checkImg(s.image);
 
   // Links: bloco Contato (legado) e botões — em páginas, projetos e notas publicados.
   const allSections = [

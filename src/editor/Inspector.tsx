@@ -851,6 +851,12 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
               <ImageUploadButton atual={c.image} onPick={(f) => void onUploadImage(f).then((id) => upd(refBlock, (b) => { if (b.type === 'contact') b.content.image = { assetId: id, alt: emptyI18n() }; }))} />
             </Row>
           ) : null}
+          {/* Toda imagem que vai para o site tem descrição — a foto do Contato não tinha onde escrever. */}
+          {c.image ? (
+            <Row label="Descrição da foto (alt)">
+              <I18nInput campo="content.image.alt" value={c.image.alt} onChange={(v) => upd(refBlock, (b) => { if (b.type === 'contact' && b.content.image) b.content.image.alt = v; }, gk('calt'))} />
+            </Row>
+          ) : null}
           <div className="insp-sub">Redes sociais</div>
           <RedesDatalist id="redes-sociais" />
           {c.socials.map((s, i) => (

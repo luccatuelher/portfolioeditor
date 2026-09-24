@@ -18,7 +18,6 @@ const FORA_DE_PROPOSITO: [RegExp, string][] = [
   [/^collections\.blog\[\]\.date$/, 'data escolhida em lista, formatada por idioma'],
   [/\.thumb\.alt$/, 'capa do card: o card já é um link com o título (imagem decorativa)'],
   [/blocks\[contact\]\.content\.cvLabel$/, 'legado: o CV virou bloco Botão'],
-  [/blocks\[contact\]\.content\.image\.alt$/, 'foto do Contato: descrição tratada na lista de imagens'],
   [/blocks\[storyboard\]\.content\.label$/, 'nome do storyboard (não aparece no site)'],
   [/^pages\[template\]\.title$/, 'modelo de detalhe: o site mostra o título do projeto/nota'],
   [/^pages\[[a-z]*\]\.seo\.image\.alt$/, 'imagem de compartilhamento: redes sociais não leem o alt'],
