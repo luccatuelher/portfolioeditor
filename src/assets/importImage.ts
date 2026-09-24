@@ -2,6 +2,8 @@
  * Pipeline de importação de imagem: decodifica → redimensiona (lado máx.
  * configurável) → recodifica em WebP. (Não gera miniatura: o site e o editor
  * usam a imagem em si — codificar uma segunda cópia a cada envio era custo à toa.)
+ * Exceções: SVG e GIF animado ficam como vieram, e uma imagem que já cabia e
+ * é menor que a versão recodificada também.
  *
  * A matemática de redimensionamento (`computeTargetSize`) é pura e testável.
  * A parte de canvas depende do browser (`createImageBitmap`/`OffscreenCanvas`)
@@ -29,8 +31,16 @@ export interface ImportedImage {
   blob: Blob;
   w: number;
   h: number;
-  mime: 'image/webp';
+  /** image/webp quando recodificada; o tipo original quando a imagem fica como veio. */
+  mime: string;
+  /** Algo que a pessoa precisa saber sobre o que aconteceu com a imagem. */
+  aviso?: string;
 }
+
+/** Formatos que qualquer navegador exibe e que podem ficar como vieram. */
+const WEB = /^image\/(jpeg|png|webp|gif|avif)$/;
+/** Acima disso um GIF animado pesaria demais no arquivo único do site. */
+export const MAX_GIF_BYTES = 4 * 1024 * 1024;
 
 export interface ImportOptions {
   maxSide?: number;
@@ -87,9 +97,22 @@ export async function importImage(
 
   const bmp = await env.createImageBitmap(source);
   const full = computeTargetSize(bmp.width, bmp.height, maxSide);
+  const original = { blob: source, w: bmp.width, h: bmp.height, mime: source.type };
+  // Vetor e animação não sobrevivem ao canvas: SVG fica vetorial (nítido em
+  // qualquer tamanho e quase sempre menor), GIF continua animado.
+  if (source.type === 'image/svg+xml' || (source.type === 'image/gif' && source.size <= MAX_GIF_BYTES)) {
+    bmp.close?.();
+    return original;
+  }
   const blob = await encode(env, bmp, full, quality);
   bmp.close?.();
-  return { blob, w: full.w, h: full.h, mime: 'image/webp' };
+  // Já cabia e o original é menor: recodificar só aumentaria o peso (e somaria
+  // mais uma perda de qualidade).
+  if (full.scale === 1 && WEB.test(source.type) && source.type !== 'image/gif' && source.size <= blob.size) return original;
+  const aviso = source.type === 'image/gif'
+    ? `O GIF tinha ${(source.size / 1048576).toFixed(1).replace('.', ',')} MB e virou imagem parada (acima de 4 MB pesaria demais no site). Para animação longa, use um vídeo (YouTube ou Vimeo).`
+    : undefined;
+  return { blob, w: full.w, h: full.h, mime: 'image/webp', ...(aviso ? { aviso } : {}) };
 }
 
 /** Converte uma data: URL (usada pela migração) em Blob, para ingestão. */

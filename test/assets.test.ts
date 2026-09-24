@@ -44,3 +44,46 @@ describe('importImage (canvas injetado)', () => {
     expect(codificacoes).toBe(1);
   });
 });
+
+describe('importImage: o que fica como veio', () => {
+  // Canvas simulado: a recodificação sai com `bytes` bytes.
+  const env = (w: number, h: number, bytes: number) => ({
+    createImageBitmap: async () => ({ width: w, height: h, close() {} }),
+    makeCanvas: () => ({
+      getContext: () => ({ drawImage() {} }),
+      convertToBlob: async (opts: { type: string; quality: number }) => new Blob([new Uint8Array(bytes)], { type: opts.type }),
+    }),
+  });
+  const arquivo = (bytes: number, type: string) => new Blob([new Uint8Array(bytes)], { type });
+
+  it('SVG continua vetorial', async () => {
+    const svg = arquivo(300, 'image/svg+xml');
+    const r = await importImage(svg, {}, env(400, 300, 5000));
+    expect(r.blob).toBe(svg);
+    expect(r.mime).toBe('image/svg+xml');
+  });
+
+  it('GIF continua animado; acima de 4 MB vira imagem parada, com aviso', async () => {
+    const gif = arquivo(200_000, 'image/gif');
+    expect((await importImage(gif, {}, env(600, 400, 50_000))).blob).toBe(gif);
+    const gigante = arquivo(5 * 1024 * 1024, 'image/gif');
+    const r = await importImage(gigante, {}, env(600, 400, 50_000));
+    expect(r.mime).toBe('image/webp');
+    expect(r.aviso).toMatch(/imagem parada/);
+  });
+
+  it('já cabia e o original é menor: fica o original; senão, WebP', async () => {
+    const pequeno = arquivo(4_000, 'image/jpeg');
+    expect((await importImage(pequeno, {}, env(800, 600, 9_000))).blob).toBe(pequeno);
+    const pesado = arquivo(90_000, 'image/png');
+    const r = await importImage(pesado, {}, env(800, 600, 30_000));
+    expect(r.mime).toBe('image/webp');
+    expect(r.blob.size).toBe(30_000);
+  });
+
+  it('grande demais é sempre reduzida, mesmo que o original seja pequeno em bytes', async () => {
+    const r = await importImage(arquivo(10_000, 'image/jpeg'), { maxSide: 2400 }, env(5000, 3000, 80_000));
+    expect(r.mime).toBe('image/webp');
+    expect(r.w).toBe(2400);
+  });
+});

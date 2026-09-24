@@ -184,7 +184,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       const dataUrl = await blobToDataUrl(r.blob);
       const id = assetIdFromContent(dataUrl);
       onAddAsset?.(id, dataUrl);
-      doc.setAssetMeta(id, { mime: 'image/webp', w: r.w, h: r.h, alt: emptyI18n() });
+      doc.setAssetMeta(id, { mime: r.mime, w: r.w, h: r.h, alt: emptyI18n() });
+      if (r.aviso) alert(r.aviso);
       return id;
     },
     [doc, onAddAsset],
