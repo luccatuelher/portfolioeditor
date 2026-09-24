@@ -18,7 +18,7 @@ test('imagens que não gravam (espaço cheio): aviso com backup, e gravar o text
   await page.addInitScript(() => {
     const put = IDBObjectStore.prototype.put;
     IDBObjectStore.prototype.put = function (value: unknown, key?: IDBValidKey) {
-      if (key === 'editor-assets') throw new DOMException('cheio', 'QuotaExceededError');
+      if (String(key).startsWith('editor-asset')) throw new DOMException('cheio', 'QuotaExceededError');
       return put.call(this, value, key);
     };
   });

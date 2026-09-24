@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { migrate } from '../src/migrate/migrate';
-import { loadLocalDraft, manterImagensEmUso, saveLocalAssets, saveLocalDoc } from '../src/editor/localDraft';
+import { clearLocalDraft, loadLocalDraft, manterImagensEmUso, podarImagensGravadas, saveLocalAssets, saveLocalDoc } from '../src/editor/localDraft';
 import { openDb, STORE_DRAFTS } from '../src/assets/assetStore';
 import { saveVersion } from '../src/editor/versions';
 import { loadFixture } from './helpers/fixtures';
@@ -43,5 +43,60 @@ describe('rascunho local do editor', () => {
     const mapa = { asset_do_doc: 'data:a', asset_da_versao: 'data:b', asset_orfao: 'data:c' };
     const podado = await manterImagensEmUso(comImagem('asset_do_doc'), mapa);
     expect(podado).toEqual({ asset_do_doc: 'data:a', asset_da_versao: 'data:b' });
+  });
+});
+
+describe('imagens: um registro por imagem', () => {
+  const chaves = async (): Promise<string[]> => {
+    const db = await openDb();
+    return new Promise((ok, erro) => {
+      const req = db.transaction(STORE_DRAFTS, 'readonly').objectStore(STORE_DRAFTS).getAllKeys();
+      req.onsuccess = () => ok(req.result.map(String));
+      req.onerror = () => erro(req.error);
+    });
+  };
+
+  it('enviar uma imagem grava só ela, ao lado das que já estavam', async () => {
+    await clearLocalDraft();
+    await saveLocalAssets({ asset_1: 'data:1' });
+    await saveLocalAssets({ asset_1: 'data:1', asset_2: 'data:2' });
+    const k = (await chaves()).filter((c) => c.startsWith('editor-asset'));
+    expect(k.sort()).toEqual(['editor-asset:asset_1', 'editor-asset:asset_2']);
+  });
+
+  it('gravação atrasada (mapa antigo, menor) não apaga imagem nova', async () => {
+    await clearLocalDraft();
+    await saveLocalAssets({ asset_1: 'data:1', asset_novo: 'data:n' });
+    await saveLocalAssets({ asset_1: 'data:1' }); // chegou depois
+    const { data } = migrate(loadFixture('legacy-synthetic-v3.json'));
+    await saveLocalDoc(data);
+    expect((await loadLocalDraft())?.assets).toEqual({ asset_1: 'data:1', asset_novo: 'data:n' });
+  });
+
+  it('formato antigo (mapa num registro só) continua sendo lido e vira registros próprios', async () => {
+    await clearLocalDraft();
+    const db = await openDb();
+    await new Promise<void>((ok, erro) => {
+      const t = db.transaction(STORE_DRAFTS, 'readwrite');
+      t.objectStore(STORE_DRAFTS).put({ assets: { asset_velho: 'data:v' }, savedAt: 1 }, 'editor-assets');
+      t.oncomplete = () => ok();
+      t.onerror = () => erro(t.error);
+    });
+    const { data } = migrate(loadFixture('legacy-synthetic-v3.json'));
+    await saveLocalDoc(data);
+    const lido = await loadLocalDraft();
+    expect(lido?.assets).toEqual({ asset_velho: 'data:v' });
+    await saveLocalAssets(lido!.assets);
+    const k = await chaves();
+    expect(k).toContain('editor-asset:asset_velho');
+    expect(k).not.toContain('editor-assets');
+    expect((await loadLocalDraft())?.assets).toEqual({ asset_velho: 'data:v' });
+  });
+
+  it('a poda da abertura apaga só o que não fica', async () => {
+    await clearLocalDraft();
+    await saveLocalAssets({ fica: 'data:f', sai: 'data:s' });
+    await podarImagensGravadas({ fica: 'data:f' });
+    expect((await chaves()).filter((c) => c.startsWith('editor-asset'))).toEqual(['editor-asset:fica']);
   });
 });

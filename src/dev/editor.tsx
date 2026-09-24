@@ -8,7 +8,7 @@ import { migrate } from '../migrate/migrate';
 import { Editor } from '../editor/Editor';
 import { ErrorBoundary } from '../renderer/ErrorBoundary';
 import type { Backup } from '../editor/backup';
-import { loadLocalDraft, manterImagensEmUso, saveRescueCopy } from '../editor/localDraft';
+import { loadLocalDraft, manterImagensEmUso, podarImagensGravadas, saveRescueCopy } from '../editor/localDraft';
 import { repairDoc } from '../migrate/repair';
 import { PortfolioV4Schema, type PortfolioV4 } from '../schema/v4';
 import { upgradeDoc } from '../migrate/upgrade';
@@ -19,6 +19,17 @@ const raw = q.get('fixture') === 'synthetic' ? syntheticRaw : templateRaw;
 const fresh = q.has('fresh'); // ?fresh=1 ignora o rascunho salvo e recomeça do exemplo
 
 type State = { doc: PortfolioV4; assets: Record<string, string>; version: number; notice?: string; persist?: boolean; gravarAoAbrir?: boolean };
+
+/**
+ * Imagens da abertura: só as que o documento, as versões ou a cópia de resgate
+ * usam — e as gravadas que sobram saem do navegador agora, antes de o editor
+ * começar a gravar (a gravação só acrescenta). Falhar a poda não impede abrir.
+ */
+async function imagensDaAbertura(doc: PortfolioV4, assets: Record<string, string>): Promise<Record<string, string>> {
+  const manter = await manterImagensEmUso(doc, assets);
+  await podarImagensGravadas(manter).catch((err: unknown) => console.warn('[rascunho] não podei as imagens', err));
+  return manter;
+}
 
 function fromFixture(): State {
   const { data, assets } = migrate(JSON.parse(raw));
@@ -41,14 +52,14 @@ function Root(): React.ReactElement {
             // Ponto de volta da sessão ("como estava ao abrir"): o desfazer não
             // sobrevive a recarregar. Falhar aqui não impede de abrir.
             void guardarAoAbrir(doc).catch((err: unknown) => console.warn('[versões] não guardei a versão ao abrir', err));
-            return { doc, assets: await manterImagensEmUso(doc, saved.assets ?? {}), version: 0 };
+            return { doc, assets: await imagensDaAbertura(doc, saved.assets ?? {}), version: 0 };
           }
           // Formato mudou: guarda a cópia intacta e conserta só o incompatível (nunca descarta em silêncio).
           const copiou = await saveRescueCopy(saved.doc).then(() => true, () => false);
           const { doc, fixes } = repairDoc(saved.doc);
           console.warn('[rascunho] ajustes ao carregar:', fixes);
           if (doc) {
-            return { doc, assets: await manterImagensEmUso(doc, saved.assets ?? {}), version: 0, notice: `Seu rascunho foi recuperado com ${fixes.length} ajuste(s) de formato. ${copiou ? 'Uma cópia do original ficou guardada neste navegador.' : 'Não consegui guardar uma cópia do original — baixe um backup agora (Ctrl+S).'}` };
+            return { doc, assets: await imagensDaAbertura(doc, saved.assets ?? {}), version: 0, notice: `Seu rascunho foi recuperado com ${fixes.length} ajuste(s) de formato. ${copiou ? 'Uma cópia do original ficou guardada neste navegador.' : 'Não consegui guardar uma cópia do original — baixe um backup agora (Ctrl+S).'}` };
           }
           const fx = fromFixture();
           // Sem cópia de resgate, o rascunho ilegível é a ÚNICA cópia: não grava por cima dele.
