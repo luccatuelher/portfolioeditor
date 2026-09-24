@@ -675,3 +675,8 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .traducoes-trecho { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8a867c; font-style: italic; }
 /* Página/projeto sem nenhuma seção: um convite grande para começar */
 .editor-canvas .canvas-vazio .canvas-add-block { display: block; width: 100%; padding: 32px 12px; font-size: 0.66rem; }
+/* Inspector do item: onde aparece (topo) e prévia da imagem escolhida */
+.insp-status { display: grid; gap: 6px; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid #e4e0d7; }
+.insp-status.is-draft .insp-note { color: #a0522d; }
+.insp-img-atual { display: grid; grid-template-columns: 64px 1fr; gap: 8px; align-items: center; }
+.insp-img-atual img { width: 64px; height: 48px; object-fit: cover; border-radius: 3px; background: #eee; border: 1px solid #e4e0d7; }

@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { DEFAULT_HEADER, type Block, type BlogItem, type GalleryItem, type HeaderConfig, type I18n, type ProjectItem, type SketchItem, type Visibility } from '../schema/v4';
+import { createContext, useContext, useRef, useState } from 'react';
+import { DEFAULT_HEADER, type Block, type BlogItem, type GalleryItem, type HeaderConfig, type I18n, type ImageRef, type ProjectItem, type SketchItem, type Visibility } from '../schema/v4';
 import { reorderArray } from '../core/array';
 import { computeRowColumns, rowHeadId, type DropZone } from './gridOps';
 import { emptyI18n } from '../core/i18n';
@@ -42,6 +42,36 @@ function CategoryRow({ value, onChange }: { value: I18n | undefined; onChange: (
   );
 }
 
+const VIS_CURTO: { value: Visibility; label: string }[] = [
+  { value: 'public', label: 'Público' },
+  { value: 'draft', label: 'Rascunho' },
+  { value: 'nda', label: 'NDA' },
+];
+const VIS_NOTA: Record<Visibility, string> = {
+  public: 'Aparece no site.',
+  draft: 'Só aparece aqui no editor — escolha Público para ir ao site.',
+  nda: 'Só aparece depois da senha da área NDA.',
+};
+
+/**
+ * Onde o item aparece, no topo do Inspector: projeto e nota nascem como
+ * rascunho, e o controle para publicar ficava no fim de uma ficha técnica
+ * de onze campos.
+ */
+function VisibilidadeItem({ value, onChange }: { value: Visibility; onChange: (v: Visibility) => void }): React.ReactElement {
+  return (
+    <div className={`insp-status is-${value}`}>
+      <span className="insp-label" id="insp-status-rot">Onde aparece</span>
+      <div className="insp-align" role="group" aria-labelledby="insp-status-rot">
+        {VIS_CURTO.map((o) => (
+          <button key={o.value} type="button" className={value === o.value ? 'on' : ''} aria-pressed={value === o.value} onClick={() => onChange(o.value)}>{o.label}</button>
+        ))}
+      </div>
+      <div className="insp-note">{VIS_NOTA[value]}</div>
+    </div>
+  );
+}
+
 const COLL_LABEL: Record<CollectionName, string> = { projects: 'Projeto', blog: 'Nota', gallery: 'Imagem da galeria', sketches: 'Sketch' };
 
 function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc: DocApi; collection: CollectionName; id: string; onUploadImage?: UploadImage; onDeleted: () => void }): React.ReactElement {
@@ -53,8 +83,8 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
       onDeleted();
     }
   };
-  const uploadBtn = (apply: (aid: string) => void): React.ReactNode =>
-    onUploadImage ? <ImageUploadButton onPick={(f) => void onUploadImage(f).then(apply)} /> : null;
+  const uploadBtn = (apply: (aid: string) => void, atual?: ImageRef): React.ReactNode =>
+    onUploadImage ? <ImageUploadButton atual={atual} onPick={(f) => void onUploadImage(f).then(apply)} /> : null;
 
   // Mesma régua e mesmo controle dos blocos, nas três telas.
   const widthRow = (coll: CollectionName, it: ItemComLargura): React.ReactNode => <LarguraItemPorDispositivo doc={doc} coll={coll} id={id} item={it} />;
@@ -65,7 +95,7 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
       <>
         <Row label="Título"><I18nInput value={p.title} onChange={(v) => doc.updateItem('projects', id, (it) => void (it.title = v), `${id}:title`)} /></Row>
         <Row label="Descrição"><I18nInput multiline value={p.description} onChange={(v) => doc.updateItem('projects', id, (it) => void (it.description = v), `${id}:desc`)} /></Row>
-        <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('projects', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }))}</Row>
+        <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('projects', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }), p.thumb)}</Row>
         {widthRow('projects', p)}
         <label className="insp-check"><input type="checkbox" checked={p.featured} onChange={(e) => doc.updateItem('projects', id, (it) => void (it.featured = e.target.checked))} /> Destaque na Home</label>
         <div className="insp-sub">Ficha técnica</div>
@@ -90,14 +120,14 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
         <DataRow key={`${id}:date`} value={b.date} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.date = v), `${id}:date`)} />
         <Row label="Resumo"><I18nInput multiline value={b.excerpt} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.excerpt = v), `${id}:exc`)} /></Row>
         {widthRow('blog', b)}
-        <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('blog', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }))}</Row>
+        <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('blog', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }), b.thumb)}</Row>
       </>
     );
   } else if (collection === 'gallery') {
     const g = item as GalleryItem;
     fields = (
       <>
-        <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('gallery', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }))}</Row>
+        <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('gallery', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }), g.image)}</Row>
         <Row label="Legenda"><I18nInput value={g.caption} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.caption = v), `${id}:cap`)} /></Row>
         <Row label="Descrição da imagem (alt)"><I18nInput value={g.image.alt} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
         {widthRow('gallery', g)}
@@ -107,7 +137,7 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
     const s = item as SketchItem;
     fields = (
       <>
-        <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('sketches', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }))}</Row>
+        <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('sketches', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }), s.image)}</Row>
         <Row label="Descrição da imagem (alt)"><I18nInput value={s.image.alt} onChange={(v) => doc.updateItem('sketches', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
         {widthRow('sketches', s)}
       </>
@@ -118,8 +148,8 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
     <>
       <div className="insp-head">{COLL_LABEL[collection]}</div>
       <div className="insp-body">
+        <VisibilidadeItem value={item.visibility} onChange={(v) => doc.updateItem(collection, id, (it) => void (it.visibility = v))} />
         {fields}
-        <Row label="Visibilidade"><SelectInput value={item.visibility} onChange={(v) => doc.updateItem(collection, id, (it) => void (it.visibility = v))} options={VIS} /></Row>
         <button type="button" className="insp-delete" onClick={del}>Excluir {COLL_LABEL[collection].toLowerCase()}</button>
       </div>
     </>
@@ -464,11 +494,28 @@ function HeaderControls({ doc }: { doc: DocApi }): React.ReactElement {
   );
 }
 
-function ImageUploadButton({ onPick }: { onPick: (file: File) => void }): React.ReactElement {
+/** Resolve a imagem (asset embutido ou URL) para a prévia nos campos do Inspector. */
+const ResolverContext = createContext<((r: ImageRef) => string) | undefined>(undefined);
+
+/**
+ * Campo de imagem: mostra a que está escolhida (antes nenhum campo mostrava —
+ * só dava para saber qual era a capa olhando o card no canvas) e troca por
+ * outra. `atual` ausente = campo de acrescentar (quadro novo do storyboard).
+ */
+function ImageUploadButton({ onPick, atual }: { onPick: (file: File) => void; atual?: ImageRef }): React.ReactElement {
   const ref = useRef<HTMLInputElement>(null);
+  const resolver = useContext(ResolverContext);
+  const src = atual && resolver ? resolver(atual) : '';
   return (
     <>
-      <button type="button" className="insp-upload" onClick={() => ref.current?.click()}>Enviar imagem…</button>
+      {src ? (
+        <div className="insp-img-atual">
+          <img src={src} alt="" />
+          <button type="button" className="insp-upload" onClick={() => ref.current?.click()}>Trocar imagem…</button>
+        </div>
+      ) : (
+        <button type="button" className="insp-upload" onClick={() => ref.current?.click()}>Enviar imagem…</button>
+      )}
       <input
         ref={ref}
         type="file"
@@ -489,7 +536,7 @@ const LANGS = [
   { id: 'en', label: 'EN', name: 'English' },
 ] as const;
 
-export function Inspector({ lang, onLang, quadroEmFoco, ...props }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void; lang: 'pt' | 'en'; onLang: (l: 'pt' | 'en') => void; quadroEmFoco?: { blockId: string; idx: number } | null }): React.ReactElement {
+export function Inspector({ lang, onLang, quadroEmFoco, resolveAsset, ...props }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void; lang: 'pt' | 'en'; onLang: (l: 'pt' | 'en') => void; quadroEmFoco?: { blockId: string; idx: number } | null; resolveAsset?: (r: ImageRef) => string }): React.ReactElement {
   return (
     <aside className="inspector">
       <div className="insp-langbar" role="group" aria-label="Idioma dos textos">
@@ -501,7 +548,9 @@ export function Inspector({ lang, onLang, quadroEmFoco, ...props }: { doc: DocAp
         ))}
       </div>
       <EditLangContext.Provider value={lang}>
-        <InspectorBody {...props} quadroEmFoco={quadroEmFoco} />
+        <ResolverContext.Provider value={resolveAsset}>
+          <InspectorBody {...props} quadroEmFoco={quadroEmFoco} />
+        </ResolverContext.Provider>
       </EditLangContext.Provider>
     </aside>
   );
@@ -580,7 +629,7 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
               </Row>
               {onUploadImage ? (
                 <Row label="Imagem ao compartilhar o link">
-                  <ImageUploadButton onPick={(f) => void onUploadImage(f).then((id) => doc.updatePage(page.id, (p) => void ((p.seo ??= {}).image = { assetId: id, alt: emptyI18n() })))} />
+                  <ImageUploadButton atual={page.seo?.image} onPick={(f) => void onUploadImage(f).then((id) => doc.updatePage(page.id, (p) => void ((p.seo ??= {}).image = { assetId: id, alt: emptyI18n() })))} />
                 </Row>
               ) : null}
               <div className="insp-note">{page.id === 'home' ? 'A Home define o texto e a imagem que aparecem ao compartilhar o site.' : 'Usada quando esta página está aberta; o link compartilhado usa sempre os dados da Home (o site é um arquivo só).'}</div>
@@ -704,6 +753,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
           {onUploadImage ? (
             <Row label="Imagem">
               <ImageUploadButton
+                atual={block.content.image}
                 onPick={(file) => {
                   void onUploadImage(file).then((id) =>
                     upd(refBlock, (b) => {
@@ -785,7 +835,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
           </Row>
           {onUploadImage ? (
             <Row label="Foto de contato">
-              <ImageUploadButton onPick={(f) => void onUploadImage(f).then((id) => upd(refBlock, (b) => { if (b.type === 'contact') b.content.image = { assetId: id, alt: emptyI18n() }; }))} />
+              <ImageUploadButton atual={c.image} onPick={(f) => void onUploadImage(f).then((id) => upd(refBlock, (b) => { if (b.type === 'contact') b.content.image = { assetId: id, alt: emptyI18n() }; }))} />
             </Row>
           ) : null}
           <div className="insp-sub">Redes sociais</div>
