@@ -1,5 +1,5 @@
 import type { PublishPayload } from './buildPayload';
-import { prerenderHome } from './prerender';
+import { prerenderHome, PREENCHER_IMAGENS } from './prerender';
 import { themeFontUrls } from '../renderer/fonts';
 
 const jsonSafe = (o: unknown): string => JSON.stringify(o).replace(/</g, '\\u003c');
@@ -11,11 +11,13 @@ const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;'
  * pelo botão "Baixar site" do editor.
  */
 export function assembleSiteHtml(shell: string, payload: PublishPayload): string {
+  // Ordem: dados e imagens → preencher as imagens da Home → NDA cifrado (que
+  // pode ser grande e não precisa atrasar a primeira foto).
   const dataScript =
     `<script>window.__PORTFOLIO_DATA__=${jsonSafe(payload.publicData)};` +
-    `window.__ASSETS__=${jsonSafe(payload.assetMap)};` +
-    (payload.ndaBlob ? `window.__NDA__=${jsonSafe(payload.ndaBlob)};` : '') +
-    `</script>`;
+    `window.__ASSETS__=${jsonSafe(payload.assetMap)};</script>` +
+    PREENCHER_IMAGENS +
+    (payload.ndaBlob ? `<script>window.__NDA__=${jsonSafe(payload.ndaBlob)};</script>` : '');
 
   const name = payload.publicData.site.name.pt || payload.publicData.site.name.en || 'Portfolio';
   const homePage = payload.publicData.pages.find((p) => p.id === 'home');

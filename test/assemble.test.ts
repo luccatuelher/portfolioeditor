@@ -30,6 +30,25 @@ describe('assembleSiteHtml', () => {
     expect(head).toContain('<style');
   });
 
+  it('imagens da Home: sem repetir o peso, preenchidas antes do runtime e do NDA', async () => {
+    const mig = migrate(loadFixture('template-v3.json'));
+    const payload = await buildPublishPayload(mig);
+    const html = assembleSiteHtml(shell, payload);
+    const root = html.slice(html.indexOf('<div id="root">'), html.indexOf('window.__PORTFOLIO_DATA__'));
+    // No pré-render a imagem vai só com o id (e as dimensões), sem o data URL.
+    expect(root).toMatch(/<img[^>]*data-asset="asset_[\w-]+"/);
+    expect(root).not.toContain('data:image');
+    expect(html).not.toContain('prerender-asset:');
+    // Nenhum preload apontando para um id de imagem (seria um pedido a endereço inexistente).
+    expect(root).not.toMatch(/<link[^>]*href="asset_/);
+    for (const url of Object.values(payload.assetMap)) expect(html.split(url).length - 1).toBe(1);
+    // O preenchimento vem logo depois do mapa de imagens e antes do runtime.
+    const mapa = html.indexOf('window.__ASSETS__');
+    const preencher = html.indexOf("querySelectorAll('img[data-asset]')");
+    expect(preencher).toBeGreaterThan(mapa);
+    expect(preencher).toBeLessThan(html.indexOf('<script type="module"'));
+  });
+
   it('dados com "$&" e "$\'" não corrompem o HTML', async () => {
     const mig = migrate(loadFixture('template-v3.json'));
     mig.data.site.role = { pt: "Preço R$& e $' teste", en: 'x' };
