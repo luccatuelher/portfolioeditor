@@ -24,6 +24,11 @@
 .pv-tablet .site { --edge: clamp(16px, calc(24px + (768px - 600px) * 0.219), var(--safe, 76.8px)); }
 
 /* ---------- pv-mobile (390px) ---------- */
+/* de src/renderer/styles.css: @media (max-width: 600px) */
+
+.pv-mobile .detail-pager { grid-template-columns: 1fr 1fr; grid-template-areas: "prev next" "all all"; margin-top: 3rem; }
+.pv-mobile .pager-all { justify-self: center; min-height: 44px; display: inline-flex; align-items: center; }
+.pv-mobile .pager-title { font-size: 1.1rem; }
 /* de src/renderer/styles.css: @media (max-width: 700px) */
 
 .pv-mobile .sticky-nav { gap: 8px; padding: 6px 10px; }
