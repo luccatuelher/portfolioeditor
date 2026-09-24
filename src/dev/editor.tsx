@@ -12,6 +12,7 @@ import { loadLocalDraft, manterImagensEmUso, saveRescueCopy } from '../editor/lo
 import { repairDoc } from '../migrate/repair';
 import { PortfolioV4Schema, type PortfolioV4 } from '../schema/v4';
 import { upgradeDoc } from '../migrate/upgrade';
+import { guardarAoAbrir } from '../editor/versions';
 
 const q = new URLSearchParams(location.search);
 const raw = q.get('fixture') === 'synthetic' ? syntheticRaw : templateRaw;
@@ -37,6 +38,9 @@ function Root(): React.ReactElement {
           const parsed = PortfolioV4Schema.safeParse(saved.doc);
           if (parsed.success) {
             const doc = upgradeDoc(parsed.data);
+            // Ponto de volta da sessão ("como estava ao abrir"): o desfazer não
+            // sobrevive a recarregar. Falhar aqui não impede de abrir.
+            void guardarAoAbrir(doc).catch((err: unknown) => console.warn('[versões] não guardei a versão ao abrir', err));
             return { doc, assets: await manterImagensEmUso(doc, saved.assets ?? {}), version: 0 };
           }
           // Formato mudou: guarda a cópia intacta e conserta só o incompatível (nunca descarta em silêncio).

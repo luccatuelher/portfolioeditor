@@ -48,3 +48,22 @@ test('importar e recarregar: o conteúdo importado continua', async ({ page }) =
   await page.locator('.left-tabs button', { hasText: 'Páginas' }).click();
   await expect(page.locator('.editor-left')).toContainText('Projeto A');
 });
+
+// O desfazer não sobrevive a recarregar: ao abrir um rascunho salvo, o
+// editor guarda "como estava ao abrir" em Versões.
+test('reabrir o editor guarda o ponto de volta da sessão', async ({ page }) => {
+  await page.route(/youtube|vimeo|speakerdeck|ytimg|fonts\.googleapis/, (r) => r.abort());
+  await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
+  // Uma edição certa no documento (excluir um bloco) — e espera ela gravar.
+  const blocos = page.locator('.editor-canvas [data-block-id]');
+  const total = await blocos.count();
+  await page.locator('.editor-canvas .block-image').first().click();
+  await page.keyboard.press('Delete');
+  await expect(blocos).toHaveCount(total - 1);
+  await expect(page.locator('.tb-status')).toHaveText('Salvando…');
+  await expect(page.locator('.tb-status')).toHaveText('Salvo neste navegador');
+  await page.goto('/editor.html', { waitUntil: 'load' });
+  await expect(blocos).toHaveCount(total - 1); // abriu o rascunho salvo
+  await page.locator('.tb-btn', { hasText: 'Versões' }).click();
+  await expect(page.locator('.versions-list')).toContainText('Ao abrir o editor');
+});

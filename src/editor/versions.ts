@@ -109,3 +109,23 @@ export async function guardarAntesDeTrocar(
     });
   }
 }
+
+/** Intervalo mínimo entre duas versões "ao abrir". */
+export const INTERVALO_AO_ABRIR_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Guarda "como estava ao abrir o editor" — o ponto de volta de uma sessão.
+ * O desfazer não sobrevive a recarregar a página: quem excluía um projeto,
+ * fechava a aba e percebia no dia seguinte não tinha para onde voltar sem ter
+ * salvo uma versão à mão. No máximo uma a cada 6 h e só se o documento mudou
+ * desde a última versão; é automática, então sai primeiro quando o limite
+ * de versões enche (as salvas à mão ficam).
+ */
+export async function guardarAoAbrir(doc: PortfolioV4, agora = Date.now()): Promise<VersionEntry | null> {
+  const all = await readAll(await openDb());
+  const ultima = all.reduce<StoredVersion | undefined>((m, v) => (!m || v.savedAt > m.savedAt ? v : m), undefined);
+  if (ultima && agora - ultima.savedAt < INTERVALO_AO_ABRIR_MS) return null;
+  if (ultima && JSON.stringify(ultima.doc) === JSON.stringify(doc)) return null;
+  const quando = new Date(agora).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  return saveVersion(`Ao abrir o editor (${quando})`, doc, true);
+}
