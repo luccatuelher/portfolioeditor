@@ -14,17 +14,21 @@ test.describe('Importar backup', () => {
 
   test('arquivo truncado: aviso claro e nada muda', async ({ page }) => {
     const antes = await page.locator('.site-header .header-name').first().textContent();
-    const mensagem = new Promise<string>((ok) => page.once('dialog', (d) => { ok(d.message()); void d.accept(); }));
     await page.setInputFiles(IMPORTAR, { name: 'backup.json', mimeType: 'application/json', buffer: Buffer.from('{"format":"portfolio-v4-backup","doc":{"schemaVersion":4,"pages":[{"id":"ho') });
-    expect(await mensagem).toContain('incompleto ou corrompido');
+    // O erro é um aviso do editor que fica até fechar (antes: alert do navegador).
+    await expect(page.locator('.aviso-erro')).toContainText('incompleto ou corrompido');
     await expect(page.locator('.site-header .header-name').first()).toHaveText(antes!);
   });
 
   test('confirmação mostra o que vem no arquivo; cancelar não troca nada', async ({ page }) => {
     const antes = await page.locator('.site-header .header-name').first().textContent();
-    const mensagem = new Promise<string>((ok) => page.once('dialog', (d) => { ok(d.message()); void d.dismiss(); }));
     await page.setInputFiles(IMPORTAR, resolve('fixtures/legacy-synthetic-v3.json'));
-    const texto = await mensagem;
+    const dialogo = page.locator('.dialogo-confirmar');
+    await expect(dialogo).toBeVisible();
+    const texto = (await dialogo.innerText()).replace(/\s+/g, ' ');
+    // Importar troca o que está aberto: o foco começa em Cancelar.
+    await expect(dialogo.locator('.tb-btn', { hasText: 'Cancelar' })).toBeFocused();
+    await dialogo.locator('.tb-btn', { hasText: 'Cancelar' }).click();
     expect(texto).toContain('legacy-synthetic-v3.json');
     expect(texto).toMatch(/\d+ projetos?/);
     expect(texto).toContain('versão automática');
@@ -32,8 +36,8 @@ test.describe('Importar backup', () => {
   });
 
   test('importar guarda o que estava aberto em Versões ("Antes de importar")', async ({ page }) => {
-    page.on('dialog', (d) => void d.accept());
     await page.setInputFiles(IMPORTAR, resolve('fixtures/legacy-synthetic-v3.json'));
+    await page.locator('.dialogo-confirmar .tb-btn.primary').click(); // diálogo do editor (antes: confirm do navegador)
     await page.locator('.left-tabs button', { hasText: 'Páginas' }).click();
     await expect(page.locator('.editor-left')).toContainText('Projeto A');
     await page.locator('.tb-btn', { hasText: 'Versões' }).click();

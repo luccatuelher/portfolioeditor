@@ -24,7 +24,6 @@ test.describe('Guias, versões, contraste e analytics', () => {
 
   test('salvar e restaurar uma versão devolve o texto anterior', async ({ page }) => {
     await openEditor(page);
-    page.on('dialog', (d) => void d.accept());
     const titulo = page.locator('.editor-canvas .block-heading').first();
     const antes = (await titulo.innerText()).trim();
 
@@ -42,6 +41,7 @@ test.describe('Guias, versões, contraste e analytics', () => {
 
     await page.locator('.tb-btn', { hasText: 'Versões' }).click();
     await page.locator('.versions-list li', { hasText: 'estado bom' }).locator('.tb-btn').click();
+    await page.locator('.dialogo-confirmar .tb-btn.primary').click(); // diálogo do editor (antes: confirm do navegador)
     await expect(page.locator('.versions-modal')).toHaveCount(0);
     await expect(page.locator('.editor-canvas .block-heading').first()).toContainText(antes.split('\n').pop()!);
   });

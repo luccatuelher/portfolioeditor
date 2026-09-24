@@ -11,7 +11,6 @@ test.describe('Versões e backup', () => {
     page.evaluate(() => [...document.querySelectorAll('.editor-canvas img')].filter((i) => i.getAttribute('src')).length);
 
   test('restaurar uma versão devolve as imagens, mesmo depois de importar um backup menor', async ({ page }) => {
-    page.on('dialog', (d) => void d.accept());
     await page.route(/youtube|vimeo|speakerdeck/, (r) => r.abort());
     await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
     await page.waitForSelector('.editor-canvas img');
@@ -27,10 +26,12 @@ test.describe('Versões e backup', () => {
 
     // backup com menos conteúdo (e menos imagens) que o rascunho atual
     await page.locator('input[accept*=json]').setInputFiles('e2e/fixtures/backup-parcial.json');
+    await page.locator('.dialogo-confirmar .tb-btn.primary').click(); // diálogo do editor (antes: confirm do navegador)
     await expect.poll(() => imagensComSrc(page)).toBeLessThan(antes);
 
     await page.locator('.tb-btn', { hasText: 'Versões' }).click();
     await page.locator('.versions-list li', { hasText: 'com todas as imagens' }).locator('.tb-btn').click();
+    await page.locator('.dialogo-confirmar .tb-btn.primary').click(); // diálogo do editor (antes: confirm do navegador)
 
     await expect.poll(() => imagensComSrc(page), { timeout: 15000 }).toBe(antes);
   });

@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from 'react';
 import { useDialog } from './useDialog';
+import { useAvisos } from './avisos';
 import type { PortfolioV4 } from '../schema/v4';
 import { deleteVersion, listVersions, loadVersion, MAX_VERSIONS, saveVersion, type VersionEntry } from './versions';
 
@@ -20,6 +21,8 @@ export function VersionsModal({ doc, onRestore, onClose }: { doc: PortfolioV4; o
   useEffect(refresh, []);
   const dialogo = useDialog<HTMLDivElement>(onClose);
   const titulo = useId();
+  const avisos = useAvisos();
+  const motivo = (err: unknown): string => (err instanceof Error ? err.message : String(err));
 
   const save = async (): Promise<void> => {
     setBusy(true);
@@ -28,7 +31,7 @@ export function VersionsModal({ doc, onRestore, onClose }: { doc: PortfolioV4; o
       setName('');
       refresh();
     } catch (err) {
-      alert('Não consegui salvar a versão: ' + (err instanceof Error ? err.message : String(err)));
+      avisos.avisar(`Não consegui salvar a versão: ${motivo(err)}`, { tipo: 'erro' });
     } finally {
       setBusy(false);
     }
@@ -36,26 +39,38 @@ export function VersionsModal({ doc, onRestore, onClose }: { doc: PortfolioV4; o
 
   const restore = async (v: VersionEntry): Promise<void> => {
     if (!onRestore) return;
-    if (!confirm(`Restaurar "${v.name}" (${fmt(v.savedAt)})?\n\nO que está aberto agora vira uma versão automática antes da troca.`)) return;
+    const ok = await avisos.confirmar({
+      titulo: `Restaurar “${v.name}”?`,
+      texto: `Versão de ${fmt(v.savedAt)}. O que está aberto agora vira uma versão automática antes da troca.`,
+      confirmar: 'Restaurar',
+      perigo: true,
+    });
+    if (!ok) return;
     setBusy(true);
     try {
       const target = await loadVersion(v.id);
       if (!target) {
-        alert('Essa versão não está mais guardada neste navegador.');
+        avisos.avisar('Essa versão não está mais guardada neste navegador.', { tipo: 'erro' });
         refresh();
         return;
       }
       await saveVersion(`Antes de restaurar "${v.name}"`, doc, true).catch(() => {});
       onRestore(target);
       onClose();
+    } catch (err) {
+      // Antes a falha ao ler a versão escapava sem aviso (não havia catch).
+      avisos.avisar(`Não consegui restaurar a versão: ${motivo(err)}`, { tipo: 'erro' });
     } finally {
       setBusy(false);
     }
   };
 
   const remove = async (v: VersionEntry): Promise<void> => {
-    if (!confirm(`Apagar a versão "${v.name}"?`)) return;
-    await deleteVersion(v.id).catch(() => {});
+    // Apagar versão não tem desfazer: pergunta antes.
+    const ok = await avisos.confirmar({ titulo: `Apagar a versão “${v.name}”?`, texto: 'Ela sai deste navegador e não dá para trazer de volta.', confirmar: 'Apagar', perigo: true });
+    if (!ok) return;
+    // Antes a falha era engolida (catch vazio) e a versão seguia na lista sem explicação.
+    await deleteVersion(v.id).catch((err: unknown) => avisos.avisar(`Não consegui apagar a versão: ${motivo(err)}`, { tipo: 'erro' }));
     refresh();
   };
 

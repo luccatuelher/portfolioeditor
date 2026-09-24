@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Theme } from '../schema/v4';
+import { useAvisos } from './avisos';
 
 const SIZES = [12, 14, 16, 18, 20, 24, 32, 40, 56];
 
@@ -15,6 +16,7 @@ export function FloatingToolbar({ fonts, colors }: { fonts: Theme['fonts']; colo
   const editable = useRef<HTMLElement | null>(null);
   const range = useRef<Range | null>(null);
   const bar = useRef<HTMLDivElement>(null);
+  const avisos = useAvisos();
 
   useEffect(() => {
     const place = (el: HTMLElement): void => {
@@ -84,12 +86,18 @@ export function FloatingToolbar({ fonts, colors }: { fonts: Theme['fonts']; colo
     });
     el?.dispatchEvent(new Event('input', { bubbles: true }));
   };
+  // Link: o mesmo "Leva para" dos botões (páginas e projetos pela lista, ou um
+  // endereço digitado) — antes era um prompt() do navegador, só texto livre.
+  // A seleção fica guardada em `range` e o exec a restaura depois do diálogo.
   const link = (e: React.MouseEvent): void => {
     e.preventDefault();
-    const url = prompt('Link (https://…, mailto:…, ou arquivo.pdf). Deixe vazio para remover:', 'https://');
-    if (url === null) return;
-    if (!url.trim() || url.trim() === 'https://') exec('unlink');
-    else exec('createLink', url.trim());
+    const a = range.current?.commonAncestorContainer;
+    const atual = (a instanceof Element ? a : a?.parentElement)?.closest('a')?.getAttribute('href') ?? '';
+    void avisos.pedirLink(atual).then((href) => {
+      if (href === null) return;
+      if (!href) exec('unlink');
+      else exec('createLink', href);
+    });
   };
 
   const fontOpts = [

@@ -13,7 +13,6 @@ test.describe('Imagens sobrevivem a recarregar', () => {
     page.evaluate(() => [...document.querySelectorAll('.editor-canvas img')].map((i) => i.getAttribute('src') ?? '').filter(Boolean));
 
   test('trocar uma imagem, recarregar e restaurar a versão devolve a imagem original', async ({ page }) => {
-    page.on('dialog', (d) => void d.accept());
     await page.route(/youtube|vimeo|speakerdeck|ytimg/, (r) => r.abort());
     await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
     await page.waitForSelector('.editor-canvas .block-image img');
@@ -39,6 +38,7 @@ test.describe('Imagens sobrevivem a recarregar', () => {
 
     await page.locator('.tb-btn', { hasText: 'Versões' }).click();
     await page.locator('.versions-list li', { hasText: 'original' }).locator('.tb-btn').click();
+    await page.locator('.dialogo-confirmar .tb-btn.primary').click(); // diálogo do editor (antes: confirm do navegador)
     await expect.poll(() => srcs(page), { timeout: 15000 }).toEqual(antes);
   });
 

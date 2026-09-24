@@ -16,6 +16,13 @@ function focaveis(box: HTMLElement): HTMLElement[] {
  *
  * Devolve o ref a pôr no elemento com `role="dialog"`.
  */
+/**
+ * Diálogos abertos, do mais antigo ao mais novo. Um diálogo pode abrir outro
+ * por cima (confirmar dentro de Versões): só o de CIMA responde ao teclado —
+ * senão o Esc fechava os dois e o Tab puxava o foco para o de baixo.
+ */
+const pilha: symbol[] = [];
+
 export function useDialog<T extends HTMLElement>(onClose: () => void): React.RefObject<T | null> {
   const ref = useRef<T>(null);
   const fechar = useRef(onClose);
@@ -27,9 +34,11 @@ export function useDialog<T extends HTMLElement>(onClose: () => void): React.Ref
     const box = ref.current;
     if (box && !box.contains(document.activeElement)) (focaveis(box)[0] ?? box).focus();
 
+    const eu = Symbol('dialogo');
+    pilha.push(eu);
     const onKey = (e: KeyboardEvent): void => {
       const box = ref.current;
-      if (!box) return;
+      if (!box || pilha[pilha.length - 1] !== eu) return;
       if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
@@ -61,6 +70,7 @@ export function useDialog<T extends HTMLElement>(onClose: () => void): React.Ref
     window.addEventListener('keydown', onKey, true);
     return () => {
       window.removeEventListener('keydown', onKey, true);
+      pilha.splice(pilha.indexOf(eu), 1);
       if (opener?.isConnected) opener.focus({ preventScroll: true });
     };
   }, [opener]);

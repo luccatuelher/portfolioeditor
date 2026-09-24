@@ -46,6 +46,7 @@ import { LangFlag } from '../renderer/Flags';
 import { useDocument } from './useDocument';
 import { useLocalDraft, type SaveStatus } from './useLocalDraft';
 import { useOutraAba } from './outraAba';
+import { AvisosContext, useAvisos, useAvisosDoEditor } from './avisos';
 import { RemoverContext } from './remover';
 import { chaveDaSelecao, type PedidoFoco } from './focoCampo';
 import type { CampoId } from '../core/camposTexto';
@@ -196,6 +197,9 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const resolveAsset = useMemo(() => mapResolver(assets), [assets]);
   const { status: saveStatus, erro: erroGravacao } = useLocalDraft(doc.state, assets, persist);
   const outraAba = useOutraAba('portfolio-editor', persist);
+  // Avisos e perguntas no visual do editor (nada de alert/confirm/prompt do navegador).
+  const avisos = useAvisosDoEditor(doc.state);
+  const { avisar: mostrarAviso, fecharAviso } = avisos.api;
 
   const uploadImage = useCallback(
     async (file: File): Promise<string> => {
@@ -204,17 +208,17 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         r = await importImage(file, { maxSide: 2400 });
       } catch (err) {
         // Um único aviso para todo envio de imagem (canvas, inspector, tema…); quem chamou simplesmente não segue.
-        alert(`Não consegui usar essa imagem: ${err instanceof Error ? err.message : String(err)}`);
+        mostrarAviso(`Não consegui usar essa imagem: ${err instanceof Error ? err.message : String(err)}`, { tipo: 'erro' });
         return new Promise<string>(() => {});
       }
       const dataUrl = await blobToDataUrl(r.blob);
       const id = assetIdFromContent(dataUrl);
       onAddAsset?.(id, dataUrl);
       doc.setAssetMeta(id, { mime: r.mime, w: r.w, h: r.h, alt: emptyI18n() });
-      if (r.aviso) alert(r.aviso);
+      if (r.aviso) mostrarAviso(r.aviso, { duracaoMs: 12000 });
       return id;
     },
-    [doc, onAddAsset],
+    [doc, onAddAsset, mostrarAviso],
   );
   const uploadFavicon = useCallback(
     async (file: File): Promise<void> => {
@@ -222,7 +226,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       try {
         dataUrl = await makeFavicon(file);
       } catch (err) {
-        alert(`Não consegui usar essa imagem como ícone: ${err instanceof Error ? err.message : String(err)}`);
+        mostrarAviso(`Não consegui usar essa imagem como ícone: ${err instanceof Error ? err.message : String(err)}`, { tipo: 'erro' });
         return;
       }
       const id = assetIdFromContent(dataUrl);
@@ -264,33 +268,33 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     if (avisoTimer.current) clearTimeout(avisoTimer.current);
     avisoTimer.current = setTimeout(() => setAvisoHistorico(null), 3500);
   };
+  // Lê sempre o documento ATUAL (docRef): o "Desfazer" de um aviso guarda esta
+  // função para depois, e o `doc` da renderização em que foi guardada dizia
+  // canUndo=false num editor recém-aberto — o botão não fazia nada.
   const desfazer = (): void => {
-    const rotulo = doc.undoLabel;
-    if (!doc.canUndo) return;
-    doc.undo();
+    const d = docRef.current;
+    const rotulo = d.undoLabel;
+    if (!d.store.canUndo()) return;
+    d.undo();
     if (rotulo) avisar(`Desfeito: ${rotulo}`);
   };
   const refazer = (): void => {
-    const rotulo = doc.redoLabel;
-    if (!doc.canRedo) return;
-    doc.redo();
+    const d = docRef.current;
+    const rotulo = d.redoLabel;
+    if (!d.store.canRedo()) return;
+    d.redo();
     if (rotulo) avisar(`Refeito: ${rotulo}`);
   };
-  // Depois de excluir: "Excluído: … · Desfazer". Some sozinho, e some assim
-  // que o documento muda de novo (aí o Desfazer já não desfaria a exclusão).
-  const [exclusao, setExclusao] = useState<{ texto: string; depois: PortfolioV4; voltar?: Container } | null>(null);
+  // Depois de excluir: "Excluído: … · Desfazer" (aviso comum do editor). Some
+  // sozinho, e some assim que o documento muda de novo (aí o Desfazer já não
+  // desfaria a exclusão).
+  const [exclusao, setExclusao] = useState<{ aviso: number; depois: PortfolioV4 } | null>(null);
   useEffect(() => {
-    if (!exclusao) return;
-    if (doc.state !== exclusao.depois) { setExclusao(null); return; }
-    const t = setTimeout(() => setExclusao(null), 10000);
-    return () => clearTimeout(t);
-  }, [exclusao, doc.state]);
-  const desfazerExclusao = (): void => {
-    if (!exclusao || docRef.current.store.getState() !== exclusao.depois) return;
-    const voltar = exclusao.voltar;
-    desfazer();
-    if (voltar) openContainer(voltar);
-  };
+    if (exclusao && doc.state !== exclusao.depois) {
+      fecharAviso(exclusao.aviso);
+      setExclusao(null);
+    }
+  }, [exclusao, doc.state, fecharAviso]);
   const [showVersions, setShowVersions] = useState(false);
   // Quadro de storyboard que o ✎ pediu para editar (destaca o campo dele).
   const [quadroEmFoco, setQuadroEmFoco] = useState<{ blockId: string; idx: number } | null>(null);
@@ -504,7 +508,20 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     if (depois === antes) return; // nada mudou (ex.: página estrutural)
     if (fechaAberto) openContainer({ on: 'page', pageId: 'home' });
     setSelection(null);
-    if (aviso) setExclusao({ texto, depois, voltar: fechaAberto ? aberto : undefined });
+    if (!aviso) return;
+    const voltar = fechaAberto ? aberto : undefined;
+    const id = mostrarAviso(`Excluído: ${texto}`, {
+      duracaoMs: 10000,
+      acao: {
+        rotulo: 'Desfazer',
+        fazer: () => {
+          if (docRef.current.store.getState() !== depois) return;
+          desfazer();
+          if (voltar) openContainer(voltar);
+        },
+      },
+    });
+    setExclusao({ aviso: id, depois });
   };
 
   /** Cola o conteúdo da área de transferência perto da seleção atual (sempre com ids novos). */
@@ -1080,6 +1097,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
 
   const frame = siteFrame(doc.state, resolveAsset);
   return (
+    <AvisosContext.Provider value={avisos.api}>
     <RemoverContext.Provider value={removeSelection}>
     <div className="editor" style={styleVars(themeToCssVars(doc.state.theme))}>
       <TopBar doc={doc} peso={peso} onPeso={() => { setLeftTab('data'); setGaveta('esquerda'); }} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
@@ -1165,13 +1183,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         </div>
       </div>
       <FloatingToolbar fonts={doc.state.theme.fonts} colors={doc.state.theme.colors} />
-      {exclusao ? (
-        <div className="aviso-exclusao" role="status">
-          <span>Excluído: {exclusao.texto}</span>
-          <button type="button" className="aviso-desfazer" title="Desfazer (Ctrl+Z)" onClick={desfazerExclusao}>Desfazer</button>
-          <button type="button" className="aviso-fechar" aria-label="Fechar aviso" onClick={() => setExclusao(null)}>✕</button>
-        </div>
-      ) : null}
+      {avisos.ui}
       {addMenu ? (
         <AddBlockPopup
           x={addMenu.x}
@@ -1213,6 +1225,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       <input ref={fileInput} type="file" accept="image/*" hidden onChange={onPickFile} data-testid="pe-file" />
     </div>
     </RemoverContext.Provider>
+    </AvisosContext.Provider>
   );
 }
 
@@ -1255,6 +1268,7 @@ const DEVICES = [
 function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; peso: PesoDoSite; onPeso: () => void; onUndo: () => void; onRedo: () => void; avisoHistorico: string | null; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pedirSenha, setPedirSenha] = useState(false);
+  const dialogos = useAvisos();
 
   if (onBackupRef) onBackupRef.current = () => download();
   const download = (): void => {
@@ -1278,12 +1292,18 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     try {
       backup = parseBackup(await file.text());
     } catch (err) {
-      alert(explicarErroDeImportacao(err));
+      dialogos.avisar(explicarErroDeImportacao(err), { tipo: 'erro' });
       return;
     }
     // Importar troca o que está aberto (e o editor recomeça, sem desfazer):
     // confirma com o resumo do arquivo e guarda o estado atual como versão.
-    if (!confirm(`Importar "${file.name}"?\n\n${resumoDoBackup(backup)}\n\nO que está aberto agora vira uma versão automática (Versões) antes da troca.`)) return;
+    const ok = await dialogos.confirmar({
+      titulo: `Importar “${file.name}”?`,
+      texto: `${resumoDoBackup(backup)}\n\nO que está aberto agora vira uma versão automática (Versões) antes da troca.`,
+      confirmar: 'Importar',
+      perigo: true,
+    });
+    if (!ok) return;
     await saveVersion(`Antes de importar "${file.name}"`, doc.state, true).catch(() => {});
     onImport?.(backup);
   };
@@ -1300,14 +1320,20 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
   // o botão parecia simplesmente não fazer nada.
   const publishSite = (password?: string): Promise<void> =>
     gerarSite(password).catch((err: unknown) => {
-      alert(`Não consegui gerar o site: ${err instanceof Error ? err.message : String(err)}\n\nSeu rascunho não foi afetado.`);
+      dialogos.avisar(`Não consegui gerar o site: ${err instanceof Error ? err.message : String(err)}. Seu rascunho não foi afetado.`, { tipo: 'erro' });
     });
   const gerarSite = async (password?: string): Promise<void> => {
     const doc0 = doc.state;
     const migratedAssets: MigratedAsset[] = Object.entries(assets).map(([id, dataUrl]) => ({ id, dataUrl, mime: '' }));
     const payload = await buildPublishPayload({ data: doc0, assets: migratedAssets }, password);
     const pf = runPreflight(payload.publicData, { assetSizes: payload.assetSizes });
-    if (pf.errors.length && !confirm(`Há ${pf.errors.length} bloqueio(s) no preflight:\n\n${pf.errors.join('\n')}\n\nBaixar mesmo assim?`)) return;
+    if (pf.errors.length && !(await dialogos.confirmar({
+      titulo: pf.errors.length === 1 ? 'Um problema impede o site de ficar certo' : `${pf.errors.length} problemas impedem o site de ficar certo`,
+      texto: pf.errors.join('\n'),
+      confirmar: 'Baixar mesmo assim',
+      cancelar: 'Voltar e corrigir',
+      perigo: true,
+    }))) return;
     // Toda publicação vira um ponto de retorno (automático) no histórico.
     void saveVersion(`Publicado em ${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}`, doc0, true).catch(() => {});
 
