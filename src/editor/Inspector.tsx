@@ -5,6 +5,7 @@ import { computeRowColumns, rowHeadId, type DropZone } from './gridOps';
 import { emptyI18n } from '../core/i18n';
 import { findBlock, findSection, type CollectionName, type Selection } from './paths';
 import type { DocApi } from './useDocument';
+import { useRemover } from './remover';
 import { EditLangContext, I18nInput, NumberInput, Row, RangeInput, SelectInput, TextInput } from './fields';
 import { LangFlag } from '../renderer/Flags';
 import { RichI18nInput } from './RichTextEditor';
@@ -76,12 +77,11 @@ const COLL_LABEL: Record<CollectionName, string> = { projects: 'Projeto', blog: 
 
 function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc: DocApi; collection: CollectionName; id: string; onUploadImage?: UploadImage; onDeleted: () => void }): React.ReactElement {
   const item = doc.state.collections[collection].find((x) => x.id === id);
+  const remover = useRemover(doc);
   if (!item) return <div className="insp-empty">Item não encontrado.</div>;
   const del = (): void => {
-    if (confirm('Excluir este item?')) {
-      doc.deleteItem(collection, id);
-      onDeleted();
-    }
+    remover({ kind: 'item', collection, itemId: id });
+    onDeleted();
   };
   const uploadBtn = (apply: (aid: string) => void, atual?: ImageRef): React.ReactNode =>
     onUploadImage ? <ImageUploadButton atual={atual} onPick={(f) => void onUploadImage(f).then(apply)} /> : null;
@@ -558,6 +558,7 @@ export function Inspector({ lang, onLang, quadroEmFoco, resolveAsset, ...props }
 
 function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void ; quadroEmFoco?: { blockId: string; idx: number } | null }): React.ReactElement {
   const [tab, setTab] = useState<Tab>('content');
+  const remover = useRemover(doc);
 
   if (!selection) {
     return (
@@ -635,7 +636,7 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
               <div className="insp-note">{page.id === 'home' ? 'A Home define o texto e a imagem que aparecem ao compartilhar o site.' : 'Usada quando esta página está aberta; o link compartilhado usa sempre os dados da Home (o site é um arquivo só).'}</div>
             </Group>
             {page.id !== 'home' ? (
-              <button type="button" className="insp-delete" onClick={() => { if (confirm('Excluir esta página?')) doc.deletePage(page.id); }}>Excluir página</button>
+              <button type="button" className="insp-delete" onClick={() => remover({ kind: 'page', pageId: page.id })}>Excluir página</button>
             ) : null}
           </div>
         ) : null}
@@ -673,7 +674,7 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
             <div className="insp-move">
               <button type="button" onClick={() => doc.duplicateSection(selection.ref.container, selection.ref.sectionId)}>Duplicar</button>
             </div>
-            <button type="button" className="insp-delete" onClick={() => { if (confirm('Excluir esta seção e seus blocos?')) { doc.deleteSection(selection.ref.container, selection.ref.sectionId); onSelect?.(null); } }}>Excluir seção</button>
+            <button type="button" className="insp-delete" onClick={() => { remover({ kind: 'section', ref: selection.ref }); onSelect?.(null); }}>Excluir seção</button>
           </div>
         ) : null}
       </>

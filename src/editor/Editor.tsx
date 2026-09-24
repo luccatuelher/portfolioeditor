@@ -45,7 +45,11 @@ import type { ImageCrop, ImageRef } from '../schema/v4';
 import { LangFlag } from '../renderer/Flags';
 import { useDocument } from './useDocument';
 import { useLocalDraft, type SaveStatus } from './useLocalDraft';
+import { RemoverContext } from './remover';
 import { imagensSemDescricao, textosSemTraducao, type ImagemSemDescricao, type TextoSemTraducao } from './pendencias';
+
+/** Nome do item no aviso de exclusão. */
+const COLL_NOME: Record<CollectionName, string> = { projects: 'projeto', blog: 'nota', gallery: 'imagem da galeria', sketches: 'sketch' };
 
 export interface EditorProps {
   initial: PortfolioV4;
@@ -268,6 +272,21 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     doc.redo();
     if (rotulo) avisar(`Refeito: ${rotulo}`);
   };
+  // Depois de excluir: "Excluído: … · Desfazer". Some sozinho, e some assim
+  // que o documento muda de novo (aí o Desfazer já não desfaria a exclusão).
+  const [exclusao, setExclusao] = useState<{ texto: string; depois: PortfolioV4; voltar?: Container } | null>(null);
+  useEffect(() => {
+    if (!exclusao) return;
+    if (doc.state !== exclusao.depois) { setExclusao(null); return; }
+    const t = setTimeout(() => setExclusao(null), 10000);
+    return () => clearTimeout(t);
+  }, [exclusao, doc.state]);
+  const desfazerExclusao = (): void => {
+    if (!exclusao || docRef.current.store.getState() !== exclusao.depois) return;
+    const voltar = exclusao.voltar;
+    desfazer();
+    if (voltar) openContainer(voltar);
+  };
   const [showVersions, setShowVersions] = useState(false);
   // Quadro de storyboard que o ✎ pediu para editar (destaca o campo dele).
   const [quadroEmFoco, setQuadroEmFoco] = useState<{ blockId: string; idx: number } | null>(null);
@@ -446,20 +465,42 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     [container, selection],
   );
 
-  /** Remove o que está selecionado (bloco, seção ou item). `ask` confirma o que tem conteúdo. */
-  const removeSelection = (sel: NonNullable<Selection>, ask: boolean): void => {
+  /**
+   * Remove o que está selecionado (bloco, seção, item ou página) sem perguntar
+   * antes: tudo volta com Desfazer. `aviso` mostra "Excluído: … · Desfazer"
+   * (o Recortar não precisa — o conteúdo está na área de transferência).
+   */
+  const removeSelection = (sel: NonNullable<Selection>, aviso = true): void => {
     const d = docRef.current;
-    if (sel.kind === 'block') d.deleteBlock(sel.ref);
-    else if (sel.kind === 'section') {
-      const sec = findSection(d.state, sel.ref);
-      if (ask && sec?.blocks.length && !confirm('Excluir esta seção e seus blocos?')) return;
+    const antes = d.store.getState();
+    const aberto = container;
+    let texto = '';
+    let fechaAberto = false;
+    if (sel.kind === 'block') {
+      const b = findSection(antes, sel.ref)?.blocks.find((x) => x.id === sel.ref.blockId);
+      texto = `bloco ${b ? TYPE_LABEL[b.type] ?? b.type : ''}`.trim();
+      d.deleteBlock(sel.ref);
+    } else if (sel.kind === 'section') {
+      const n = findSection(antes, sel.ref)?.blocks.length ?? 0;
+      texto = n ? `seção com ${n} ${n === 1 ? 'bloco' : 'blocos'}` : 'seção vazia';
       d.deleteSection(sel.ref.container, sel.ref.sectionId);
     } else if (sel.kind === 'item') {
-      if (ask && !confirm('Excluir este item?')) return;
+      const it = antes.collections[sel.collection].find((x) => x.id === sel.itemId);
+      const nome = it ? pick('title' in it ? it.title : 'caption' in it ? it.caption : it.image.alt, 'pt') : '';
+      texto = `${COLL_NOME[sel.collection]}${nome ? ` “${nome}”` : ''}`;
       d.deleteItem(sel.collection, sel.itemId);
-      if (container.on === 'item' && container.itemId === sel.itemId) openContainer({ on: 'page', pageId: 'home' });
+      fechaAberto = aberto.on === 'item' && aberto.itemId === sel.itemId;
+    } else if (sel.kind === 'page') {
+      const pg = antes.pages.find((p) => p.id === sel.pageId);
+      texto = `página “${pg ? pick(pg.title, 'pt') || pg.slug : sel.pageId}”`;
+      d.deletePage(sel.pageId);
+      fechaAberto = aberto.on === 'page' && aberto.pageId === sel.pageId;
     } else return;
+    const depois = d.store.getState();
+    if (depois === antes) return; // nada mudou (ex.: página estrutural)
+    if (fechaAberto) openContainer({ on: 'page', pageId: 'home' });
     setSelection(null);
+    if (aviso) setExclusao({ texto, depois, voltar: fechaAberto ? aberto : undefined });
   };
 
   /** Cola o conteúdo da área de transferência perto da seleção atual (sempre com ids novos). */
@@ -577,7 +618,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     }
     if (!typing && (e.key === 'Delete' || e.key === 'Backspace') && selection && selection.kind !== 'site' && selection.kind !== 'page') {
       e.preventDefault();
-      removeSelection(selection, true);
+      removeSelection(selection);
       return;
     }
     if (e.key === 'Escape' && !typing) setSelection((s) => parentOf(s));
@@ -614,7 +655,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           const ref = locateBlock(d.state, container, id);
           if (!ref) return;
           if (act === 'delete') {
-            removeSelection({ kind: 'block', ref }, false);
+            removeSelection({ kind: 'block', ref });
           } else {
             setSelection({ kind: 'block', ref });
             if (act === 'image') pickImage((aid) => docRef.current.updateBlock(ref, (b) => void (b.type === 'image' && setImg(b.content.image, aid))));
@@ -626,7 +667,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         } else if (target === 'item') {
           const coll = actBox.getAttribute('data-coll') as CollectionName;
           if (act === 'delete') {
-            removeSelection({ kind: 'item', collection: coll, itemId: id }, true);
+            removeSelection({ kind: 'item', collection: coll, itemId: id });
           } else if (act === 'edit') {
             setSelection({ kind: 'item', collection: coll, itemId: id });
           } else if (act === 'crop') {
@@ -1031,6 +1072,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
 
   const frame = siteFrame(doc.state, resolveAsset);
   return (
+    <RemoverContext.Provider value={removeSelection}>
     <div className="editor" style={styleVars(themeToCssVars(doc.state.theme))}>
       <TopBar doc={doc} peso={peso} onPeso={() => { setLeftTab('data'); setGaveta('esquerda'); }} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
       {notice && showNotice ? (
@@ -1104,6 +1146,13 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         </div>
       </div>
       <FloatingToolbar fonts={doc.state.theme.fonts} colors={doc.state.theme.colors} />
+      {exclusao ? (
+        <div className="aviso-exclusao" role="status">
+          <span>Excluído: {exclusao.texto}</span>
+          <button type="button" className="aviso-desfazer" title="Desfazer (Ctrl+Z)" onClick={desfazerExclusao}>Desfazer</button>
+          <button type="button" className="aviso-fechar" aria-label="Fechar aviso" onClick={() => setExclusao(null)}>✕</button>
+        </div>
+      ) : null}
       {addMenu ? (
         <AddBlockPopup
           x={addMenu.x}
@@ -1141,6 +1190,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       ) : null}
       <input ref={fileInput} type="file" accept="image/*" hidden onChange={onPickFile} data-testid="pe-file" />
     </div>
+    </RemoverContext.Provider>
   );
 }
 

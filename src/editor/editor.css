@@ -680,3 +680,12 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .insp-status.is-draft .insp-note { color: #a0522d; }
 .insp-img-atual { display: grid; grid-template-columns: 64px 1fr; gap: 8px; align-items: center; }
 .insp-img-atual img { width: 64px; height: 48px; object-fit: cover; border-radius: 3px; background: #eee; border: 1px solid #e4e0d7; }
+/* Depois de excluir: "Excluído: … · Desfazer" (nada de confirm() antes) */
+.aviso-exclusao { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 9500; display: flex; align-items: center; gap: 12px; max-width: calc(100vw - 32px); padding: 8px 8px 8px 16px; border-radius: 6px; background: #1c1b18; color: #f2efe8; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25); font-size: 0.78rem; animation: aviso-in 0.18s ease-out; }
+.aviso-exclusao > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aviso-desfazer { flex: none; padding: 6px 12px; border: 1px solid #f0c969; border-radius: 4px; background: none; color: #f0c969; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+.aviso-desfazer:hover { background: #f0c969; color: #1c1b18; }
+.aviso-fechar { flex: none; width: 32px; height: 32px; border: 0; background: none; color: #a09c93; cursor: pointer; }
+@media (pointer: coarse) { .aviso-desfazer { min-height: 40px; } .aviso-fechar { width: 40px; height: 40px; } }
+@keyframes aviso-in { from { opacity: 0; transform: translate(-50%, 8px); } }
+@media (prefers-reduced-motion: reduce) { .aviso-exclusao { animation: none; } }

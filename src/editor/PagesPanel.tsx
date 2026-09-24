@@ -8,6 +8,7 @@ import type { Lang } from '../renderer/context';
 import type { BlogItem, Page, PortfolioV4, ProjectItem } from '../schema/v4';
 import type { Container, Selection } from './paths';
 import type { DocApi } from './useDocument';
+import { useRemover } from './remover';
 
 type ListKind = 'featured' | 'projects' | 'nda' | 'blog';
 
@@ -57,6 +58,7 @@ function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: page.id });
   const nome = pick(page.title, lang);
   const renome = useTreeRename(nome, (v) => doc.updatePage(page.id, (pg) => void (pg.title[lang] = v), `rename:${page.id}`), novaAgora);
+  const remover = useRemover(doc);
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
       <div className={`tree-row pagerow ${active ? 'sel' : ''}`}>
@@ -74,7 +76,7 @@ function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc
         )}
         <button type="button" className="tree-dup" title="Duplicar página" aria-label={`Duplicar página ${pick(page.title, lang)}`} onClick={() => doc.duplicatePage(page.id)}>⧉</button>
         {page.id !== 'home' ? (
-          <button type="button" className="tree-del" title="Excluir página" aria-label={`Excluir página ${pick(page.title, lang)}`} onClick={() => { if (confirm('Excluir esta página?')) doc.deletePage(page.id); }}>✕</button>
+          <button type="button" className="tree-del" title="Excluir página" aria-label={`Excluir página ${pick(page.title, lang)}`} onClick={() => remover({ kind: 'page', pageId: page.id })}>✕</button>
         ) : null}
       </div>
       {children}
