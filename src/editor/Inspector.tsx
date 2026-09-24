@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { DEFAULT_HEADER, type Block, type BlogItem, type GalleryItem, type HeaderConfig, type I18n, type ProjectItem, type SketchItem, type Visibility } from '../schema/v4';
 import { reorderArray } from '../core/array';
-import { computeRowColumns, rowHeadId } from './gridOps';
+import { computeRowColumns, rowHeadId, type DropZone } from './gridOps';
 import { emptyI18n } from '../core/i18n';
 import { findBlock, findSection, type CollectionName, type Selection } from './paths';
 import type { DocApi } from './useDocument';
@@ -855,6 +855,38 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
   }
 }
 
+/**
+ * Montar a grade sem arrastar: os mesmos gestos de soltar na lateral ou embaixo
+ * de outro elemento, em botões. Arrastar no canvas não existe no toque nem no
+ * teclado; aqui tudo fica ao alcance de um toque ou de um Enter.
+ */
+function PosicaoNaGrade({ doc, refBlock }: { doc: DocApi; refBlock: import('./paths').BlockRef }): React.ReactElement | null {
+  const section = findSection(doc.state, refBlock);
+  if (!section) return null;
+  const blocks = section.blocks;
+  const i = blocks.findIndex((b) => b.id === refBlock.blockId);
+  if (i < 0) return null;
+  const linhas = computeRowColumns(blocks);
+  const linha = linhas.find((r) => r.some((c) => c.includes(i))) ?? [[i]];
+  const naLinha = (j: number): boolean => linha.some((c) => c.includes(j));
+  const anterior = blocks[i - 1];
+  const proximo = blocks[i + 1];
+  const eu = blocks[i]!;
+  const sozinho = linha.length === 1 && linha[0]!.length === 1;
+  const soltar = (alvo: string, zona: DropZone): void => doc.dropBlock(refBlock.container, refBlock.blockId, alvo, zona);
+  return (
+    <div className="insp-row">
+      <span className="insp-label">Posição na grade</span>
+      <div className="insp-grade" role="group" aria-label="Posição na grade">
+        <button type="button" disabled={!anterior || (naLinha(i - 1) && !eu.stack)} onClick={() => anterior && soltar(anterior.id, 'right')} title="Na mesma linha, à direita do elemento de cima">⇤ Ao lado do anterior</button>
+        <button type="button" disabled={!proximo || (naLinha(i + 1) && !proximo.stack)} onClick={() => proximo && soltar(proximo.id, 'left')} title="Na mesma linha, à esquerda do elemento de baixo">Ao lado do próximo ⇥</button>
+        <button type="button" disabled={!anterior || !!eu.stack || !(anterior && linhas.find((r) => r.some((c) => c.includes(i - 1)))!.length > 1)} onClick={() => anterior && soltar(anterior.id, 'bottom')} title="Na mesma coluna, logo embaixo do elemento de cima (quando ele divide a linha com outros)">⤓ Embaixo do anterior</button>
+        <button type="button" disabled={sozinho} onClick={() => doc.blockOwnRow(refBlock)} title="Tira da linha/coluna e ocupa a largura toda">▭ Linha própria</button>
+      </div>
+    </div>
+  );
+}
+
 function LayoutTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef }): React.ReactElement {
   return (
     <>
@@ -866,6 +898,7 @@ function LayoutTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlo
           <button type="button" onClick={() => doc.moveBlock(refBlock, -1)}>↑ Subir</button>
           <button type="button" onClick={() => doc.moveBlock(refBlock, 1)}>↓ Descer</button>
         </div>
+        <PosicaoNaGrade doc={doc} refBlock={refBlock} />
       </Group>
       <Group id="pad" title="Espaço deste elemento" defaultOpen={false}>
         <BlockPadding doc={doc} block={block} refBlock={refBlock} />

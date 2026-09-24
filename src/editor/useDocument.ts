@@ -5,7 +5,7 @@ import { findBlock, findSection, getSections, type BlockRef, type CollectionName
 import { bi, emptyI18n } from '../core/i18n';
 import { reorderArray } from '../core/array';
 import { newBlockId, newSectionId, renewSectionIds } from './blockFactory';
-import { columnIds, detachBlock, placeBlock, rowHeadId, unstackBlock, type DropZone } from './gridOps';
+import { columnIds, computeRowColumns, detachBlock, placeBlock, rowHeadId, unstackBlock, type DropZone } from './gridOps';
 
 export interface DocApi {
   store: Store<PortfolioV4>;
@@ -31,6 +31,8 @@ export interface DocApi {
   dropBlock(container: Container, source: string | Block, targetId: string, zone: DropZone): void;
   /** Move/insere um bloco no fim de uma seção (largura cheia). */
   dropBlockInSection(container: Container, source: string | Block, sectionId: string): void;
+  /** Tira o bloco da linha/coluna em que está e o põe numa linha só dele (largura cheia), logo depois. */
+  blockOwnRow(ref: BlockRef): void;
   /** Alinhamento da linha a que o bloco pertence. */
   setRowAlign(ref: BlockRef, align: 'start' | 'center' | 'end' | 'between'): void;
   /** Largura de um bloco — aplicada à coluna inteira (pilha). */
@@ -230,6 +232,21 @@ export function useDocument(initial: PortfolioV4): DocApi {
         block.stack = undefined;
         block.rowAlign = undefined;
         secs.find((s) => s.id === sectionId)!.blocks.push(block);
+      });
+    },
+    blockOwnRow(ref) {
+      store.update((d) => {
+        const s = findSection(d, ref);
+        if (!s) return;
+        const i = s.blocks.findIndex((b) => b.id === ref.blockId);
+        if (i < 0) return;
+        const linha = computeRowColumns(s.blocks).find((r) => r.some((c) => c.includes(i)));
+        const fim = linha ? Math.max(...linha.flat()) : i;
+        const b = detachBlock(s.blocks, ref.blockId);
+        if (!b) return;
+        b.span = 12;
+        // Depois do que sobrou da linha (sem ele, o último dela está em fim - 1).
+        s.blocks.splice(fim, 0, b);
       });
     },
     setRowAlign(ref, align) {

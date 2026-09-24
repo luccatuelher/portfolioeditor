@@ -613,3 +613,10 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
   /* Alça de largura com área de toque de verdade (a barra visível continua fina). */
   .editor-canvas .pe-span-handle { width: 28px; right: -18px; }
 }
+/* Posição na grade (Inspector › Layout): os gestos de arrastar em botões */
+.insp-grade { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.insp-grade button { min-height: 32px; padding: 6px; border: 1px solid #cfcabf; border-radius: 4px; background: #fff; cursor: pointer; font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.04em; text-transform: uppercase; color: #3a3833; }
+.insp-grade button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.insp-grade button:disabled { opacity: 0.4; cursor: default; }
+@media (pointer: coarse) { .insp-grade button, .insp-move button { min-height: 40px; } }
+.insp-move + .insp-row { margin-top: 14px; }
