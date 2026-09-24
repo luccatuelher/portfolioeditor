@@ -689,3 +689,6 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 @media (pointer: coarse) { .aviso-desfazer { min-height: 40px; } .aviso-fechar { width: 40px; height: 40px; } }
 @keyframes aviso-in { from { opacity: 0; transform: translate(-50%, 8px); } }
 @media (prefers-reduced-motion: reduce) { .aviso-exclusao { animation: none; } }
+/* Aviso que pede ação (gravação falhando, editor em duas abas): não some sozinho */
+.editor-alerta { background: #fbe3dc; border-bottom-color: #d99a86; color: #6b2412; }
+.editor-notice .editor-alerta-acao { margin-left: auto; flex: none; padding: 5px 12px; border: 1px solid currentColor; border-radius: 4px; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; }

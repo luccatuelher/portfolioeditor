@@ -45,6 +45,7 @@ import type { ImageCrop, ImageRef } from '../schema/v4';
 import { LangFlag } from '../renderer/Flags';
 import { useDocument } from './useDocument';
 import { useLocalDraft, type SaveStatus } from './useLocalDraft';
+import { useOutraAba } from './outraAba';
 import { RemoverContext } from './remover';
 import { imagensSemDescricao, textosSemTraducao, type ImagemSemDescricao, type TextoSemTraducao } from './pendencias';
 
@@ -191,7 +192,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [publishNotice, setPublishNotice] = useState<Publicado | null>(null);
   const doc = useDocument(initial);
   const resolveAsset = useMemo(() => mapResolver(assets), [assets]);
-  const saveStatus = useLocalDraft(doc.state, assets, persist);
+  const { status: saveStatus, erro: erroGravacao } = useLocalDraft(doc.state, assets, persist);
+  const outraAba = useOutraAba('portfolio-editor', persist);
 
   const uploadImage = useCallback(
     async (file: File): Promise<string> => {
@@ -1082,6 +1084,17 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     <RemoverContext.Provider value={removeSelection}>
     <div className="editor" style={styleVars(themeToCssVars(doc.state.theme))}>
       <TopBar doc={doc} peso={peso} onPeso={() => { setLeftTab('data'); setGaveta('esquerda'); }} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
+      {erroGravacao ? (
+        <div className="editor-notice editor-alerta" role="alert">
+          <span><b>Não estou conseguindo salvar neste navegador.</b> {erroGravacao} O que está aberto continua aqui — baixe um backup para não perder.</span>
+          <button type="button" className="editor-alerta-acao" onClick={() => backupRef.current?.()}>Baixar backup</button>
+        </div>
+      ) : null}
+      {outraAba ? (
+        <div className="editor-notice editor-alerta" role="alert">
+          <span><b>O editor também está aberto em outra aba.</b> As duas gravam no mesmo lugar: a última a salvar apaga o que a outra fez. Feche uma delas.</span>
+        </div>
+      ) : null}
       {notice && showNotice ? (
         <div className="editor-notice" role="status">
           <span>{notice}</span>
@@ -1345,7 +1358,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
             {DEVICES.find((d) => d.id === device)!.curto} ✕
           </button>
         ) : null}
-        <span className={`tb-status status-${saveStatus}`}>{STATUS_LABEL[saveStatus]}</span>
+        <span className={`tb-status status-${saveStatus}`} title={saveStatus === 'error' ? 'Veja o aviso logo abaixo da barra' : undefined}>{STATUS_LABEL[saveStatus]}</span>
         <span className="tb-historico" role="status" aria-live="polite">{avisoHistorico ?? ''}</span>
       </div>
       <div className="tb-right">
