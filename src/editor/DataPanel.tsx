@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { pick } from '../renderer/text';
 import type { Visibility } from '../schema/v4';
 import type { CollectionName, Selection } from './paths';
+import { formatarPeso, LIMITE_GITHUB_BYTES, type PesoDoSite } from '../publish/peso';
 import type { DocApi } from './useDocument';
 
 const VIS_OPTS: { value: Visibility; label: string }[] = [
@@ -39,8 +40,45 @@ function SortableRow({ doc, collection, id, label, visibility, onSelect, extra }
   );
 }
 
+/**
+ * Peso estimado do site publicado, com a régua dos 25 MB do upload pelo
+ * GitHub e as imagens que mais pesam (e onde estão), para decidir o que
+ * trocar antes de o arquivo não caber.
+ */
+function PesoDoSitePainel({ peso, assets }: { peso: PesoDoSite; assets: Record<string, string> }): React.ReactElement {
+  const fracao = Math.min(1, peso.total / LIMITE_GITHUB_BYTES);
+  const nivel = peso.total > LIMITE_GITHUB_BYTES ? 'acima' : fracao > 0.8 ? 'perto' : 'ok';
+  const top = peso.imagens.slice(0, 5);
+  return (
+    <div className={`peso-site peso-${nivel}`}>
+      <div className="panel-h">Peso do site</div>
+      <div className="peso-barra" role="meter" aria-label="Peso estimado do site" aria-valuemin={0} aria-valuemax={25} aria-valuenow={Math.round((peso.total / 1048576) * 10) / 10} aria-valuetext={`${formatarPeso(peso.total)} de 25 MB`}>
+        <i style={{ width: `${Math.max(1, fracao * 100)}%` }} />
+      </div>
+      <p className="peso-resumo">
+        ≈ <b>{formatarPeso(peso.total)}</b> de 25 MB (limite do upload pelo navegador do GitHub).
+        {nivel === 'acima' ? ' Não cabe: troque as imagens maiores abaixo ou use vídeo por link.' : nivel === 'perto' ? ' Está perto do limite.' : ''}
+      </p>
+      {top.length ? (
+        <details className="peso-imagens" open={nivel !== 'ok'}>
+          <summary>Imagens que mais pesam</summary>
+          <ol>
+            {top.map((im) => (
+              <li key={im.id}>
+                {assets[im.id] ? <img src={assets[im.id]} alt="" /> : null}
+                <span className="peso-onde">{im.onde}</span>
+                <b>{formatarPeso(im.bytes)}</b>
+              </li>
+            ))}
+          </ol>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
 /** Painel de dados das coleções: editar, reordenar (arrastar), visibilidade, destaque. */
-export function DataPanel({ doc, onSelect }: { doc: DocApi; onSelect: (s: Selection) => void }): React.ReactElement {
+export function DataPanel({ doc, onSelect, peso, assets }: { doc: DocApi; onSelect: (s: Selection) => void; peso?: PesoDoSite; assets?: Record<string, string> }): React.ReactElement {
   const c = doc.state.collections;
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const sel = (collection: CollectionName, id: string): void => onSelect({ kind: 'item', collection, itemId: id });
@@ -52,6 +90,7 @@ export function DataPanel({ doc, onSelect }: { doc: DocApi; onSelect: (s: Select
 
   return (
     <div className="panel data-panel">
+      {peso ? <PesoDoSitePainel peso={peso} assets={assets ?? {}} /> : null}
       <div className="panel-h">Projetos</div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('projects', c.projects.map((p) => p.id))}>
         <table className="data-table">

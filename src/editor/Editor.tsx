@@ -17,6 +17,7 @@ import siteShell from '../publish/site-shell.html?raw';
 import { assembleSiteHtml } from '../publish/assemble';
 import { buildPublishPayload } from '../publish/buildPayload';
 import { arquivosAoLado, runPreflight } from '../publish/preflight';
+import { formatarPeso, LIMITE_GITHUB_BYTES, pesoDoSite, type PesoDoSite } from '../publish/peso';
 import type { MigratedAsset } from '../migrate/migrate';
 import { importImage } from '../assets/importImage';
 import { makeFavicon } from '../assets/favicon';
@@ -210,6 +211,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [selection, setSelection] = useState<Selection>(null);
   const [lang, setLang] = useState<Lang>('pt');
   const [leftTab, setLeftTab] = useState<'pages' | 'layers' | 'theme' | 'data'>('layers');
+  // Peso estimado do index.html (runtime + dados + imagens que vão para o site).
+  const peso = useMemo(() => pesoDoSite(doc.state, assets, siteShell.length), [doc.state, assets]);
   // Largura do canvas: ver o site como no tablet/celular (usa o mesmo CSS responsivo do site).
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const backupRef = useRef<(() => void) | null>(null);
@@ -975,7 +978,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const frame = siteFrame(doc.state, resolveAsset);
   return (
     <div className="editor" style={styleVars(themeToCssVars(doc.state.theme))}>
-      <TopBar doc={doc} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
+      <TopBar doc={doc} peso={peso} onPeso={() => { setLeftTab('data'); setGaveta('esquerda'); }} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
       {notice && showNotice ? (
         <div className="editor-notice" role="status">
           <span>{notice}</span>
@@ -1007,7 +1010,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           ) : leftTab === 'theme' ? (
             <ThemePanel doc={doc} onUploadImage={uploadImage} onUploadFavicon={uploadFavicon} resolveAsset={resolveAsset} />
           ) : leftTab === 'data' ? (
-            <DataPanel doc={doc} onSelect={abrirItem} />
+            <DataPanel doc={doc} onSelect={abrirItem} peso={peso} assets={assets} />
           ) : (
             <LayersPanel doc={doc} page={page} item={item} lang={lang} selection={selection} onSelect={setSelection} />
           )}
@@ -1118,7 +1121,7 @@ const DEVICES = [
   { id: 'mobile', label: 'Celular (390px)', curto: 'Celular' },
 ] as const;
 
-function TopBar({ doc, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; onUndo: () => void; onRedo: () => void; avisoHistorico: string | null; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
+function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; peso: PesoDoSite; onPeso: () => void; onUndo: () => void; onRedo: () => void; avisoHistorico: string | null; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pedirSenha, setPedirSenha] = useState(false);
 
@@ -1234,6 +1237,7 @@ function TopBar({ doc, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, 
         <button type="button" className="tb-btn" onClick={onVersions} title="Histórico de versões salvas neste navegador">Versões</button>
         <button type="button" className="tb-btn" onClick={download} title="Baixar backup (doc + imagens)">Backup</button>
         <button type="button" className="tb-btn" onClick={() => fileRef.current?.click()} title="Importar backup">Importar</button>
+        <button type="button" className={`tb-peso${peso.total > LIMITE_GITHUB_BYTES ? ' acima' : peso.total > LIMITE_GITHUB_BYTES * 0.8 ? ' perto' : ''}`} onClick={onPeso} title="Peso estimado do index.html (limite do upload pelo GitHub: 25 MB). Clique para ver o que mais pesa.">≈ {formatarPeso(peso.total)}</button>
         <button type="button" className="tb-btn primary" onClick={() => (itensNda ? setPedirSenha(true) : void publishSite())} title="Gera o index.html do site, pronto para subir no GitHub Pages">Baixar site</button>
         {pedirSenha ? (
           <NdaPasswordModal
