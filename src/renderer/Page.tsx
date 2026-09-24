@@ -1,4 +1,5 @@
 import type { BlogItem, I18n, Page, ProjectItem } from '../schema/v4';
+import { useUi } from './ui';
 import { blocoNoSite, SectionView } from './blocks';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useRender } from './context';
@@ -25,16 +26,6 @@ const META_VALUES: Record<string, Record<string, I18n>> = {
 };
 const META_ORDER = ['year', 'client', 'role', 'category', 'skills', 'contribution', 'credits', 'sequenceLabel', 'storyType', 'processNotes'];
 
-const PAGER_TXT = {
-  prev: { pt: 'Anterior', en: 'Previous' },
-  next: { pt: 'Próximo', en: 'Next' },
-  nextBlog: { pt: 'Próxima', en: 'Next' },
-  prevBlog: { pt: 'Anterior', en: 'Previous' },
-  more: { pt: 'Mais projetos', en: 'More projects' },
-  moreBlog: { pt: 'Mais notas', en: 'More notes' },
-  all: { pt: 'Todos os projetos', en: 'All projects' },
-  allBlog: { pt: 'Todas as notas', en: 'All notes' },
-} satisfies Record<string, I18n>;
 
 /**
  * Fim da página de um projeto (ou nota): anterior, a lista inteira e o
@@ -44,6 +35,7 @@ const PAGER_TXT = {
  */
 function DetailPager({ item, kind }: { item: ProjectItem | BlogItem; kind: 'project' | 'blog' }): React.ReactElement | null {
   const { lang, data, editing, onNavigate } = useRender();
+  const t = useUi();
   if (!onNavigate) return null;
   const nome = kind === 'project' ? 'projects' : 'blog';
   const mundoNda = item.visibility === 'nda';
@@ -64,23 +56,22 @@ function DetailPager({ item, kind }: { item: ProjectItem | BlogItem; kind: 'proj
     editing ? { onClick: () => onNavigate(route), role: 'link' } : linkInterno(route, onNavigate);
   const Tag = editing ? 'button' : 'a';
   const rota = (it: ProjectItem | BlogItem): string => `${kind}/${it.id}`;
-  const txt = (k: keyof typeof PAGER_TXT): string => pick(PAGER_TXT[k], lang);
   return (
-    <nav className="detail-pager" aria-label={txt(kind === 'project' ? 'more' : 'moreBlog')}>
+    <nav className="detail-pager" aria-label={t(kind === 'project' ? 'maisProjetos' : 'maisNotas')}>
       {prev ? (
         <Tag className="pager-link pager-prev" {...(editing ? { type: 'button' } : {})} {...ir(rota(prev))}>
-          <span className="pager-dir">← {txt(kind === 'project' ? 'prev' : 'prevBlog')}</span>
+          <span className="pager-dir">← {t('anterior')}</span>
           <span className="pager-title">{pick(prev.title, lang)}</span>
         </Tag>
       ) : <span />}
       {lista ? (
         <Tag className="pager-link pager-all" {...(editing ? { type: 'button' } : {})} {...ir(lista.slug || lista.id)}>
-          {txt(kind === 'project' ? 'all' : 'allBlog')}
+          {t(kind === 'project' ? 'allProjects' : 'todasNotas')}
         </Tag>
       ) : <span />}
       {next ? (
         <Tag className="pager-link pager-next" {...(editing ? { type: 'button' } : {})} {...ir(rota(next))}>
-          <span className="pager-dir">{txt(kind === 'project' ? 'next' : 'nextBlog')} →</span>
+          <span className="pager-dir">{t(kind === 'project' ? 'proximo' : 'proxima')} →</span>
           <span className="pager-title">{pick(next.title, lang)}</span>
         </Tag>
       ) : <span />}
@@ -104,6 +95,7 @@ function PrimeiroBloco(): React.ReactElement {
 /** Renderiza uma página estática, ou o detalhe de um item numa página template. */
 export function PageView({ page, item }: { page: Page; item?: ProjectItem | BlogItem }): React.ReactElement {
   const { lang, data, nda, editing } = useRender();
+  const t = useUi();
 
   if (page.kind === 'template' && item) {
     const isProject = 'meta' in item;
@@ -150,7 +142,7 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
       {page.sections.map((s, i) => (
         <ErrorBoundary
           key={s.id}
-          fallback={() => <p className="secao-defeito">Uma seção desta página não pôde ser exibida. O resto continua aqui.</p>}
+          fallback={() => <p className="secao-defeito">{t('secaoComDefeito')}</p>}
         >
           <SectionView section={s} primeira={i === 0} />
         </ErrorBoundary>

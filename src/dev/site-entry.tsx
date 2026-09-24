@@ -3,7 +3,8 @@ import { createRoot } from 'react-dom/client';
 import '../renderer/styles.css';
 import './site-entry.css';
 import type { AssetResolver } from '../renderer/context';
-import { Site } from '../renderer/Site';
+import { initialVisitorLang, Site } from '../renderer/Site';
+import { htmlLang, textoUi } from '../renderer/ui';
 import { ErrorBoundary } from '../renderer/ErrorBoundary';
 import { decryptNda, type EncryptedNda } from '../publish/nda';
 import { mergeNda, type NdaBundle } from '../publish/publicSnapshot';
@@ -52,17 +53,22 @@ function App(): React.ReactElement {
 
   return (
     <ErrorBoundary
-      fallback={(erro, tentarDeNovo) => (
-        <div className="tela-de-erro">
-          <h1>Algo não pôde ser exibido</h1>
-          <p>Tente de novo ou recarregue a página.</p>
-          <pre>{erro.message}</pre>
-          <div className="tela-de-erro-acoes">
-            <button type="button" onClick={tentarDeNovo}>Tentar de novo</button>
-            <button type="button" onClick={() => location.reload()}>Recarregar</button>
+      // O site caiu inteiro: o idioma do visitante vem da escolha salva (o
+      // estado se perdeu com o erro). O motivo técnico fica no console.
+      fallback={(_erro, tentarDeNovo) => {
+        const lang = initialVisitorLang('pt');
+        const t = (k: Parameters<typeof textoUi>[2]): string => textoUi(data, lang, k);
+        return (
+          <div className="tela-de-erro" lang={htmlLang(lang)}>
+            <h1>{t('erroTitulo')}</h1>
+            <p>{t('erroTexto')}</p>
+            <div className="tela-de-erro-acoes">
+              <button type="button" onClick={tentarDeNovo}>{t('tentarDeNovo')}</button>
+              <button type="button" onClick={() => location.reload()}>{t('recarregar')}</button>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      }}
     >
       <Site data={data} resolveAsset={resolver} editing={false} nda={hasNda ? { locked: !unlocked, unlock } : undefined} />
     </ErrorBoundary>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { PageView } from '../src/renderer/Page';
+import { textoUi } from '../src/renderer/ui';
 import { RenderContext } from '../src/renderer/context';
 import { migrate } from '../src/migrate/migrate';
 import { loadFixture } from './helpers/fixtures';
@@ -26,7 +27,8 @@ describe('fim da página de projeto: anterior · todos · próximo', () => {
     const html = render(d, pub[1]!.id);
     expect(html).toContain(`href="#project/${pub[0]!.id}"`);
     expect(html).toContain(`href="#project/${pub[2]!.id}"`);
-    expect(html).toContain('Todos os projetos');
+    // O texto vem do dicionário da interface — o personalizado do site, se houver.
+    expect(html).toContain(textoUi(d, 'pt', 'allProjects'));
     expect(html).toMatch(/class="pager-link pager-all" href="#[a-z]/); // a página da lista, não a Home
   });
 

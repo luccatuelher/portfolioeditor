@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { useUi } from './ui';
 import { camposDoBloco, faltaNoIdioma } from '../core/camposTexto';
 import { hrefPublico } from '../core/links';
 import { embedProvider, embedSource, motivoDoEmbedVazio } from '../embed/embedSource';
@@ -243,6 +244,7 @@ const NOME_PROVEDOR: Record<string, string> = { youtube: 'YouTube', vimeo: 'Vime
  * função.
  */
 function EmbedCarousel({ blocos, lang }: { blocos: Block[]; lang: Lang }): React.ReactElement | null {
+  const t = useUi();
   const [atual, setAtual] = useState(0);
   const toque = useRef<{ x: number; y: number } | null>(null);
   if (!blocos.length) return null;
@@ -303,8 +305,8 @@ function EmbedCarousel({ blocos, lang }: { blocos: Block[]; lang: Lang }): React
         <BlockView block={{ ...blocos[i]!, span: 12 }} />
         {unico ? null : (
           <>
-            <button type="button" className="pv-carrossel-seta prev" onClick={() => ir(-1)} aria-label={lang === 'en' ? 'Previous' : 'Anterior'}>‹</button>
-            <button type="button" className="pv-carrossel-seta next" onClick={() => ir(1)} aria-label={lang === 'en' ? 'Next' : 'Próximo'}>›</button>
+            <button type="button" className="pv-carrossel-seta prev" onClick={() => ir(-1)} aria-label={t('anterior')}>‹</button>
+            <button type="button" className="pv-carrossel-seta next" onClick={() => ir(1)} aria-label={t('proximo')}>›</button>
           </>
         )}
       </div>
@@ -326,6 +328,7 @@ function EmbedCarousel({ blocos, lang }: { blocos: Block[]; lang: Lang }): React
  * grade e ocultar — os mesmos gestos do resto do editor, valendo só no popup.
  */
 function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () => void; id?: string }): React.ReactElement {
+  const t = useUi();
   const ctx = useRender();
   const panel = useRef<HTMLDivElement>(null);
   // Abriu: traz a prévia para a tela. Sem isso, no celular ela nasce abaixo do
@@ -382,14 +385,14 @@ function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () 
         <div className="home-preview-actions">
           {onNavigate ? (
             <button type="button" className="home-preview-go" onClick={() => onNavigate(`project/${item.id}`)}>
-              {lang === 'en' ? 'Go to project →' : 'Ir para o projeto →'}
+              {t('irParaProjeto')}
             </button>
           ) : null}
-          <button type="button" className="home-preview-close" onClick={onClose} aria-label={ctx.lang === 'en' ? 'Close' : 'Fechar'}>✕</button>
+          <button type="button" className="home-preview-close" onClick={onClose} aria-label={t('fechar')}>✕</button>
         </div>
       </div>
       {editing && edit ? (
-        <div className="pv-chips" aria-label={ctx.lang === 'en' ? 'Project elements in this preview' : 'Elementos do projeto nesta prévia'}>
+        <div className="pv-chips" aria-label={t('elementosDaPrevia')}>
           <span className="pv-chips-label">Nesta prévia:</span>
           {desc ? (
             <button type="button" className={`pv-chip${pv.hideDescription ? '' : ' on'}`} onClick={() => edit((p) => void (p.hideDescription = !p.hideDescription || undefined))}>
@@ -498,6 +501,7 @@ function GalleryCard({ item, cols, onOpen }: { item: GalleryItem; cols: number; 
 }
 
 function SketchCard({ item, cols, onOpen }: { item: SketchItem; cols: number; onOpen?: () => void }): React.ReactElement {
+  const t = useUi();
   const { editing, lang } = useRender();
   const desc = pick(item.image.alt, lang);
   const span = itemWidth(item, cols);
@@ -505,7 +509,7 @@ function SketchCard({ item, cols, onOpen }: { item: SketchItem; cols: number; on
     <div className={`sketch-item${useItemSel(item.id)}`} style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'media'))} {...itemDrag(editing, 'sketches', item.id)}>
       <EditActions target={{ target: 'item', coll: 'sketches', id: item.id }} acts={['image', 'crop', 'edit', 'delete']} nome="sketch" />
       <ItemResize coll="sketches" id={item.id} span={span} />
-      <button type="button" className="sketch-img-btn" onClick={onOpen} aria-label={`${lang === 'en' ? 'Open image' : 'Abrir imagem'}${desc ? `: ${desc}` : ''}`}>
+      <button type="button" className="sketch-img-btn" onClick={onOpen} aria-label={`${t('abrirImagem')}${desc ? `: ${desc}` : ''}`}>
         <Img image={item.image} />
       </button>
       <EditBadges visibility={item.visibility} />
@@ -520,6 +524,7 @@ const CATEGORY_FILTERS = [
 ] as const;
 
 function CollectionView({ block }: { block: Extract<Block, { type: 'collection' }> }): React.ReactElement {
+  const t = useUi();
   const { data, editing, resolveAsset, lang, onOpenLightbox, onNavigate, nda } = useRender();
   const { collection, cols, filter, showFilter, preview } = block.content;
   const [uiFilter, setUiFilter] = useState<'all' | 'professional' | 'personal'>('all');
@@ -559,7 +564,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
     if (expanded) previewPanel = <ProjectPreview key="__preview" id={previewId} item={expanded} onClose={closePreview} />;
     if (showFilter && !fixedCategory) {
       filterBar = (
-        <div className="project-filter" role="group" aria-label={lang === 'en' ? 'Filter projects' : 'Filtrar projetos'}>
+        <div className="project-filter" role="group" aria-label={t('filtrarProjetos')}>
           {CATEGORY_FILTERS.map((f) => (
             <button key={f.value} type="button" className={`filter-btn ${uiFilter === f.value ? 'active' : ''}`} aria-pressed={uiFilter === f.value} onClick={() => setUiFilter(f.value)}>
               {pick(f.label, lang)}
@@ -618,7 +623,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
               {ndaOnly
                 ? editing
                   ? 'Nenhum item NDA ainda — marque a visibilidade de um projeto como NDA. No site, a senha é pedida aqui.'
-                  : lang === 'en' ? 'No confidential work yet.' : 'Nenhum trabalho confidencial ainda.'
+                  : t('semConfidencial')
                 : 'Nenhum item aqui ainda — crie no painel Dados, à esquerda. Esta mensagem só aparece no editor.'}
             </p>
           )
@@ -635,11 +640,11 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
 
 /** Senha da área NDA, exibida no lugar da lista confidencial enquanto trancada. */
 function NdaUnlock(): React.ReactElement {
-  const { nda, lang } = useRender();
+  const { nda } = useRender();
+  const t = useUi();
   const [pw, setPw] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
-  const en = lang === 'en';
   return (
     <form
       className="nda-unlock"
@@ -649,14 +654,14 @@ function NdaUnlock(): React.ReactElement {
         setBusy(true);
         void nda.unlock(pw).then((err) => {
           setBusy(false);
-          setError(err ? (en ? 'Wrong password.' : 'Senha incorreta.') : '');
+          setError(err ? t('senhaIncorreta') : '');
         });
       }}
     >
-      <p className="nda-unlock-text">🔒 {en ? 'Confidential work. Enter the password to view.' : 'Trabalhos confidenciais. Digite a senha para ver.'}</p>
+      <p className="nda-unlock-text">🔒 {t('ndaTexto')}</p>
       <div className="nda-unlock-row">
-        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder={en ? 'Password' : 'Senha'} aria-label={en ? 'NDA password' : 'Senha NDA'} autoComplete="current-password" />
-        <button type="submit" disabled={busy || !pw}>{busy ? '…' : en ? 'Unlock' : 'Desbloquear'}</button>
+        <input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder={t('senha')} aria-label={t('senhaNda')} autoComplete="current-password" />
+        <button type="submit" disabled={busy || !pw}>{busy ? '…' : t('ndaBtn')}</button>
       </div>
       {error ? <p className="nda-unlock-error" role="alert">{error}</p> : null}
     </form>
@@ -747,6 +752,7 @@ function faltaTraduzir(block: Block, lang: 'pt' | 'en'): boolean {
 }
 
 export function BlockView({ block, place, sobra, topo }: { block: Block; place?: Placement; sobra?: { tablet: number | null; mobile: number | null }; topo?: boolean }): React.ReactElement | null {
+  const t = useUi();
   const { data, lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan, nda } = useRender();
   if (!editing && !blocoNoSite(block, nda)) return null;
 
@@ -824,7 +830,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
         <div className="storyboard-grid">
           {frames.map((f, i) => (
             <div key={i} className="storyboard-cell" style={styleVars(spanVars({ desktop: f.span ?? 3, tablet: f.spanTablet, mobile: f.spanMobile }, 'media'))} {...(editing ? { draggable: true, 'data-frame-block': block.id, 'data-frame-idx': i } : {})}>
-              <button type="button" className="storyboard-frame-btn" onClick={() => onOpenLightbox?.(light, i)} aria-label={`${lang === 'en' ? 'Open frame' : 'Abrir quadro'} ${i + 1}${pick(f.alt, lang) ? `: ${pick(f.alt, lang)}` : ''}`}>
+              <button type="button" className="storyboard-frame-btn" onClick={() => onOpenLightbox?.(light, i)} aria-label={`${t('abrirQuadro')} ${i + 1}${pick(f.alt, lang) ? `: ${pick(f.alt, lang)}` : ''}`}>
                 <Img image={f} className="storyboard-frame" />
               </button>
               <EditActions target={{ target: 'frame', id: block.id, idx: i }} acts={['image', 'crop', 'edit', 'delete']} nome={`quadro ${i + 1} do storyboard`} />
@@ -947,13 +953,16 @@ export function SectionView({ section, primeira }: { section: Section; primeira?
         {shown.map((b, i) => (
           <ErrorBoundary
             key={b.id}
-            fallback={(erro, tentarDeNovo) => (
+            // No editor, o aviso com o motivo (é quem pode consertar). No site, o
+            // bloco quebrado some: o visitante não tem o que fazer com "TypeError"
+            // — o registro fica no console (ErrorBoundary).
+            fallback={(erro, tentarDeNovo) => (editing ? (
               <div className="block block-defeito" style={styleVars({ '--span': b.span })} data-block-id={b.id}>
                 <b>Este elemento não pôde ser exibido</b>
                 <span>{b.type} · {erro.message.slice(0, 120)}</span>
                 <button type="button" onClick={tentarDeNovo}>Tentar de novo</button>
               </div>
-            )}
+            ) : null)}
           >
             <BlockView block={b} place={places[i]} sobra={places[i] ? sobraPorLinha.get(places[i]!.row) : undefined} topo={primeira && (places[i]?.row ?? '').startsWith('1 ')} />
           </ErrorBoundary>

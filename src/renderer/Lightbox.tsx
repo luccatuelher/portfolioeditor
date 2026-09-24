@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { LightItem } from './context';
 import { cropImgStyle } from './blocks';
-import { useRender } from './context';
+import { useUi } from './ui';
 
 /**
  * Visualizador de imagem (storyboard, galeria, sketches): overlay escuro sobre
@@ -12,8 +12,7 @@ import { useRender } from './context';
  * mais de uma imagem; no celular, deslizar para o lado também troca.
  */
 export function Lightbox({ items, index, onIndex, onClose }: { items: LightItem[]; index: number; onIndex: (i: number) => void; onClose: () => void }): React.ReactElement | null {
-  const { lang } = useRender();
-  const en = lang === 'en';
+  const t = useUi();
   const boxRef = useRef<HTMLDivElement>(null);
   const touch = useRef<{ x: number; y: number } | null>(null);
   const clamped = Math.max(0, Math.min(index, items.length - 1));
@@ -71,19 +70,19 @@ export function Lightbox({ items, index, onIndex, onClose }: { items: LightItem[
   };
 
   return (
-    <div className="lightbox" role="dialog" aria-modal="true" aria-label={en ? 'Enlarged image' : 'Imagem ampliada'} aria-describedby={current.caption ? 'lightbox-legenda' : undefined} ref={boxRef} tabIndex={-1} onClick={onClose} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      <button type="button" className="lightbox-close" onClick={(e) => { stop(e); onClose(); }} aria-label={en ? 'Close' : 'Fechar'}>✕</button>
+    <div className="lightbox" role="dialog" aria-modal="true" aria-label={t('imagemAmpliada')} aria-describedby={current.caption ? 'lightbox-legenda' : undefined} ref={boxRef} tabIndex={-1} onClick={onClose} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <button type="button" className="lightbox-close" onClick={(e) => { stop(e); onClose(); }} aria-label={t('fechar')}>✕</button>
       {current.crop ? (
         <span className="lightbox-img img-crop" style={{ aspectRatio: String(current.crop.ar), width: `min(92vw, calc(var(--lb-h, 88vh) * ${current.crop.ar}))` }} onClick={stop}>
-          <img src={current.src} alt={current.alt || `${en ? 'Image' : 'Imagem'} ${clamped + 1}`} style={cropImgStyle(current.crop)} />
+          <img src={current.src} alt={current.alt || `${t('imagem')} ${clamped + 1}`} style={cropImgStyle(current.crop)} />
         </span>
       ) : (
-        <img className="lightbox-img" src={current.src} alt={current.alt || `${en ? 'Image' : 'Imagem'} ${clamped + 1}`} onClick={stop} />
+        <img className="lightbox-img" src={current.src} alt={current.alt || `${t('imagem')} ${clamped + 1}`} onClick={stop} />
       )}
       {many ? (
         <>
-          <button type="button" className="lightbox-nav prev" onClick={(e) => { stop(e); step(-1); }} aria-label={en ? 'Previous image' : 'Imagem anterior'}>‹</button>
-          <button type="button" className="lightbox-nav next" onClick={(e) => { stop(e); step(1); }} aria-label={en ? 'Next image' : 'Próxima imagem'}>›</button>
+          <button type="button" className="lightbox-nav prev" onClick={(e) => { stop(e); step(-1); }} aria-label={t('imagemAnterior')}>‹</button>
+          <button type="button" className="lightbox-nav next" onClick={(e) => { stop(e); step(1); }} aria-label={t('proximaImagem')}>›</button>
         </>
       ) : null}
       {current.caption || many ? (

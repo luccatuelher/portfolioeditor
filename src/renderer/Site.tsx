@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { htmlLang, textoUi } from './ui';
 import { rotaCanonica } from '../core/links';
 import type { BlogItem, Page, PortfolioV4, ProjectItem } from '../schema/v4';
 import type { AssetResolver, Lang, LightItem, RenderContextValue } from './context';
@@ -69,7 +70,7 @@ export interface SiteProps {
 
 /** Raiz do renderer: mesmo componente serve o site público e o canvas do editor. */
 /** Idioma inicial do visitante: a escolha salva, senão o do navegador (quem não usa português vê EN). */
-function initialVisitorLang(fallback: Lang): Lang {
+export function initialVisitorLang(fallback: Lang): Lang {
   try {
     const saved = localStorage.getItem('portfolio-lang');
     if (saved === 'pt' || saved === 'en') return saved;
@@ -159,7 +160,7 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
 
   useEffect(() => {
     try {
-      document.documentElement.lang = lang === 'en' ? 'en' : 'pt-BR';
+      document.documentElement.lang = htmlLang(lang);
     } catch {
       /* ambiente sem document */
     }
@@ -195,11 +196,11 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
 
   return (
     <RenderContext.Provider value={ctx}>
-      <div className={`site${frame.className}`} lang={lang === 'en' ? 'en' : 'pt-BR'} style={styleVars({ ...themeToCssVars(data.theme), ...frame.vars })}>
+      <div className={`site${frame.className}`} lang={htmlLang(lang)} style={styleVars({ ...themeToCssVars(data.theme), ...frame.vars })}>
         {/* Primeiro item do Tab: pula o menu inteiro e vai ao conteúdo. Só aparece ao receber foco. */}
         {!editing ? (
           <a className="skip-link" href="#conteudo">
-            {lang === 'en' ? 'Skip to content' : 'Pular para o conteúdo'}
+            {textoUi(data, lang, 'pularConteudo')}
           </a>
         ) : null}
         <SiteHeader data={data} lang={lang} onLang={setLang} onNavigate={navigate} current={route} />
