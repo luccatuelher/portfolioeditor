@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { hrefPublico } from '../core/links';
 import { embedProvider, embedSource, motivoDoEmbedVazio } from '../embed/embedSource';
 import { sobraDaLinha, spanVars } from './responsive';
 import { ErrorBoundary } from './ErrorBoundary';
@@ -751,7 +752,7 @@ function faltaTraduzir(block: Block, lang: 'pt' | 'en'): boolean {
 }
 
 export function BlockView({ block, place, sobra, topo }: { block: Block; place?: Placement; sobra?: { tablet: number | null; mobile: number | null }; topo?: boolean }): React.ReactElement | null {
-  const { lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan, nda } = useRender();
+  const { data, lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan, nda } = useRender();
   if (!editing && !blocoNoSite(block, nda)) return null;
 
   const bgToken = block.style?.bg;
@@ -906,7 +907,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
           : null;
       }
       return wrap(
-        <a className={`btn btn-${c.variant}`} href={c.href} {...(c.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})} onClick={editing ? (e) => e.preventDefault() : undefined}>
+        <a className={`btn btn-${c.variant}`} href={hrefPublico(data, c.href)} {...(c.newTab ? { target: '_blank', rel: 'noopener noreferrer' } : {})} onClick={editing ? (e) => e.preventDefault() : undefined}>
           {pick(c.label, lang)}
         </a>,
       );

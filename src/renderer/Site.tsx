@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { rotaCanonica } from '../core/links';
 import type { BlogItem, Page, PortfolioV4, ProjectItem } from '../schema/v4';
 import type { AssetResolver, Lang, LightItem, RenderContextValue } from './context';
 import { RenderContext } from './context';
@@ -90,7 +91,8 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
     }
   }, []);
   // A rota vive no endereço (#projects, #project/<id>…): voltar/avançar do navegador funcionam, inclusive em file://.
-  const hashRoute = (): string => (typeof location !== 'undefined' ? rotaDoHash(location.hash) : '');
+  // Link para página chega pelo id (#about) e aparece pelo endereço (#sobre): ver core/links.
+  const hashRoute = (): string => (typeof location !== 'undefined' ? rotaCanonica(data, rotaDoHash(location.hash)) : '');
   const [route, setRouteState] = useState(() => (editing ? initialRoute : hashRoute() || initialRoute));
   const [lightbox, setLightbox] = useState<{ items: LightItem[]; index: number } | null>(null);
   const lbPushed = useRef(false);
@@ -99,14 +101,15 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
   const { page, item } = resolveRoute(data, route);
 
   const navigate = useCallback(
-    (r: string) => {
+    (rota: string) => {
+      const r = editing ? rota : rotaCanonica(data, rota);
       setRouteState(r);
       if (editing || typeof history === 'undefined') return;
       const hash = r && r !== 'home' ? `#${r}` : '#';
       if (location.hash !== hash) history.pushState({ route: r }, '', hash === '#' ? location.pathname + location.search : hash);
       window.scrollTo({ top: 0 });
     },
-    [editing],
+    [editing, data],
   );
 
   useEffect(() => {
@@ -122,12 +125,21 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
         setLightbox(null);
         return;
       }
-      setRouteState(hashRoute());
+      const r = hashRoute();
+      setRouteState(r);
+      // Chegou pelo id (link de texto, endereço antigo): o endereço mostra a rota canônica.
+      if (rotaDoHash(location.hash) !== r) history.replaceState(history.state, '', r ? `#${r}` : location.pathname + location.search);
       window.scrollTo({ top: 0 });
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [editing]);
+  }, [editing, data]);
+
+  // Abriu por um endereço antigo ou pelo id (#about): mostra o canônico (#sobre).
+  useEffect(() => {
+    if (editing || typeof history === 'undefined') return;
+    if (rotaDoHash(location.hash) !== route && location.hash) history.replaceState(history.state, '', route ? `#${route}` : location.pathname + location.search);
+  }, []);
 
   const openLightbox = (items: LightItem[], index: number): void => {
     setLightbox({ items, index });

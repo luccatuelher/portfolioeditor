@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import { hrefDaPagina, problemaDoLink } from '../core/links';
 import type { I18n, PortfolioV4 } from '../schema/v4';
 import { pick } from '../renderer/text';
 import { I18nInput, Row, TextInput } from './fields';
@@ -13,12 +14,14 @@ const OUTRO = '__outro';
 
 /** Endereços internos do site que um link pode apontar (páginas e projetos). */
 export function destinosInternos(doc: PortfolioV4): { grupo: string; value: string; label: string }[] {
+  // Rascunhos entram marcados: um botão que já aponta para um deles continua
+  // reconhecível na lista (o aviso embaixo diz que ele não vai para o site).
+  const rascunho = (v: string): string => (v === 'draft' ? ' (rascunho)' : '');
   const paginas = doc.pages
-    .filter((p) => p.kind === 'static' && p.visibility !== 'draft')
-    .map((p) => ({ grupo: 'Página do site', value: p.id === 'home' ? '#home' : `#${p.slug || p.id}`, label: pick(p.title, 'pt') || p.slug || p.id }));
+    .filter((p) => p.kind === 'static')
+    .map((p) => ({ grupo: 'Página do site', value: hrefDaPagina(p), label: `${pick(p.title, 'pt') || p.slug || p.id}${p.id === 'home' ? '' : rascunho(p.visibility)}` }));
   const projetos = doc.collections.projects
-    .filter((p) => p.visibility !== 'draft')
-    .map((p) => ({ grupo: 'Projeto', value: `#project/${p.id}`, label: pick(p.title, 'pt') || p.id }));
+    .map((p) => ({ grupo: 'Projeto', value: `#project/${p.id}`, label: `${pick(p.title, 'pt') || p.id}${rascunho(p.visibility)}` }));
   return [...paginas, ...projetos];
 }
 
@@ -32,6 +35,7 @@ export function LinkPicker({ doc, href, onChange }: { doc: PortfolioV4; href: st
   const internos = new Set(destinos.map((d) => d.value));
   const h = href.trim();
   const [digitando, setDigitando] = useState(false);
+  const problema = problemaDoLink(doc, h);
   const outro = digitando || (h !== '' && h !== '#' && !internos.has(h));
   const grupos = [...new Set(destinos.map((d) => d.grupo))];
   return (
@@ -68,6 +72,7 @@ export function LinkPicker({ doc, href, onChange }: { doc: PortfolioV4; href: st
           <TextInput label="Endereço do link" value={href} placeholder="https://…, mailto:voce@email.com ou cv.pdf" onChange={onChange} />
         </Row>
       ) : null}
+      {problema ? <div className="insp-note insp-warn">Este link {problema}.</div> : null}
     </>
   );
 }

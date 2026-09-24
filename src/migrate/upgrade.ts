@@ -1,4 +1,5 @@
 import type { Block, PortfolioV4, Section } from '../schema/v4';
+import { linksPorId } from '../core/links';
 
 const uid = (): string => `b_${(globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)).replace(/-/g, '').slice(0, 12)}`;
 
@@ -30,5 +31,7 @@ export function upgradeDoc(doc: PortfolioV4): PortfolioV4 {
       if (b.type === 'collection' && (!b.content.filter || b.content.filter === 'all')) b.content.filter = 'nda';
     }
   }
+  // Link para página gravado pelo endereço quebrava ao renomear o endereço: passa a ser pelo id.
+  linksPorId(doc);
   return doc;
 }

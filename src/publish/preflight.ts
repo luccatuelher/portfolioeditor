@@ -1,6 +1,7 @@
 import { embedSource } from '../embed/embedSource';
 import type { Block, ImageRef, PortfolioV4 } from '../schema/v4';
 import { textosSemTraducao } from '../editor/pendencias';
+import { linksDoDocumento, problemaDoLink, type LinkNoDocumento } from '../core/links';
 
 export interface PreflightResult {
   errors: string[];
@@ -121,6 +122,20 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
         }
       }
     }
+  }
+
+  // Links internos (botões, CV, links nos textos) do que vai para o site:
+  // página excluída ou em rascunho não quebra o site, mas leva o visitante à Home.
+  const vaiProSite = (l: LinkNoDocumento): boolean => {
+    const c = l.container;
+    const secs = c.on === 'page'
+      ? data.pages.find((p) => p.id === c.pageId && (p.visibility !== 'draft' || p.id === 'home'))?.sections
+      : data.collections[c.collection].find((i) => i.id === c.itemId && i.visibility === 'public')?.sections;
+    return !!secs?.find((s) => s.id === l.sectionId)?.blocks.some((b) => b.id === l.blockId && b.visibility === 'public');
+  };
+  for (const l of linksDoDocumento(data)) {
+    const problema = vaiProSite(l) ? problemaDoLink(data, l.href) : null;
+    if (problema) warnings.push(`${l.onde}: ${problema}.`);
   }
 
   if (missingAlt > 0) warnings.push(`${missingAlt} imagem(ns) sem descrição (texto alternativo) — a lista, com atalho para cada uma, está no painel Dados › Descrição das imagens.`);
