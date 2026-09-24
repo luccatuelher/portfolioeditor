@@ -6,7 +6,11 @@ import { z } from 'zod';
  * bilíngue, todo estilo por referência a tokens do tema.
  */
 
-export const SCHEMA_VERSION = 4 as const;
+import { SCHEMA_VERSION } from './defaults';
+
+// Valores padrão ficam em ./defaults (sem zod): o site publicado usa eles e não
+// precisa carregar a biblioteca de validação.
+export { SCHEMA_VERSION, DEFAULT_LAYOUT, DEFAULT_HEADER, headerSpan, defaultTheme } from './defaults';
 
 // ------------------------------------------------------------------ primitivos
 export const I18nSchema = z.strictObject({
@@ -436,37 +440,6 @@ export type HeaderConfig = z.infer<typeof HeaderConfigSchema>;
 export type PageLayout = z.infer<typeof PageLayoutSchema>;
 export type Backdrop = z.infer<typeof BackdropSchema>;
 
-export const DEFAULT_LAYOUT: PageLayout = { margin: 10, maxWidth: 2200 };
 export type HeaderElement = z.infer<typeof HeaderElementSchema>;
 
-export const DEFAULT_HEADER: HeaderConfig = { order: ['brand', 'lang', 'nav'], layout: 'grid', spans: { brand: 6, lang: 6, nav: 12 }, align: { lang: 'end', nav: 'end' } };
-
-/** Largura padrão de um elemento do cabeçalho quando não definida. */
-export const headerSpan = (cfg: HeaderConfig, el: string): number => cfg.spans?.[el] ?? DEFAULT_HEADER.spans?.[el] ?? 12;
 export type PortfolioV4 = z.infer<typeof PortfolioV4Schema>;
-
-/** Tema padrão, portado dos tokens CSS `:root` do v3 (legacy/index.html l.13). */
-export function defaultTheme(): Theme {
-  return {
-    colors: {
-      bg: '#F2EFE8',
-      surface: '#E8E4DB',
-      ink: '#1C1B18',
-      inkSoft: '#5A574F',
-      inkPale: '#A09C93',
-      rule: '#C8C4BB',
-      accent: '#C1440E',
-      accent2: '#2D5A8E',
-    },
-    fonts: { display: 'DM Serif Display', body: 'DM Sans', mono: 'DM Mono' },
-    type: { base: 16, ratio: 1.25 },
-    textStyles: {
-      display: { font: 'display', size: 3.2, weight: 400, tracking: -0.02, case: 'none' },
-      label: { font: 'mono', size: 0.68, weight: 500, tracking: 0.15, case: 'upper' },
-      body: { font: 'body', size: 1, weight: 300, tracking: 0, case: 'none' },
-    },
-    space: { unit: 8 },
-    radius: 2,
-    grid: { cols: 12, maxWidth: 1100, gutter: 24 },
-  };
-}

@@ -8,7 +8,7 @@ import { ErrorBoundary } from '../renderer/ErrorBoundary';
 import { decryptNda, type EncryptedNda } from '../publish/nda';
 import { mergeNda, type NdaBundle } from '../publish/publicSnapshot';
 import type { PortfolioV4 } from '../schema/v4';
-import { repairDoc } from '../migrate/repair';
+import { reporBasico } from '../migrate/formaMinima';
 
 declare global {
   interface Window {
@@ -18,10 +18,16 @@ declare global {
   }
 }
 
-// Nunca derruba o site por um campo inválido: conserta só o que não bate com o schema.
-const repaired = repairDoc(window.__PORTFOLIO_DATA__ ?? {});
-if (repaired.fixes.length) console.warn('[site] dados ajustados:', repaired.fixes);
-const publicData: PortfolioV4 = repaired.doc ?? (window.__PORTFOLIO_DATA__ as PortfolioV4);
+// Os dados já saem validados da publicação (buildPublishPayload roda o
+// repairDoc). Aqui só a forma mínima — tema, coleções, dados do site — para
+// um arquivo mexido à mão não derrubar a página; sem carregar o schema (zod)
+// no celular de quem visita. O resto fica com a barreira de erro.
+const bruto = structuredClone(window.__PORTFOLIO_DATA__ ?? {}) as Record<string, unknown>;
+if (!Array.isArray(bruto['pages'])) bruto['pages'] = [];
+const ajustes: string[] = [];
+reporBasico(bruto, ajustes);
+if (ajustes.length) console.warn('[site] dados ajustados:', ajustes);
+const publicData = bruto as unknown as PortfolioV4;
 const assets: Record<string, string> = { ...(window.__ASSETS__ ?? {}) };
 const resolver: AssetResolver = (ref) => (ref.assetId ? assets[ref.assetId] ?? '' : ref.url ?? '');
 

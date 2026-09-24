@@ -41,3 +41,12 @@ describe('peso estimado do site', () => {
     expect(formatarPeso(3.4 * 1048576)).toBe('3,4 MB');
   });
 });
+
+describe('runtime do site publicado', () => {
+  it('não carrega a biblioteca de validação (zod): os dados já saem validados da publicação', () => {
+    const shell = readFileSync(new URL('../src/publish/site-shell.html', import.meta.url), 'utf8');
+    expect(shell).not.toContain('ZodError');
+    // Referência: com o zod eram ~403 KB; sem ele, ~300 KB.
+    expect(shell.length).toBeLessThan(340_000);
+  });
+});

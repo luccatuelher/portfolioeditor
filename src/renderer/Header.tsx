@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { DEFAULT_HEADER, headerSpan, type HeaderElement, type Page, type PortfolioV4 } from '../schema/v4';
+import { DEFAULT_HEADER, headerSpan } from '../schema/defaults';
+import type { HeaderElement, Page, PortfolioV4 } from '../schema/v4';
 import type { Lang } from './context';
 import { useRender } from './context';
 import { EditActions, SpanHandle } from './blocks';
