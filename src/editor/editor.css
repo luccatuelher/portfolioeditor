@@ -669,8 +669,8 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .pendencia { padding-bottom: 6px; }
 .peso-site .panel-h { margin-bottom: 4px; }
 /* Traduções (painel Dados): idioma que falta, onde está e o começo do texto */
-.traducoes-lista li { grid-template-columns: 26px 1fr auto; }
-.traducoes-falta { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.04em; text-align: center; border: 1px solid #d8b49a; color: #a0522d; border-radius: 3px; padding: 2px 0; }
+.traducoes-lista li { grid-template-columns: minmax(26px, auto) 1fr auto; }
+.traducoes-falta { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.04em; text-align: center; white-space: nowrap; border: 1px solid #d8b49a; color: #a0522d; border-radius: 3px; padding: 2px 3px; }
 .traducoes-texto { display: grid; min-width: 0; }
 .traducoes-trecho { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8a867c; font-style: italic; }
 /* Página/projeto sem nenhuma seção: um convite grande para começar */

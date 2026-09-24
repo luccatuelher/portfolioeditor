@@ -1,6 +1,7 @@
 import type { Block, ImageRef, PortfolioV4, Section } from '../schema/v4';
 import { pick } from '../renderer/text';
 import type { Container, Selection } from './paths';
+import { camposDeTexto, textoLimpo, type CampoId, type Dono } from '../core/camposTexto';
 
 /**
  * Imagem publicada sem descrição (texto alternativo): o que o leitor de tela
@@ -11,6 +12,8 @@ export interface ImagemSemDescricao {
   onde: string;
   imagem: ImageRef;
   alvo: NonNullable<Selection>;
+  /** O campo de descrição no Inspector (camposTexto). */
+  campo: CampoId;
   /** Quadro do storyboard a pôr em foco no Inspector. */
   quadro?: number;
 }
@@ -26,10 +29,10 @@ export function imagensSemDescricao(doc: PortfolioV4): ImagemSemDescricao[] {
       for (const b of s.blocks as Block[]) {
         if (b.visibility === 'draft') continue;
         const ref = { container, sectionId: s.id, blockId: b.id };
-        if (b.type === 'image' && semDescricao(b.content.image)) out.push({ onde: `Imagem · ${lugar}`, imagem: b.content.image, alvo: { kind: 'block', ref } });
+        if (b.type === 'image' && semDescricao(b.content.image)) out.push({ onde: `Imagem · ${lugar}`, imagem: b.content.image, alvo: { kind: 'block', ref }, campo: 'content.image.alt' });
         if (b.type === 'storyboard') {
           b.content.frames.forEach((f, i) => {
-            if (semDescricao(f)) out.push({ onde: `quadro ${i + 1} do Storyboard · ${lugar}`, imagem: f, alvo: { kind: 'block', ref }, quadro: i });
+            if (semDescricao(f)) out.push({ onde: `quadro ${i + 1} do Storyboard · ${lugar}`, imagem: f, alvo: { kind: 'block', ref }, campo: `frames.${i}.alt`, quadro: i });
           });
         }
       }
@@ -43,82 +46,63 @@ export function imagensSemDescricao(doc: PortfolioV4): ImagemSemDescricao[] {
     }
   }
   for (const g of doc.collections.gallery) {
-    if (g.visibility !== 'draft' && semDescricao(g.image)) out.push({ onde: pick(g.caption, 'pt') ? `galeria “${pick(g.caption, 'pt')}”` : 'imagem da galeria', imagem: g.image, alvo: { kind: 'item', collection: 'gallery', itemId: g.id } });
+    if (g.visibility !== 'draft' && semDescricao(g.image)) out.push({ onde: pick(g.caption, 'pt') ? `galeria “${pick(g.caption, 'pt')}”` : 'imagem da galeria', imagem: g.image, alvo: { kind: 'item', collection: 'gallery', itemId: g.id }, campo: 'image.alt' });
   }
   for (const s of doc.collections.sketches) {
-    if (s.visibility !== 'draft' && semDescricao(s.image)) out.push({ onde: 'sketch', imagem: s.image, alvo: { kind: 'item', collection: 'sketches', itemId: s.id } });
+    if (s.visibility !== 'draft' && semDescricao(s.image)) out.push({ onde: 'sketch', imagem: s.image, alvo: { kind: 'item', collection: 'sketches', itemId: s.id }, campo: 'image.alt' });
   }
   return out;
 }
 
-/** Um texto publicado que só existe num idioma. `falta` é o idioma a preencher. */
+/**
+ * Um texto publicado que só existe num idioma (`tipo: 'falta'`), ou que está
+ * igual nos dois (`'igual'`: a migração do portfólio antigo copiou o
+ * português para o inglês). `falta` é o idioma a preencher; `campo` é o id
+ * do campo no Inspector (para levar o cursor até ele).
+ */
 export interface TextoSemTraducao {
   onde: string;
+  tipo: 'falta' | 'igual';
   falta: 'pt' | 'en';
   /** Começo do texto que existe, para a pessoa reconhecer qual é. */
   trecho: string;
+  campo: CampoId;
   alvo: NonNullable<Selection>;
 }
 
-const limpo = (s: string): string => s.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim();
+/** Iguais nos dois idiomas só contam a partir de 4 palavras: nome, título curto e termo ("Storyboard") costumam ser iguais de propósito. */
+const PALAVRAS_IGUAL = 4;
+
+/** O que selecionar para chegar ao dono de um campo. */
+export function selecaoDoDono(d: Dono): NonNullable<Selection> {
+  if (d.tipo === 'site') return { kind: 'site' };
+  if (d.tipo === 'pagina') return { kind: 'page', pageId: d.pageId };
+  if (d.tipo === 'item') return { kind: 'item', collection: d.colecao, itemId: d.itemId };
+  return { kind: 'block', ref: { container: d.container, sectionId: d.sectionId, blockId: d.blockId } };
+}
 
 /**
- * Textos que vão para o site com PT e sem EN (ou o contrário). No site, o
- * visitante do outro idioma vê o texto do idioma que existe — funciona, mas
- * fica pela metade. Mesmos campos que o canvas marca com "sem EN"/"sem PT".
+ * Textos que vão para o site com PT e sem EN (ou o contrário) — o visitante
+ * do outro idioma vê o texto do idioma que existe: funciona, mas fica pela
+ * metade — e textos longos iguais nos dois (`tipo: 'igual'`), à parte. Os
+ * campos vêm de camposDeTexto, a mesma lista que o canvas usa.
  */
 export function textosSemTraducao(doc: PortfolioV4): TextoSemTraducao[] {
   const out: TextoSemTraducao[] = [];
-  const ver = (v: { pt: string; en: string } | undefined, onde: string, alvo: NonNullable<Selection>): void => {
-    if (!v) return;
-    const pt = limpo(v.pt);
-    const en = limpo(v.en);
-    if (!!pt === !!en) return;
+  for (const c of camposDeTexto(doc)) {
+    if (!c.publicado) continue;
+    const pt = textoLimpo(c.valor.pt);
+    const en = textoLimpo(c.valor.en);
     const texto = pt || en;
-    out.push({ onde, falta: pt ? 'en' : 'pt', trecho: texto.length > 40 ? `${texto.slice(0, 40)}…` : texto, alvo });
-  };
-  ver(doc.site.name, 'nome do site', { kind: 'site' });
-  ver(doc.site.role, 'função no cabeçalho', { kind: 'site' });
-  const blocos = (sections: Section[], container: Container, lugar: string): void => {
-    for (const s of sections) {
-      for (const b of s.blocks as Block[]) {
-        if (b.visibility === 'draft') continue;
-        const alvo = { kind: 'block' as const, ref: { container, sectionId: s.id, blockId: b.id } };
-        if (b.type === 'heading') ver(b.content.text, `Título · ${lugar}`, alvo);
-        else if (b.type === 'text') ver(b.content.html, `Texto · ${lugar}`, alvo);
-        else if (b.type === 'button') ver(b.content.label, `Botão · ${lugar}`, alvo);
-        else if (b.type === 'image') ver(b.content.image.alt, `Descrição da imagem · ${lugar}`, alvo);
-        else if (b.type === 'contact') {
-          ver(b.content.heading, `Contato (título) · ${lugar}`, alvo);
-          ver(b.content.body, `Contato (texto) · ${lugar}`, alvo);
-        }
-      }
+    if (!texto) continue;
+    const trecho = texto.length > 40 ? `${texto.slice(0, 40)}…` : texto;
+    const onde = `${c.rotulo[0]!.toUpperCase()}${c.rotulo.slice(1)} · ${c.lugar}`;
+    const base = { onde, trecho, campo: c.campo, alvo: selecaoDoDono(c.dono) };
+    if (!pt || !en) out.push({ ...base, tipo: 'falta', falta: pt ? 'en' : 'pt' });
+    else if (pt === en && pt.split(' ').filter((w) => /\p{L}/u.test(w)).length >= PALAVRAS_IGUAL) {
+      // "&", "·" e números não contam como palavra.
+      out.push({ ...base, tipo: 'igual', falta: 'en' });
     }
-  };
-  for (const p of doc.pages) {
-    if (p.visibility === 'draft') continue;
-    const nome = `página ${pick(p.title, 'pt') || p.slug}`;
-    if (p.kind === 'static') ver(p.title, `nome da ${nome}`, { kind: 'page', pageId: p.id });
-    blocos(p.sections, { on: 'page', pageId: p.id }, nome);
-  }
-  for (const it of doc.collections.projects) {
-    if (it.visibility === 'draft') continue;
-    const nome = `projeto “${pick(it.title, 'pt')}”`;
-    const alvo = { kind: 'item' as const, collection: 'projects' as const, itemId: it.id };
-    ver(it.title, `título do ${nome}`, alvo);
-    ver(it.description, `descrição do ${nome}`, alvo);
-    blocos(it.sections, { on: 'item', collection: 'projects', itemId: it.id }, nome);
-  }
-  for (const it of doc.collections.blog) {
-    if (it.visibility === 'draft') continue;
-    const nome = `nota “${pick(it.title, 'pt')}”`;
-    const alvo = { kind: 'item' as const, collection: 'blog' as const, itemId: it.id };
-    ver(it.title, `título da ${nome}`, alvo);
-    ver(it.excerpt, `resumo da ${nome}`, alvo);
-    blocos(it.sections, { on: 'item', collection: 'blog', itemId: it.id }, nome);
-  }
-  for (const g of doc.collections.gallery) {
-    if (g.visibility !== 'draft') ver(g.caption, 'legenda da galeria', { kind: 'item', collection: 'gallery', itemId: g.id });
   }
   return out;
 }

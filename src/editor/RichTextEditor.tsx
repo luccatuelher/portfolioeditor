@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import type { I18n } from '../core/i18n';
 import { useEditLang } from './fields';
 import { LangFlag } from '../renderer/Flags';
+import type { CampoId } from '../core/camposTexto';
+import { useFocoDoCampo } from './focoCampo';
 
 function OneEditor({ html, onChange }: { html: string; onChange: (h: string) => void }): React.ReactElement | null {
   const editor = useEditor({
@@ -42,11 +44,12 @@ function OneEditor({ html, onChange }: { html: string; onChange: (h: string) => 
 }
 
 /** Editor rich (Tiptap) no idioma escolhido no toggle do inspector. */
-export function RichI18nInput({ value, onChange }: { value: I18n; onChange: (v: I18n) => void }): React.ReactElement {
+export function RichI18nInput({ value, onChange, campo }: { value: I18n; onChange: (v: I18n) => void; campo?: CampoId }): React.ReactElement {
   const lang = useEditLang();
-  const temTexto = (h: string): boolean => !!h.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
+  const caixa = useRef<HTMLDivElement>(null);
+  useFocoDoCampo(campo, caixa);
   return (
-    <div className="insp-i18n-field" data-falta={!temTexto(value[lang]) && temTexto(value[lang === 'pt' ? 'en' : 'pt']) ? '' : undefined}>
+    <div className="insp-i18n-field" ref={caixa} data-campo={campo}>
       <span className="insp-i18n-tag"><LangFlag lang={lang} /></span>
       <OneEditor key={lang} html={value[lang]} onChange={(h) => onChange({ ...value, [lang]: h })} />
     </div>

@@ -47,6 +47,8 @@ import { useDocument } from './useDocument';
 import { useLocalDraft, type SaveStatus } from './useLocalDraft';
 import { useOutraAba } from './outraAba';
 import { RemoverContext } from './remover';
+import { chaveDaSelecao, type PedidoFoco } from './focoCampo';
+import type { CampoId } from '../core/camposTexto';
 import { imagensSemDescricao, textosSemTraducao, type ImagemSemDescricao, type TextoSemTraducao } from './pendencias';
 
 /** Nome do item no aviso de exclusão. */
@@ -330,36 +332,33 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     [],
   );
 
-  /** Leva ao campo de descrição de uma imagem da lista (abre a página/projeto dela e seleciona). */
-  const irParaDescricao = (p: ImagemSemDescricao): void => {
-    if (p.alvo.kind === 'block') {
-      setContainer(p.alvo.ref.container);
-      setSelection(p.alvo);
-      if (p.quadro !== undefined) setQuadroEmFoco({ blockId: p.alvo.ref.blockId, idx: p.quadro });
-    } else abrirItem(p.alvo);
+  // Pedido de foco num campo do Inspector (ver focoCampo): o campo se foca ao aparecer.
+  const [pedidoFoco, setPedidoFoco] = useState<PedidoFoco | null>(null);
+  const focoAtendido = useCallback((n: number) => setPedidoFoco((p) => (p?.n === n ? null : p)), []);
+  /**
+   * Leva a um campo pelo id (camposTexto): abre onde ele mora (página, projeto,
+   * bloco), seleciona, troca o idioma de edição se pedido e pede o foco.
+   */
+  const irParaCampo = (alvo: NonNullable<Selection>, campo: CampoId, idioma?: Lang): void => {
+    if (idioma) setLang(idioma);
+    if (alvo.kind === 'item') abrirItem(alvo);
+    else {
+      if (alvo.kind === 'block' || alvo.kind === 'section') setContainer(alvo.ref.container);
+      else if (alvo.kind === 'page') setContainer({ on: 'page', pageId: alvo.pageId });
+      setSelection(alvo);
+    }
+    setPedidoFoco((p) => ({ campo, chave: chaveDaSelecao(alvo), n: (p?.n ?? 0) + 1 }));
     setGaveta('direita'); // tela estreita: o campo fica no Inspector
   };
 
-  /**
-   * Leva ao texto que falta traduzir: abre onde ele está, troca o idioma de
-   * edição para o que falta e põe o cursor no campo vazio do Inspector (o
-   * texto do outro idioma aparece de modelo, no placeholder).
-   */
-  const irParaTraducao = (t: TextoSemTraducao): void => {
-    setLang(t.falta);
-    const a = t.alvo;
-    if (a.kind === 'block') setContainer(a.ref.container);
-    else if (a.kind === 'page') setContainer({ on: 'page', pageId: a.pageId });
-    if (a.kind === 'item') abrirItem(a);
-    else setSelection(a);
-    setGaveta('direita');
-    // Depois de o Inspector redesenhar no outro idioma.
-    window.setTimeout(() => requestAnimationFrame(() => {
-      const campo = document.querySelector<HTMLElement>('.inspector [data-falta] :is(input, textarea, [contenteditable="true"])');
-      campo?.scrollIntoView({ block: 'center' });
-      campo?.focus();
-    }), 0);
+  /** "Descrever" na lista de imagens sem descrição. */
+  const irParaDescricao = (p: ImagemSemDescricao): void => {
+    if (p.quadro !== undefined && p.alvo.kind === 'block') setQuadroEmFoco({ blockId: p.alvo.ref.blockId, idx: p.quadro });
+    irParaCampo(p.alvo, p.campo);
   };
+
+  /** "Traduzir" na lista de traduções: no idioma que falta (o outro aparece de modelo no campo). */
+  const irParaTraducao = (t: TextoSemTraducao): void => irParaCampo(t.alvo, t.campo, t.falta);
 
   const openContainer = useCallback((c: Container) => {
     setContainer(c);
@@ -1162,7 +1161,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
 
         <div className="editor-right">
           <button type="button" className="gaveta-fechar" aria-label="Fechar painel" onClick={() => setGaveta(null)}>✕</button>
-          <Inspector doc={doc} selection={selection} onUploadImage={uploadImage} onSelect={setSelection} lang={lang} onLang={setLang} quadroEmFoco={quadroEmFoco} resolveAsset={resolveAsset} />
+          <Inspector doc={doc} selection={selection} onUploadImage={uploadImage} onSelect={setSelection} lang={lang} onLang={setLang} quadroEmFoco={quadroEmFoco} resolveAsset={resolveAsset} pedidoFoco={pedidoFoco} onFocoAtendido={focoAtendido} />
         </div>
       </div>
       <FloatingToolbar fonts={doc.state.theme.fonts} colors={doc.state.theme.colors} />

@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { I18n } from '../core/i18n';
 import { LangFlag } from '../renderer/Flags';
+import type { CampoId } from '../core/camposTexto';
+import { useFocoDoCampo } from './focoCampo';
 
 /** Idioma que os campos bilíngues do inspector estão editando (toggle no topo). */
 export const EditLangContext = createContext<'pt' | 'en'>('pt');
@@ -125,8 +127,14 @@ export function SelectInput<T extends string>({ value, onChange, options }: { va
 }
 
 /** Campo bilíngue: mostra só o idioma escolhido no toggle do inspector. */
-export function I18nInput({ value, onChange, multiline }: { value: I18n; onChange: (v: I18n) => void; multiline?: boolean }): React.ReactElement {
+/**
+ * Campo bilíngue (no idioma em edição). `campo` é o id em camposTexto: com ele,
+ * "Traduzir"/"Descrever" das listas trazem o cursor direto para cá.
+ */
+export function I18nInput({ value, onChange, multiline, campo }: { value: I18n; onChange: (v: I18n) => void; multiline?: boolean; campo?: CampoId }): React.ReactElement {
   const lang = useEditLang();
+  const caixa = useRef<HTMLDivElement>(null);
+  useFocoDoCampo(campo, caixa);
   const other = lang === 'pt' ? 'en' : 'pt';
   // Mesma digitação adiada do TextInput: a gravação no documento espera a pausa.
   const t = useTextoAdiado(value[lang], (v) => onChange({ ...value, [lang]: v }));
@@ -138,9 +146,8 @@ export function I18nInput({ value, onChange, multiline }: { value: I18n; onChang
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => t.aoDigitar(e.target.value),
     onBlur: t.aoSair,
   };
-  // data-falta: só o outro idioma tem texto — é aqui que o atalho "Traduzir" põe o foco.
   return (
-    <div className="insp-i18n-field" data-falta={!value[lang].trim() && value[other].trim() ? '' : undefined}>
+    <div className="insp-i18n-field" ref={caixa} data-campo={campo}>
       <span className="insp-i18n-tag" title={lang === 'pt' ? 'Português' : 'English'}><LangFlag lang={lang} /></span>
       {multiline ? <textarea rows={4} {...common} /> : <input {...common} />}
     </div>

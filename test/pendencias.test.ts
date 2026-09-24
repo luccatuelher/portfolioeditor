@@ -49,7 +49,7 @@ describe('textos sem tradução', () => {
     const proj = d.collections.projects.find((p) => p.visibility !== 'draft')!;
     proj.title = { pt: 'Casa', en: '' };
     const lista = textosSemTraducao(d);
-    expect(lista.some((l) => l.alvo.kind === 'site' && l.onde === 'função no cabeçalho')).toBe(true);
-    expect(lista.some((l) => l.alvo.kind === 'item' && l.alvo.itemId === proj.id && l.onde.startsWith('título do projeto'))).toBe(true);
+    expect(lista.some((l) => l.alvo.kind === 'site' && l.campo === 'site.role' && l.onde === 'Função · cabeçalho')).toBe(true);
+    expect(lista.some((l) => l.alvo.kind === 'item' && l.alvo.itemId === proj.id && l.campo === 'title' && l.onde.startsWith('Título · projeto'))).toBe(true);
   });
 });

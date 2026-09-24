@@ -139,7 +139,7 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
   }
 
   if (missingAlt > 0) warnings.push(`${missingAlt} imagem(ns) sem descrição (texto alternativo) — a lista, com atalho para cada uma, está no painel Dados › Descrição das imagens.`);
-  const semTraducao = textosSemTraducao(data).length;
+  const semTraducao = textosSemTraducao(data).filter((t) => t.tipo === 'falta').length;
   if (semTraducao > 0) warnings.push(`${semTraducao} texto(s) só em um idioma — a lista, com atalho para traduzir cada um, está no painel Dados › Traduções.`);
 
   // Tamanho do export

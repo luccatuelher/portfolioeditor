@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { camposDoBloco, faltaNoIdioma } from '../core/camposTexto';
 import { hrefPublico } from '../core/links';
 import { embedProvider, embedSource, motivoDoEmbedVazio } from '../embed/embedSource';
 import { sobraDaLinha, spanVars } from './responsive';
@@ -740,15 +741,9 @@ function InlineEditable({ initial, plain, className, onCommit }: { initial: stri
  * que é bom. O problema é para o DONO: sem marca nenhuma, achar o que falta
  * traduzir exigiria abrir bloco por bloco nos dois idiomas.
  */
+/** Algum texto do bloco está sem o idioma em edição (mesma lista de campos da aba Traduções). */
 function faltaTraduzir(block: Block, lang: 'pt' | 'en'): boolean {
-  const outro = lang === 'pt' ? 'en' : 'pt';
-  const vazio = (v?: { pt: string; en: string }): boolean => !!v && !v[lang].trim() && !!v[outro].trim();
-  if (block.type === 'heading') return vazio(block.content.text);
-  if (block.type === 'text') return vazio(block.content.html);
-  if (block.type === 'button') return vazio(block.content.label);
-  if (block.type === 'image') return vazio(block.content.image.alt);
-  if (block.type === 'contact') return vazio(block.content.heading) || vazio(block.content.body);
-  return false;
+  return camposDoBloco(block).some((c) => faltaNoIdioma(c.valor, lang));
 }
 
 export function BlockView({ block, place, sobra, topo }: { block: Block; place?: Placement; sobra?: { tablet: number | null; mobile: number | null }; topo?: boolean }): React.ReactElement | null {

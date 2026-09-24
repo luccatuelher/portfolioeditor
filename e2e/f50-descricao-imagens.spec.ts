@@ -27,4 +27,5 @@ test('imagem que perde a descrição entra na lista; Descrever leva ao campo', a
   await page.locator('.descricoes > summary').click(); // a lista fica recolhida para não empurrar os dados
   await page.locator('.descricoes-ir').first().click();
   await expect(page.locator('.insp-row', { hasText: 'Descrição da imagem (alt)' })).toBeVisible();
+  await expect(page.locator('.inspector [data-campo="content.image.alt"] input')).toBeFocused();
 });

@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { DEFAULT_HEADER, type Block, type BlogItem, type GalleryItem, type HeaderConfig, type I18n, type ImageRef, type ProjectItem, type SketchItem, type Visibility } from '../schema/v4';
 import { reorderArray } from '../core/array';
 import { computeRowColumns, rowHeadId, type DropZone } from './gridOps';
@@ -6,6 +6,7 @@ import { emptyI18n } from '../core/i18n';
 import { findBlock, findSection, type CollectionName, type Selection } from './paths';
 import type { DocApi } from './useDocument';
 import { useRemover } from './remover';
+import { chaveDaSelecao, FocoCampoContext, usePedidoFoco, type PedidoFoco } from './focoCampo';
 import { newBlockId } from './blockFactory';
 import { EditLangContext, I18nInput, NumberInput, Row, RangeInput, SelectInput, TextInput } from './fields';
 import { LangFlag } from '../renderer/Flags';
@@ -94,8 +95,8 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
     const p = item as ProjectItem;
     fields = (
       <>
-        <Row label="Título"><I18nInput value={p.title} onChange={(v) => doc.updateItem('projects', id, (it) => void (it.title = v), `${id}:title`)} /></Row>
-        <Row label="Descrição"><I18nInput multiline value={p.description} onChange={(v) => doc.updateItem('projects', id, (it) => void (it.description = v), `${id}:desc`)} /></Row>
+        <Row label="Título"><I18nInput campo="title" value={p.title} onChange={(v) => doc.updateItem('projects', id, (it) => void (it.title = v), `${id}:title`)} /></Row>
+        <Row label="Descrição"><I18nInput campo="description" multiline value={p.description} onChange={(v) => doc.updateItem('projects', id, (it) => void (it.description = v), `${id}:desc`)} /></Row>
         <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('projects', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }), p.thumb)}</Row>
         {widthRow('projects', p)}
         <label className="insp-check"><input type="checkbox" checked={p.featured} onChange={(e) => doc.updateItem('projects', id, (it) => void (it.featured = e.target.checked))} /> Destaque na Home</label>
@@ -108,7 +109,7 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
           ) : f === 'storyType' ? (
             <FormatoRow key={`${id}:${f}`} value={p.meta[f]} onChange={(v) => doc.updateItem('projects', id, (it) => { if (v) it.meta[f] = v; else delete it.meta[f]; }, `${id}:${f}`)} />
           ) : (
-            <Row key={f} label={META_LABEL[f] ?? f}><I18nInput value={p.meta[f] ?? emptyI18n()} onChange={(v) => doc.updateItem('projects', id, (it) => { it.meta[f] = v; }, `${id}:${f}`)} /></Row>
+            <Row key={f} label={META_LABEL[f] ?? f}><I18nInput campo={`meta.${f}`} value={p.meta[f] ?? emptyI18n()} onChange={(v) => doc.updateItem('projects', id, (it) => { it.meta[f] = v; }, `${id}:${f}`)} /></Row>
           ),
         )}
       </>
@@ -117,9 +118,9 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
     const b = item as BlogItem;
     fields = (
       <>
-        <Row label="Título"><I18nInput value={b.title} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.title = v), `${id}:title`)} /></Row>
+        <Row label="Título"><I18nInput campo="title" value={b.title} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.title = v), `${id}:title`)} /></Row>
         <DataRow key={`${id}:date`} value={b.date} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.date = v), `${id}:date`)} />
-        <Row label="Resumo"><I18nInput multiline value={b.excerpt} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.excerpt = v), `${id}:exc`)} /></Row>
+        <Row label="Resumo"><I18nInput campo="excerpt" multiline value={b.excerpt} onChange={(v) => doc.updateItem('blog', id, (it) => void (it.excerpt = v), `${id}:exc`)} /></Row>
         {widthRow('blog', b)}
         <Row label="Capa (thumb)">{uploadBtn((aid) => doc.updateItem('blog', id, (it) => { it.thumb.assetId = aid; it.thumb.url = undefined; }), b.thumb)}</Row>
       </>
@@ -129,8 +130,8 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
     fields = (
       <>
         <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('gallery', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }), g.image)}</Row>
-        <Row label="Legenda"><I18nInput value={g.caption} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.caption = v), `${id}:cap`)} /></Row>
-        <Row label="Descrição da imagem (alt)"><I18nInput value={g.image.alt} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
+        <Row label="Legenda"><I18nInput campo="caption" value={g.caption} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.caption = v), `${id}:cap`)} /></Row>
+        <Row label="Descrição da imagem (alt)"><I18nInput campo="image.alt" value={g.image.alt} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
         {widthRow('gallery', g)}
       </>
     );
@@ -139,7 +140,7 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
     fields = (
       <>
         <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('sketches', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }), s.image)}</Row>
-        <Row label="Descrição da imagem (alt)"><I18nInput value={s.image.alt} onChange={(v) => doc.updateItem('sketches', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
+        <Row label="Descrição da imagem (alt)"><I18nInput campo="image.alt" value={s.image.alt} onChange={(v) => doc.updateItem('sketches', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
         {widthRow('sketches', s)}
       </>
     );
@@ -537,7 +538,9 @@ const LANGS = [
   { id: 'en', label: 'EN', name: 'English' },
 ] as const;
 
-export function Inspector({ lang, onLang, quadroEmFoco, resolveAsset, ...props }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void; lang: 'pt' | 'en'; onLang: (l: 'pt' | 'en') => void; quadroEmFoco?: { blockId: string; idx: number } | null; resolveAsset?: (r: ImageRef) => string }): React.ReactElement {
+export function Inspector({ lang, onLang, quadroEmFoco, resolveAsset, pedidoFoco, onFocoAtendido, ...props }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void; lang: 'pt' | 'en'; onLang: (l: 'pt' | 'en') => void; quadroEmFoco?: { blockId: string; idx: number } | null; resolveAsset?: (r: ImageRef) => string; pedidoFoco?: PedidoFoco | null; onFocoAtendido?: (n: number) => void }): React.ReactElement {
+  // O pedido de foco só vale para a seleção que ele mirou.
+  const pedido = pedidoFoco && pedidoFoco.chave === chaveDaSelecao(props.selection) ? pedidoFoco : null;
   return (
     <aside className="inspector">
       <div className="insp-langbar" role="group" aria-label="Idioma dos textos">
@@ -550,7 +553,9 @@ export function Inspector({ lang, onLang, quadroEmFoco, resolveAsset, ...props }
       </div>
       <EditLangContext.Provider value={lang}>
         <ResolverContext.Provider value={resolveAsset}>
-          <InspectorBody {...props} quadroEmFoco={quadroEmFoco} />
+          <FocoCampoContext.Provider value={{ pedido, atender: onFocoAtendido ?? (() => {}) }}>
+            <InspectorBody {...props} quadroEmFoco={quadroEmFoco} />
+          </FocoCampoContext.Provider>
         </ResolverContext.Provider>
       </EditLangContext.Provider>
     </aside>
@@ -560,6 +565,11 @@ export function Inspector({ lang, onLang, quadroEmFoco, resolveAsset, ...props }
 function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco }: { doc: DocApi; selection: Selection; onUploadImage?: UploadImage; onSelect?: (s: Selection) => void ; quadroEmFoco?: { blockId: string; idx: number } | null }): React.ReactElement {
   const [tab, setTab] = useState<Tab>('content');
   const remover = useRemover(doc);
+  // "Traduzir"/"Descrever" pediram um campo: os textos moram na aba Conteúdo.
+  const pedido = usePedidoFoco();
+  useEffect(() => {
+    if (pedido) setTab('content');
+  }, [pedido]);
 
   if (!selection) {
     return (
@@ -596,8 +606,8 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
       <>
         <div className="insp-head">Site · cabeçalho</div>
         <div className="insp-body">
-          <Row label="Nome"><I18nInput value={doc.state.site.name} onChange={(v) => doc.updateSite((s) => void (s.name = v), 'site:name')} /></Row>
-          <Row label="Função"><I18nInput value={doc.state.site.role} onChange={(v) => doc.updateSite((s) => void (s.role = v), 'site:role')} /></Row>
+          <Row label="Nome"><I18nInput campo="site.name" value={doc.state.site.name} onChange={(v) => doc.updateSite((s) => void (s.name = v), 'site:name')} /></Row>
+          <Row label="Função"><I18nInput campo="site.role" value={doc.state.site.role} onChange={(v) => doc.updateSite((s) => void (s.role = v), 'site:role')} /></Row>
           <HeaderControls doc={doc} />
         </div>
       </>
@@ -612,7 +622,7 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
         {page ? (
           <div className="insp-body">
             <Row label="Título">
-              <I18nInput value={page.title} onChange={(v) => doc.updatePage(page.id, (p) => void (p.title = v), `${page.id}:title`)} />
+              <I18nInput campo="title" value={page.title} onChange={(v) => doc.updatePage(page.id, (p) => void (p.title = v), `${page.id}:title`)} />
             </Row>
             {page.id !== 'home' ? (
               <Row label="Endereço (slug) — site.html#…">
@@ -627,7 +637,7 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
             </label>
             <Group id="seo" title="SEO e compartilhamento" defaultOpen={false}>
               <Row label="Descrição (Google e redes sociais)">
-                <I18nInput multiline value={page.seo?.description ?? emptyI18n()} onChange={(v) => doc.updatePage(page.id, (p) => void ((p.seo ??= {}).description = v), `${page.id}:seodesc`)} />
+                <I18nInput campo="seo.description" multiline value={page.seo?.description ?? emptyI18n()} onChange={(v) => doc.updatePage(page.id, (p) => void ((p.seo ??= {}).description = v), `${page.id}:seodesc`)} />
               </Row>
               {onUploadImage ? (
                 <Row label="Imagem ao compartilhar o link">
@@ -734,7 +744,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
       return (
         <>
           <Row label="Texto">
-            <I18nInput value={{ pt: stripTags(block.content.text.pt), en: stripTags(block.content.text.en) }} onChange={(v) => upd(refBlock, (b) => void (b.type === 'heading' && (b.content.text = { pt: escapeText(v.pt), en: escapeText(v.en) })), gk('text'))} />
+            <I18nInput campo="content.text" value={{ pt: stripTags(block.content.text.pt), en: stripTags(block.content.text.en) }} onChange={(v) => upd(refBlock, (b) => void (b.type === 'heading' && (b.content.text = { pt: escapeText(v.pt), en: escapeText(v.en) })), gk('text'))} />
             {/<[a-z]/i.test(block.content.text.pt + block.content.text.en) ? <div className="insp-note">Este título tem formatação (cor, fonte…) feita no canvas. Editar aqui remove a formatação — para mantê-la, edite direto no canvas.</div> : null}
           </Row>
           <div className="insp-row">
@@ -748,7 +758,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
         </>
       );
     case 'text':
-      return <Row label="Texto rich"><RichI18nInput value={block.content.html} onChange={(v) => upd(refBlock, (b) => void (b.type === 'text' && (b.content.html = v)), gk('html'))} /></Row>;
+      return <Row label="Texto rich"><RichI18nInput campo="content.html" value={block.content.html} onChange={(v) => upd(refBlock, (b) => void (b.type === 'text' && (b.content.html = v)), gk('html'))} /></Row>;
     case 'image':
       return (
         <>
@@ -769,7 +779,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
               />
             </Row>
           ) : null}
-          <Row label="Descrição da imagem (alt)"><I18nInput value={block.content.image.alt} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.image.alt = v)), gk('alt'))} /></Row>
+          <Row label="Descrição da imagem (alt)"><I18nInput campo="content.image.alt" value={block.content.image.alt} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.image.alt = v)), gk('alt'))} /></Row>
           <Row label="Largura (%)"><NumberInput value={block.content.widthPct ?? 100} min={25} max={100} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.widthPct = v)), gk('wpct'))} /></Row>
         </>
       );
@@ -794,6 +804,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
           </Row>
           <Row label="Nome (aba do carrossel)">
             <I18nInput
+              campo="content.label"
               value={block.content.label ?? emptyI18n()}
               onChange={(v) => upd(refBlock, (b) => void (b.type === 'embed' && (b.content.label = v.pt.trim() || v.en.trim() ? v : undefined)), gk('elabel'))}
             />
@@ -827,8 +838,8 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
       const c = block.content;
       return (
         <>
-          <Row label="Título"><I18nInput value={c.heading} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.heading = v)), gk('ch'))} /></Row>
-          <Row label="Corpo"><I18nInput multiline value={c.body} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.body = v)), gk('cb'))} /></Row>
+          <Row label="Título"><I18nInput campo="content.heading" value={c.heading} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.heading = v)), gk('ch'))} /></Row>
+          <Row label="Corpo"><I18nInput campo="content.body" multiline value={c.body} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.body = v)), gk('cb'))} /></Row>
           <Row label="E-mail"><TextInput value={c.email} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.email = v)), gk('em'))} /></Row>
           <Row label="Telefone"><TextInput value={c.phone} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.phone = v)), gk('ph'))} /></Row>
           <Row label="CV">
@@ -869,7 +880,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
       const c = block.content;
       return (
         <>
-          <Row label="Texto do botão"><I18nInput value={c.label} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.label = v)), gk('lbl'))} /></Row>
+          <Row label="Texto do botão"><I18nInput campo="content.label" value={c.label} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.label = v)), gk('lbl'))} /></Row>
           <LinkPicker key={block.id} doc={doc.state} href={c.href} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.href = v)), gk('href'))} />
           <Row label="Estilo"><SelectInput value={c.variant} onChange={(v) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.variant = v)))} options={[{ value: 'solid', label: 'Cheio' }, { value: 'outline', label: 'Contorno' }, { value: 'link', label: 'Link' }]} /></Row>
           <label className="insp-check"><input type="checkbox" checked={!!c.newTab} onChange={(e) => upd(refBlock, (b) => void (b.type === 'button' && (b.content.newTab = e.target.checked || undefined)))} /> Abrir em nova aba</label>
@@ -893,6 +904,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
             <Row key={n} label={`Quadro ${n + 1} · descrição`}>
               <div className={`insp-quadro${foco === n ? ' em-foco' : ''}`} data-quadro={n}>
                 <I18nInput
+                  campo={`frames.${n}.alt`}
                   value={f.alt}
                   onChange={(v) => upd(refBlock, (b) => { const fr = b.type === 'storyboard' ? b.content.frames[n] : undefined; if (fr) fr.alt = v; }, `${refBlock.blockId}:alt${n}`)}
                 />

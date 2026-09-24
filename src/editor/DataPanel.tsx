@@ -114,31 +114,47 @@ function DescricoesPainel({ itens, resolver, onIr }: { itens: ImagemSemDescricao
  * o texto que existe, e o site fica pela metade. Mesma regra do "sem EN"/"sem
  * PT" do canvas, mas do site inteiro — não só do que está na tela.
  */
-function TraducoesPainel({ itens, onIr }: { itens: TextoSemTraducao[]; onIr: (t: TextoSemTraducao) => void }): React.ReactElement {
-  const faltaEn = itens.filter((t) => t.falta === 'en').length;
-  const faltaPt = itens.length - faltaEn;
-  const resumo = [faltaEn ? `${faltaEn} sem EN` : '', faltaPt ? `${faltaPt} sem PT` : ''].filter(Boolean).join(' · ');
+function ListaTraducoes({ itens, onIr }: { itens: TextoSemTraducao[]; onIr: (t: TextoSemTraducao) => void }): React.ReactElement {
   return (
-    <details className={`pendencia traducoes ${itens.length ? 'faltam' : 'ok'}`} data-faltam={itens.length}>
+    <>
+      <ol className="descricoes-lista traducoes-lista">
+        {itens.slice(0, 12).map((t, i) => (
+          <li key={i}>
+            <span className="traducoes-falta" title={t.tipo === 'igual' ? 'Igual ao português' : undefined}>{t.tipo === 'igual' ? 'PT=EN' : t.falta.toUpperCase()}</span>
+            <span className="traducoes-texto">
+              <span className="peso-onde">{t.onde}</span>
+              <span className="traducoes-trecho">{t.trecho}</span>
+            </span>
+            <button type="button" className="descricoes-ir" onClick={() => onIr(t)} aria-label={`Traduzir para ${t.falta === 'en' ? 'inglês' : 'português'}: ${t.onde}`}>Traduzir</button>
+          </li>
+        ))}
+      </ol>
+      {itens.length > 12 ? <p className="peso-resumo">e mais {itens.length - 12}.</p> : null}
+    </>
+  );
+}
+
+function TraducoesPainel({ itens, onIr }: { itens: TextoSemTraducao[]; onIr: (t: TextoSemTraducao) => void }): React.ReactElement {
+  const faltam = itens.filter((t) => t.tipo === 'falta');
+  const iguais = itens.filter((t) => t.tipo === 'igual');
+  const faltaEn = faltam.filter((t) => t.falta === 'en').length;
+  const faltaPt = faltam.length - faltaEn;
+  const resumo = [faltaEn ? `${faltaEn} sem EN` : '', faltaPt ? `${faltaPt} sem PT` : '', iguais.length ? `${iguais.length} iguais` : ''].filter(Boolean).join(' · ');
+  return (
+    <details className={`pendencia traducoes ${itens.length ? 'faltam' : 'ok'}`} data-faltam={faltam.length} data-iguais={iguais.length}>
       <summary>
         Traduções · <b>{itens.length ? resumo : 'tudo nos dois idiomas ✓'}</b>
       </summary>
-      {itens.length ? (
+      {faltam.length ? (
         <>
           <p className="peso-resumo">Quem visita no outro idioma vê o texto que existe — funciona, mas fica pela metade.</p>
-          <ol className="descricoes-lista traducoes-lista">
-            {itens.slice(0, 12).map((t, i) => (
-              <li key={i}>
-                <span className="traducoes-falta">{t.falta.toUpperCase()}</span>
-                <span className="traducoes-texto">
-                  <span className="peso-onde">{t.onde}</span>
-                  <span className="traducoes-trecho">{t.trecho}</span>
-                </span>
-                <button type="button" className="descricoes-ir" onClick={() => onIr(t)} aria-label={`Traduzir para ${t.falta === 'en' ? 'inglês' : 'português'}: ${t.onde}`}>Traduzir</button>
-              </li>
-            ))}
-          </ol>
-          {itens.length > 12 ? <p className="peso-resumo">e mais {itens.length - 12}.</p> : null}
+          <ListaTraducoes itens={faltam} onIr={onIr} />
+        </>
+      ) : null}
+      {iguais.length ? (
+        <>
+          <p className="peso-resumo"><b>Iguais em PT e EN.</b> Textos longos idênticos nos dois idiomas — em geral, português copiado para o inglês (a importação do portfólio antigo faz isso). Quem visita em inglês lê português.</p>
+          <ListaTraducoes itens={iguais} onIr={onIr} />
         </>
       ) : null}
     </details>
