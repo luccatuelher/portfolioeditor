@@ -28,6 +28,12 @@
 
 .pv-mobile .sticky-nav { gap: 8px; padding: 6px 10px; }
 .pv-mobile .sticky-nav .nav-link { padding: 9px 8px; font-size: 0.66rem; }
+/* de src/renderer/styles.css: @media (max-width: 600px) */
+
+.pv-mobile .sticky-nav { flex-wrap: nowrap; justify-content: space-between; gap: 4px; padding: 4px 8px; }
+.pv-mobile .sticky-nav nav { flex: 1 1 auto; min-width: 0; padding-right: 24px; mask-image: linear-gradient(to right, black calc(100% - 24px), transparent); }
+.pv-mobile .sticky-nav .lang-icons { flex: none; gap: 0; }
+.pv-mobile .sticky-nav .flag-btn { padding: 4px 6px; }
 /* de src/renderer/styles.css: @media (max-width: 900px) */
 
 .pv-mobile .site-header { grid-template-columns: 1fr; }

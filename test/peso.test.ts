@@ -49,4 +49,13 @@ describe('runtime do site publicado', () => {
     // Referência: com o zod eram ~403 KB; sem ele, ~300 KB.
     expect(shell.length).toBeLessThan(340_000);
   });
+
+  it('o desfoque do menu fixo e do visualizador sai também sem prefixo (o Chrome ignora o -webkit-)', () => {
+    const shell = readFileSync(new URL('../src/publish/site-shell.html', import.meta.url), 'utf8');
+    // Escrever as duas formas à mão fazia o minificador ficar só com a -webkit-.
+    for (const regra of ['.sticky-nav{', '.lightbox{']) {
+      const corpo = shell.slice(shell.indexOf(regra), shell.indexOf('}', shell.indexOf(regra)));
+      expect(corpo).toMatch(/(^|[;{])backdrop-filter:blur/);
+    }
+  });
 });
