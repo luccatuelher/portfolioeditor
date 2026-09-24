@@ -32,11 +32,15 @@ test('emite dist/site.html com dados públicos + NDA cifrado', async () => {
     : migrate(parsed);
   const payload = await buildPublishPayload(migrated, pw);
 
-  const shellPath = resolve(root, 'dist/site.html');
+  // PUBLISH_SHELL/PUBLISH_OUTPUT (opcionais): outro shell (ex.: o site-shell.html
+  // já gerado, sem rodar o build) e outro arquivo de saída — os testes que
+  // publicam em paralelo não disputam o mesmo dist/site.html.
+  const shellPath = resolve(root, process.env.PUBLISH_SHELL || 'dist/site.html');
+  const outPath = resolve(root, process.env.PUBLISH_OUTPUT || shellPath);
   expect(existsSync(shellPath), 'rode "vite build --config vite.site.config.ts" antes').toBe(true);
   const shell = readFileSync(shellPath, 'utf8');
   const html = assembleSiteHtml(shell, payload);
-  writeFileSync(shellPath, html, 'utf8');
+  writeFileSync(outPath, html, 'utf8');
 
   const pf = runPreflight(payload.publicData, { assetSizes: payload.assetSizes });
   const sizeMB = (Object.values(payload.assetSizes).reduce((a, b) => a + b, 0) / (1024 * 1024)).toFixed(2);
