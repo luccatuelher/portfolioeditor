@@ -3,7 +3,7 @@ import type { Lang, RenderContextValue } from '../renderer/context';
 import { RenderContext } from '../renderer/context';
 import { PageView } from '../renderer/Page';
 import { SiteHeader } from '../renderer/Header';
-import { defaultPreview, TYPE_LABEL } from '../renderer/preview';
+import { blockLabel, defaultPreview, TYPE_LABEL } from '../renderer/preview';
 import { DEFAULT_HEADER, headerSpan, type HeaderElement } from '../schema/v4';
 import { detachBlock, placeBlock } from './gridOps';
 import { pick } from '../renderer/text';
@@ -78,6 +78,22 @@ function rotuloDaSelecao(doc: PortfolioV4, sel: NonNullable<Selection>): string 
   if (sel.kind === 'item') return { projects: 'Projeto', blog: 'Nota', gallery: 'Imagem', sketches: 'Sketch' }[sel.collection];
   if (sel.kind === 'site') return 'Cabeçalho';
   return 'Página';
+}
+
+/** Nome completo do selecionado, para o anúncio ao leitor de tela ("Título · Selected Work"). */
+function descreverSelecao(doc: PortfolioV4, sel: NonNullable<Selection>): string {
+  if (sel.kind === 'block') {
+    const b = findSection(doc, sel.ref)?.blocks.find((x) => x.id === sel.ref.blockId);
+    return b ? blockLabel(b) : 'Elemento';
+  }
+  if (sel.kind === 'section') return findSection(doc, sel.ref)?.name || 'Seção';
+  if (sel.kind === 'item') {
+    const it = doc.collections[sel.collection].find((x) => x.id === sel.itemId) as { title?: { pt: string; en: string }; caption?: { pt: string; en: string } } | undefined;
+    const nome = it?.title ? pick(it.title, 'pt') : it?.caption ? pick(it.caption, 'pt') : '';
+    return `${rotuloDaSelecao(doc, sel)}${nome ? ` “${nome}”` : ''}`;
+  }
+  if (sel.kind === 'page') return `Página ${pick(doc.pages.find((p) => p.id === sel.pageId)?.title ?? { pt: '', en: '' }, 'pt')}`;
+  return rotuloDaSelecao(doc, sel);
 }
 
 /** Resultado do "Baixar site", para o aviso com os passos de publicação. */
@@ -985,6 +1001,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           <button type="button" onClick={() => setShowNotice(false)} aria-label="Fechar aviso">✕</button>
         </div>
       ) : null}
+      {/* Leitor de tela: diz o que acabou de ser selecionado (no canvas, nas Layers ou pelo teclado). */}
+      <div className="sr-only" aria-live="polite">{selection ? `Selecionado: ${descreverSelecao(doc.state, selection)}` : ''}</div>
       {publishNotice ? <AvisoPublicado p={publishNotice} onClose={() => setPublishNotice(null)} /> : null}
       {/* Só em tela estreita (CSS): abre os painéis, que viram gavetas por cima do canvas. */}
       <div className="editor-gavetas" role="group" aria-label="Painéis">

@@ -18,10 +18,10 @@ function BlockRow({ doc, container, sectionId, block, selected, onSelect }: { do
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} className={`tree-row blk ${selected ? 'sel' : ''} ${block.visibility !== 'public' ? 'dim' : ''}`}>
       <span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar">⠿</span>
-      <button type="button" className="tree-main" onClick={() => onSelect({ kind: 'block', ref })}>
-        <span className="tree-icon">◈</span>{BLOCK_LABELS[block.type] ?? block.type}
+      <button type="button" className="tree-main" aria-current={selected ? 'true' : undefined} onClick={() => onSelect({ kind: 'block', ref })}>
+        <span className="tree-icon" aria-hidden="true">◈</span>{BLOCK_LABELS[block.type] ?? block.type}
       </button>
-      <button type="button" className="tree-eye" title="Visibilidade" onClick={() => doc.updateBlock(ref, (b) => void (b.visibility = b.visibility === 'public' ? 'draft' : 'public'))}>
+      <button type="button" className="tree-eye" title={block.visibility === 'public' ? 'Ocultar (rascunho)' : 'Mostrar no site'} aria-label={`${block.visibility === 'public' ? 'Ocultar' : 'Mostrar'} ${BLOCK_LABELS[block.type] ?? block.type}`} onClick={() => doc.updateBlock(ref, (b) => void (b.visibility = b.visibility === 'public' ? 'draft' : 'public'))}>
         {block.visibility === 'public' ? '👁' : '⊘'}
       </button>
     </div>
@@ -66,8 +66,8 @@ function SortableSection({ doc, container, section, index, selection, onSelect }
         {renome.editando ? (
           renome.campo
         ) : (
-          <button type="button" className="tree-main" onClick={() => onSelect({ kind: 'section', ref: { container, sectionId: section.id } })} onDoubleClick={renome.abrir}>
-            <span className="tree-icon">▦</span>{section.name || `Seção ${index + 1}`}
+          <button type="button" className="tree-main" aria-current={selSectionId === section.id ? 'true' : undefined} onClick={() => onSelect({ kind: 'section', ref: { container, sectionId: section.id } })} onDoubleClick={renome.abrir}>
+            <span className="tree-icon" aria-hidden="true">▦</span>{section.name || `Seção ${index + 1}`}
           </button>
         )}
         <span className="tree-sec-actions">
@@ -112,8 +112,8 @@ export function LayersPanel({ doc, page, item, lang, selection, onSelect }: { do
       <div className="panel-h">Layers · {item ? pick(item.title, lang) : pick(page.title, lang)}</div>
       <div className={`tree-row sec ${selection?.kind === 'site' ? 'sel' : ''}`}>
         <span className="tree-grip" aria-hidden="true" />
-        <button type="button" className="tree-main" onClick={() => onSelect({ kind: 'site' })}>
-          <span className="tree-icon">▭</span>Cabeçalho (todas as páginas)
+        <button type="button" className="tree-main" aria-current={selection?.kind === 'site' ? 'true' : undefined} onClick={() => onSelect({ kind: 'site' })}>
+          <span className="tree-icon" aria-hidden="true">▭</span>Cabeçalho (todas as páginas)
         </button>
       </div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSectionDragEnd}>

@@ -103,7 +103,7 @@ const ACT_TITLE: Record<ActKind, string> = { edit: 'Editar', image: 'Trocar imag
  * Ícones de ação que aparecem no hover (só no editor). O editor lê os
  * atributos `data-*` do contêiner e o `data-act` do botão clicado.
  */
-export function EditActions({ target, acts }: { target: Record<string, string | number>; acts: ActKind[] }): React.ReactElement | null {
+export function EditActions({ target, acts, nome }: { target: Record<string, string | number>; acts: ActKind[]; /** De quê: "Título · Selected Work". Sem isso o leitor de tela ouvia dezenas de "Editar" iguais. */ nome?: string }): React.ReactElement | null {
   const { editing } = useRender();
   if (!editing) return null;
   const attrs = Object.fromEntries(Object.entries(target).map(([k, v]) => [`data-${k}`, String(v)]));
@@ -111,8 +111,9 @@ export function EditActions({ target, acts }: { target: Record<string, string | 
     <div className="pe-actions" {...attrs}>
       {acts.map((a) => {
         const Icon = ACT_ICON[a];
+        const rotulo = nome ? `${ACT_TITLE[a]}: ${nome}` : ACT_TITLE[a];
         return (
-          <button key={a} type="button" className={`pe-act pe-act-${a}`} data-act={a} title={ACT_TITLE[a]} aria-label={ACT_TITLE[a]}>
+          <button key={a} type="button" className={`pe-act pe-act-${a}`} data-act={a} title={rotulo} aria-label={rotulo}>
             <Icon />
           </button>
         );
@@ -219,7 +220,7 @@ function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link 
       <div className="card-thumb-wrap">
         <Img image={item.thumb} className="card-thumb" />
         <EditBadges visibility={item.visibility} featured={item.featured} />
-        <EditActions target={{ target: 'item', coll: 'projects', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} />
+        <EditActions target={{ target: 'item', coll: 'projects', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`projeto “${pick(item.title, lang)}”`} />
       </div>
       <div className="card-title">{pick(item.title, lang)}</div>
       <ItemResize coll="projects" id={item.id} span={span} />
@@ -432,7 +433,7 @@ function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () 
               style={styleVars({ '--span': it.span })}
               {...(editing ? { 'data-pv-cell': it.ref, 'data-pv-of': item.id, draggable: true } : {})}
             >
-              <EditActions target={{ target: 'pv', project: item.id, id: it.ref }} acts={['hide']} />
+              <EditActions target={{ target: 'pv', project: item.id, id: it.ref }} acts={['hide']} nome={`${blockLabel(bl)} na prévia`} />
               <RenderContext.Provider value={readOnly}>
                 <BlockView block={{ ...bl, span: 12 }} />
               </RenderContext.Provider>
@@ -468,7 +469,7 @@ function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.React
       <span className="blog-date">{pick(item.date, lang)}</span>
       <div className="blog-thumb-wrap">
         <Img image={item.thumb} className="blog-thumb" />
-        <EditActions target={{ target: 'item', coll: 'blog', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} />
+        <EditActions target={{ target: 'item', coll: 'blog', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`nota “${pick(item.title, lang)}”`} />
       </div>
       <div className="blog-title">{pick(item.title, lang)}</div>
       <p className="blog-excerpt">{pick(item.excerpt, lang)}</p>
@@ -487,7 +488,7 @@ function GalleryCard({ item, cols, onOpen }: { item: GalleryItem; cols: number; 
         {editing && !item.image.assetId && !item.image.url ? <span className="pe-img-empty">Sem imagem</span> : null}
       </button>
       <EditBadges visibility={item.visibility} />
-      <EditActions target={{ target: 'item', coll: 'gallery', id: item.id }} acts={['image', 'crop', 'edit', 'delete']} />
+      <EditActions target={{ target: 'item', coll: 'gallery', id: item.id }} acts={['image', 'crop', 'edit', 'delete']} nome={pick(item.caption, lang) ? `imagem “${pick(item.caption, lang)}”` : 'imagem da galeria'} />
       <ItemResize coll="gallery" id={item.id} span={span} />
       <figcaption className="art-caption">{pick(item.caption, lang)}</figcaption>
     </figure>
@@ -499,7 +500,7 @@ function SketchCard({ item, cols, onOpen }: { item: SketchItem; cols: number; on
   const span = itemWidth(item, cols);
   return (
     <div className={`sketch-item${useItemSel(item.id)}`} style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'media'))} {...itemDrag(editing, 'sketches', item.id)}>
-      <EditActions target={{ target: 'item', coll: 'sketches', id: item.id }} acts={['image', 'crop', 'edit', 'delete']} />
+      <EditActions target={{ target: 'item', coll: 'sketches', id: item.id }} acts={['image', 'crop', 'edit', 'delete']} nome="sketch" />
       <ItemResize coll="sketches" id={item.id} span={span} />
       <button type="button" className="sketch-img-btn" onClick={onOpen} aria-label="Abrir imagem">
         <Img image={item.image} />
@@ -785,7 +786,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
       {editing ? (
         <>
           <span className="pe-drag-handle" draggable data-drag-block={block.id} title="Arraste para mover — solte na lateral de outro bloco para formar uma grade" aria-hidden="true">⠿</span>
-          <EditActions target={{ target: 'block', id: block.id }} acts={block.type === 'image' ? ['image', 'crop', 'edit', 'delete'] : ['edit', 'delete']} />
+          <EditActions target={{ target: 'block', id: block.id }} acts={block.type === 'image' ? ['image', 'crop', 'edit', 'delete'] : ['edit', 'delete']} nome={blockLabel(block)} />
           {onSetSpan ? <SpanHandle span={block.span} onSpan={(n) => onSetSpan(block.id, n)} /> : null}
         </>
       ) : null}
@@ -829,7 +830,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
               <button type="button" className="storyboard-frame-btn" onClick={() => onOpenLightbox?.(light, i)} aria-label={`Abrir quadro ${i + 1}`}>
                 <Img image={f} className="storyboard-frame" />
               </button>
-              <EditActions target={{ target: 'frame', id: block.id, idx: i }} acts={['image', 'crop', 'edit', 'delete']} />
+              <EditActions target={{ target: 'frame', id: block.id, idx: i }} acts={['image', 'crop', 'edit', 'delete']} nome={`quadro ${i + 1} do storyboard`} />
               {onSetItemSpan ? <SpanHandle span={f.span ?? 3} onSpan={(n) => onSetItemSpan({ blockId: block.id, frame: i }, n)} /> : null}
             </div>
           ))}

@@ -9,6 +9,8 @@ import { pick } from './text';
 import { LangFlag } from './Flags';
 import { linkInterno } from './links';
 
+const NOME_DO_ELEMENTO: Record<HeaderElement, string> = { brand: 'nome e função', nav: 'menu', lang: 'idiomas' };
+
 /** Itens do menu: páginas marcadas no menu (sem NDA) + páginas NDA (com cadeado). */
 function menuPages(data: PortfolioV4): { nav: Page[]; nda: Page[] } {
   return {
@@ -60,7 +62,7 @@ export function SiteHeader({ data, lang, onLang, onNavigate, current }: { data: 
       style={isGrid ? styleVars(spanVars({ desktop: headerSpan(cfg, el), tablet: cfg.spansTablet?.[el], mobile: cfg.spansMobile?.[el] ?? HEADER_MOBILE_DEFAULT }, 'header')) : undefined}
       {...(editing ? { 'data-header-el': el, draggable: true } : {})}
     >
-      <EditActions target={{ target: 'header', id: el }} acts={['edit', 'hide']} />
+      <EditActions target={{ target: 'header', id: el }} acts={['edit', 'hide']} nome={`${NOME_DO_ELEMENTO[el]} do cabeçalho`} />
       {children}
       {isGrid && onSetHeaderSpan ? <SpanHandle span={headerSpan(cfg, el)} onSpan={(n) => onSetHeaderSpan(el, n)} /> : null}
     </div>
