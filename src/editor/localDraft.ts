@@ -51,12 +51,6 @@ export async function saveLocalAssets(assets: Record<string, string>): Promise<v
   await put(db, ASSETS_KEY, { assets, savedAt: Date.now() });
 }
 
-/** Grava os dois (usado ao importar um backup). */
-export async function saveLocalDraft(doc: PortfolioV4, assets: Record<string, string>): Promise<void> {
-  await saveLocalDoc(doc);
-  await saveLocalAssets(assets);
-}
-
 export async function loadLocalDraft(): Promise<LocalBundle | null> {
   const db = await openDb();
   const docRec = await get<{ doc: PortfolioV4; savedAt: number }>(db, DOC_KEY);

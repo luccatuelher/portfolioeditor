@@ -40,7 +40,7 @@ import { AddBlockPopup, ElementsPalette } from './ElementsPalette';
 import { SECTION_PRESETS } from './sectionPresets';
 import { VersionsModal } from './VersionsModal';
 import { NdaPasswordModal } from './NdaPasswordModal';
-import { saveVersion } from './versions';
+import { guardarAntesDeTrocar, saveVersion } from './versions';
 import { CropModal } from './CropModal';
 import type { ImageCrop, ImageRef } from '../schema/v4';
 import { LangFlag } from '../renderer/Flags';
@@ -65,6 +65,11 @@ export interface EditorProps {
   /** Adiciona uma imagem ao mapa de assets (data URL) sem remontar o editor. */
   onAddAsset?: (id: string, dataUrl: string) => void;
   persist?: boolean;
+  /**
+   * O documento de abertura ainda não está gravado (acabou de ser importado ou
+   * restaurado): o autosave grava já — e mostra o aviso se não conseguir.
+   */
+  gravarAoAbrir?: boolean;
   /** Aviso exibido no topo (ex.: rascunho recuperado com ajustes). */
   notice?: string;
 }
@@ -190,13 +195,13 @@ function resolveView(doc: PortfolioV4, c: Container): { page: Page; item?: Proje
   return item ? { page, item } : { page };
 }
 
-export function Editor({ initial, assets, onImport, onAddAsset, persist = true, notice }: EditorProps): React.ReactElement {
+export function Editor({ initial, assets, onImport, onAddAsset, persist = true, gravarAoAbrir = false, notice }: EditorProps): React.ReactElement {
   const [showNotice, setShowNotice] = useState(!!notice);
   // Avisos da última publicação ("Baixar site"), mostrados na barra de aviso.
   const [publishNotice, setPublishNotice] = useState<Publicado | null>(null);
   const doc = useDocument(initial);
   const resolveAsset = useMemo(() => mapResolver(assets), [assets]);
-  const { status: saveStatus, erro: erroGravacao } = useLocalDraft(doc.state, assets, persist);
+  const { status: saveStatus, erro: erroGravacao } = useLocalDraft(doc.state, assets, persist, gravarAoAbrir);
   const outraAba = useOutraAba('portfolio-editor', persist);
   // Avisos e perguntas no visual do editor (nada de alert/confirm/prompt do navegador).
   const avisos = useAvisosDoEditor(doc.state);
@@ -1305,7 +1310,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
       perigo: true,
     });
     if (!ok) return;
-    await saveVersion(`Antes de importar "${file.name}"`, doc.state, true).catch(() => {});
+    if (!(await guardarAntesDeTrocar(`Antes de importar "${file.name}"`, doc.state, dialogos.confirmar))) return;
     onImport?.(backup);
   };
 

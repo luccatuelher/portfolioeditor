@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react';
 import { useDialog } from './useDialog';
 import { useAvisos } from './avisos';
 import type { PortfolioV4 } from '../schema/v4';
-import { deleteVersion, listVersions, loadVersion, MAX_VERSIONS, saveVersion, type VersionEntry } from './versions';
+import { deleteVersion, guardarAntesDeTrocar, listVersions, loadVersion, MAX_VERSIONS, saveVersion, type VersionEntry } from './versions';
 
 const fmt = (t: number): string =>
   new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -54,7 +54,7 @@ export function VersionsModal({ doc, onRestore, onClose }: { doc: PortfolioV4; o
         refresh();
         return;
       }
-      await saveVersion(`Antes de restaurar "${v.name}"`, doc, true).catch(() => {});
+      if (!(await guardarAntesDeTrocar(`Antes de restaurar "${v.name}"`, doc, avisos.confirmar))) return;
       onRestore(target);
       onClose();
     } catch (err) {

@@ -45,11 +45,13 @@ export interface LocalDraftState {
  * versão depois de recarregar devolvia o elemento vazio. Quem poda o mapa é a
  * abertura do editor (`manterImagensEmUso`), sabendo das versões.
  */
-export function useLocalDraft(doc: PortfolioV4, assets: Record<string, string>, enabled = true): LocalDraftState {
+export function useLocalDraft(doc: PortfolioV4, assets: Record<string, string>, enabled = true, gravarInicial = false): LocalDraftState {
   const [canais, setCanais] = useState<{ doc: Canal; imagens: Canal; gravou: boolean; erro: string | null }>({ doc: 'ok', imagens: 'ok', gravou: false, erro: null });
   const docTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const assetTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const firstDoc = useRef(true);
+  // O documento de abertura normalmente já está gravado (veio do rascunho). Um
+  // recém-importado não: grava já, pelo mesmo caminho que mostra falha.
+  const firstDoc = useRef(!gravarInicial);
   const latest = useRef(doc);
   latest.current = doc;
   const latestAssets = useRef(assets);

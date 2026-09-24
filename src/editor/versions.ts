@@ -83,3 +83,29 @@ export async function deleteVersion(id: string): Promise<void> {
   const db = await openDb();
   await put(db, (await readAll(db)).filter((v) => v.id !== id));
 }
+
+/**
+ * Guarda o que está aberto antes de uma troca (importar backup, restaurar
+ * versão) — é a rede prometida no diálogo ("vira uma versão automática").
+ * Antes, a falha dessa gravação era engolida e a troca seguia: o trabalho
+ * aberto sumia sem cópia. Agora, se não guardar, pergunta se segue mesmo
+ * assim (e sugere o backup). Devolve se pode trocar.
+ */
+export async function guardarAntesDeTrocar(
+  nome: string,
+  doc: PortfolioV4,
+  confirmar: (c: { titulo: string; texto: string; confirmar: string; cancelar?: string; perigo?: boolean }) => Promise<boolean>,
+): Promise<boolean> {
+  try {
+    await saveVersion(nome, doc, true);
+    return true;
+  } catch (err) {
+    return confirmar({
+      titulo: 'Não consegui guardar o que está aberto',
+      texto: `A versão automática falhou (${err instanceof Error ? err.message : String(err)}) — em geral, falta espaço neste navegador. Se seguir, o que está aberto agora é substituído sem cópia. Baixe um backup antes (Ctrl+S), por segurança.`,
+      confirmar: 'Seguir mesmo assim',
+      cancelar: 'Cancelar',
+      perigo: true,
+    });
+  }
+}

@@ -8,7 +8,7 @@ import { migrate } from '../migrate/migrate';
 import { Editor } from '../editor/Editor';
 import { ErrorBoundary } from '../renderer/ErrorBoundary';
 import type { Backup } from '../editor/backup';
-import { loadLocalDraft, manterImagensEmUso, saveLocalDraft, saveRescueCopy } from '../editor/localDraft';
+import { loadLocalDraft, manterImagensEmUso, saveRescueCopy } from '../editor/localDraft';
 import { repairDoc } from '../migrate/repair';
 import { PortfolioV4Schema, type PortfolioV4 } from '../schema/v4';
 import { upgradeDoc } from '../migrate/upgrade';
@@ -17,7 +17,7 @@ const q = new URLSearchParams(location.search);
 const raw = q.get('fixture') === 'synthetic' ? syntheticRaw : templateRaw;
 const fresh = q.has('fresh'); // ?fresh=1 ignora o rascunho salvo e recomeça do exemplo
 
-type State = { doc: PortfolioV4; assets: Record<string, string>; version: number; notice?: string; persist?: boolean };
+type State = { doc: PortfolioV4; assets: Record<string, string>; version: number; notice?: string; persist?: boolean; gravarAoAbrir?: boolean };
 
 function fromFixture(): State {
   const { data, assets } = migrate(JSON.parse(raw));
@@ -40,14 +40,15 @@ function Root(): React.ReactElement {
             return { doc, assets: await manterImagensEmUso(doc, saved.assets ?? {}), version: 0 };
           }
           // Formato mudou: guarda a cópia intacta e conserta só o incompatível (nunca descarta em silêncio).
-          await saveRescueCopy(saved.doc).catch(() => {});
+          const copiou = await saveRescueCopy(saved.doc).then(() => true, () => false);
           const { doc, fixes } = repairDoc(saved.doc);
           console.warn('[rascunho] ajustes ao carregar:', fixes);
           if (doc) {
-            return { doc, assets: await manterImagensEmUso(doc, saved.assets ?? {}), version: 0, notice: `Seu rascunho foi recuperado com ${fixes.length} ajuste(s) de formato. Uma cópia do original ficou guardada neste navegador.` };
+            return { doc, assets: await manterImagensEmUso(doc, saved.assets ?? {}), version: 0, notice: `Seu rascunho foi recuperado com ${fixes.length} ajuste(s) de formato. ${copiou ? 'Uma cópia do original ficou guardada neste navegador.' : 'Não consegui guardar uma cópia do original — baixe um backup agora (Ctrl+S).'}` };
           }
           const fx = fromFixture();
-          return { ...fx, notice: 'Não foi possível ler o rascunho salvo — uma cópia intacta ficou guardada neste navegador. Não edite: importe seu backup (Importar) ou me avise.' };
+          // Sem cópia de resgate, o rascunho ilegível é a ÚNICA cópia: não grava por cima dele.
+          return { ...fx, persist: copiou, notice: `Não foi possível ler o rascunho salvo${copiou ? ' — uma cópia intacta ficou guardada neste navegador' : ''}. Não edite: importe seu backup (Importar) ou me avise.` };
         }
       } catch (err) {
         // Não conseguiu LER o armazenamento: mostra o exemplo, mas NÃO grava por cima do que está salvo.
@@ -79,8 +80,9 @@ function Root(): React.ReactElement {
   const onImport = (b: Backup): void => {
     setState((s) => {
       const assets = { ...(s?.assets ?? {}), ...b.assets };
-      void saveLocalDraft(b.doc, assets).catch(() => {});
-      return { doc: b.doc, assets, version: (s?.version ?? 0) + 1, persist: true };
+      // Quem grava é o autosave do editor que vai abrir (gravarAoAbrir): uma
+      // falha aparece no aviso dele. Antes a gravação era aqui, e a falha, engolida.
+      return { doc: b.doc, assets, version: (s?.version ?? 0) + 1, persist: true, gravarAoAbrir: true };
     });
   };
   // Adiciona imagem sem remontar (mantém seleção/undo).
@@ -103,7 +105,7 @@ function Root(): React.ReactElement {
         </div>
       )}
     >
-      <Editor key={state.version} initial={state.doc} assets={state.assets} onImport={onImport} onAddAsset={onAddAsset} notice={state.notice} persist={state.persist !== false} />
+      <Editor key={state.version} initial={state.doc} assets={state.assets} onImport={onImport} onAddAsset={onAddAsset} notice={state.notice} persist={state.persist !== false} gravarAoAbrir={state.gravarAoAbrir} />
     </ErrorBoundary>
   );
 }
