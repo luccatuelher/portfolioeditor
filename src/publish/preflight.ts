@@ -1,4 +1,5 @@
 import { embedSource } from '../embed/embedSource';
+import { paginaVaiProSite, vaiProSite } from '../core/visibilidade';
 import type { Block, ImageRef, PortfolioV4 } from '../schema/v4';
 import { imagensSemDescricao, textosSemTraducao } from '../editor/pendencias';
 import { linksDoDocumento, problemaDoLink, type LinkNoDocumento } from '../core/links';
@@ -120,15 +121,15 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
 
   // Links internos (botões, CV, links nos textos) do que vai para o site:
   // página excluída ou em rascunho não quebra o site, mas leva o visitante à Home.
-  const vaiProSite = (l: LinkNoDocumento): boolean => {
+  const linkPublicado = (l: LinkNoDocumento): boolean => {
     const c = l.container;
     const secs = c.on === 'page'
-      ? data.pages.find((p) => p.id === c.pageId && (p.visibility !== 'draft' || p.id === 'home'))?.sections
-      : data.collections[c.collection].find((i) => i.id === c.itemId && i.visibility === 'public')?.sections;
-    return !!secs?.find((s) => s.id === l.sectionId)?.blocks.some((b) => b.id === l.blockId && b.visibility === 'public');
+      ? data.pages.find((p) => p.id === c.pageId && paginaVaiProSite(p))?.sections
+      : data.collections[c.collection].find((i) => i.id === c.itemId && vaiProSite(i.visibility))?.sections;
+    return !!secs?.find((s) => s.id === l.sectionId)?.blocks.some((b) => b.id === l.blockId && vaiProSite(b.visibility));
   };
   for (const l of linksDoDocumento(data)) {
-    const problema = vaiProSite(l) ? problemaDoLink(data, l.href) : null;
+    const problema = linkPublicado(l) ? problemaDoLink(data, l.href) : null;
     if (problema) warnings.push(`${l.onde}: ${problema}.`);
   }
 

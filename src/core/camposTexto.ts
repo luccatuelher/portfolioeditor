@@ -1,4 +1,5 @@
 import type { Block, BlogItem, I18n, ImageRef, PortfolioV4, ProjectItem, Section } from '../schema/v4';
+import { paginaVaiProSite, vaiProSite } from './visibilidade';
 
 /**
  * Os textos bilíngues do documento, num lugar só.
@@ -87,7 +88,7 @@ export function camposDeTexto(doc: PortfolioV4): CampoTexto[] {
     for (const s of sections) {
       for (const b of s.blocks as Block[]) {
         const dono: Dono = { tipo: 'bloco', container, sectionId: s.id, blockId: b.id };
-        for (const c of camposDoBloco(b)) out.push({ ...c, dono, lugar, publicado: publicado && b.visibility !== 'draft' });
+        for (const c of camposDoBloco(b)) out.push({ ...c, dono, lugar, publicado: publicado && vaiProSite(b.visibility) });
       }
     }
   };
@@ -97,7 +98,7 @@ export function camposDeTexto(doc: PortfolioV4): CampoTexto[] {
 
   for (const p of doc.pages) {
     const lugar = `página ${nome(p.title) || p.slug}`;
-    const publicado = p.visibility !== 'draft' || p.id === 'home';
+    const publicado = paginaVaiProSite(p);
     const dono: Dono = { tipo: 'pagina', pageId: p.id };
     if (p.kind === 'static') out.push({ campo: 'title', rotulo: 'nome', valor: p.title, dono, lugar, publicado });
     if (p.seo?.description) out.push({ campo: 'seo.description', rotulo: 'descrição de SEO', valor: p.seo.description, dono, lugar, publicado });
@@ -105,7 +106,7 @@ export function camposDeTexto(doc: PortfolioV4): CampoTexto[] {
   }
   for (const it of doc.collections.projects as ProjectItem[]) {
     const lugar = `projeto “${nome(it.title)}”`;
-    const publicado = it.visibility !== 'draft';
+    const publicado = vaiProSite(it.visibility);
     const dono: Dono = { tipo: 'item', colecao: 'projects', itemId: it.id };
     out.push({ campo: 'title', rotulo: 'título', valor: it.title, dono, lugar, publicado });
     out.push({ campo: 'description', rotulo: 'descrição', valor: it.description, dono, lugar, publicado });
@@ -117,7 +118,7 @@ export function camposDeTexto(doc: PortfolioV4): CampoTexto[] {
   }
   for (const it of doc.collections.blog as BlogItem[]) {
     const lugar = `nota “${nome(it.title)}”`;
-    const publicado = it.visibility !== 'draft';
+    const publicado = vaiProSite(it.visibility);
     const dono: Dono = { tipo: 'item', colecao: 'blog', itemId: it.id };
     out.push({ campo: 'title', rotulo: 'título', valor: it.title, dono, lugar, publicado });
     out.push({ campo: 'excerpt', rotulo: 'resumo', valor: it.excerpt, dono, lugar, publicado });
@@ -125,12 +126,12 @@ export function camposDeTexto(doc: PortfolioV4): CampoTexto[] {
   }
   for (const g of doc.collections.gallery) {
     const dono: Dono = { tipo: 'item', colecao: 'gallery', itemId: g.id };
-    const publicado = g.visibility !== 'draft';
+    const publicado = vaiProSite(g.visibility);
     out.push({ campo: 'caption', rotulo: 'legenda', valor: g.caption, dono, lugar: 'galeria', publicado });
     out.push({ campo: 'image.alt', rotulo: 'descrição da imagem', valor: g.image.alt, imagem: { ref: g.image, nome: 'Imagem' }, dono, lugar: nome(g.caption) ? `galeria “${nome(g.caption)}”` : 'galeria', publicado });
   }
   for (const s of doc.collections.sketches) {
-    out.push({ campo: 'image.alt', rotulo: 'descrição da imagem', valor: s.image.alt, imagem: { ref: s.image, nome: 'Imagem' }, dono: { tipo: 'item', colecao: 'sketches', itemId: s.id }, lugar: 'sketch', publicado: s.visibility !== 'draft' });
+    out.push({ campo: 'image.alt', rotulo: 'descrição da imagem', valor: s.image.alt, imagem: { ref: s.image, nome: 'Imagem' }, dono: { tipo: 'item', colecao: 'sketches', itemId: s.id }, lugar: 'sketch', publicado: vaiProSite(s.visibility) });
   }
   return out;
 }

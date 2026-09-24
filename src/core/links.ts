@@ -1,4 +1,5 @@
 import type { BlogItem, Page, PortfolioV4, ProjectItem, Section } from '../schema/v4';
+import { paginaVaiProSite, vaiProSite } from './visibilidade';
 
 /**
  * Links internos do site (#…), num lugar só.
@@ -123,8 +124,8 @@ export function linksDoDocumento(doc: PortfolioV4): LinkNoDocumento[] {
 export function problemaDoLink(doc: PortfolioV4, href: string): string | null {
   const d = destinoDoLink(doc, href);
   if (d.tipo === 'quebrado') return 'leva para uma página que não existe mais';
-  if (d.tipo === 'pagina' && d.page.visibility === 'draft' && d.page.id !== 'home') return `leva para a página “${nomeDe(d.page.title)}”, que está em rascunho (não vai para o site)`;
-  if (d.tipo === 'item' && d.item.visibility === 'draft') return `leva para “${nomeDe(d.item.title)}”, que está em rascunho (não vai para o site)`;
+  if (d.tipo === 'pagina' && !paginaVaiProSite(d.page)) return `leva para a página “${nomeDe(d.page.title)}”, que está em rascunho (não vai para o site)`;
+  if (d.tipo === 'item' && !vaiProSite(d.item.visibility)) return `leva para “${nomeDe(d.item.title)}”, que está em rascunho (não vai para o site)`;
   return null;
 }
 

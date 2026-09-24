@@ -17,6 +17,7 @@ import siteShell from '../publish/site-shell.html?raw';
 import { assembleSiteHtml } from '../publish/assemble';
 import { buildPublishPayload } from '../publish/buildPayload';
 import { arquivosAoLado, runPreflight } from '../publish/preflight';
+import { ndaCount, publicSnapshot } from '../publish/publicSnapshot';
 import { formatarPeso, LIMITE_GITHUB_BYTES, pesoDoSite, type PesoDoSite } from '../publish/peso';
 import type { MigratedAsset } from '../migrate/migrate';
 import { importImage } from '../assets/importImage';
@@ -1308,13 +1309,17 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     onImport?.(backup);
   };
 
-  // Quantos itens confidenciais existem (0 = nem pergunta a senha): itens NDA
-  // e blocos NDA soltos em páginas e itens públicos (vão cifrados também).
-  const blocosNda = (secs: Section[]): number => secs.reduce((n, s) => n + s.blocks.filter((b) => b.visibility === 'nda').length, 0);
-  const itensNda =
-    (['projects', 'blog', 'gallery', 'sketches'] as const).reduce((n, k) => n + doc.state.collections[k].filter((i) => i.visibility === 'nda').length, 0) +
-    doc.state.pages.filter((p) => p.visibility !== 'draft' || p.id === 'home' || p.kind === 'template').reduce((n, p) => n + blocosNda(p.sections), 0) +
-    [...doc.state.collections.projects, ...doc.state.collections.blog].filter((i) => i.visibility === 'public').reduce((n, i) => n + blocosNda(i.sections), 0);
+  // Quantos itens confidenciais vão cifrados (0 = nem pergunta a senha). Conta
+  // o que o próprio publicSnapshot separa — antes esta conta era uma cópia à
+  // mão da regra dele, que podia divergir. Calcula no clique: o snapshot copia
+  // o documento inteiro, não é para rodar a cada tecla.
+  const [itensNda, setItensNda] = useState(0);
+  const baixarSite = (): void => {
+    const n = ndaCount(publicSnapshot(doc.state).nda);
+    setItensNda(n);
+    if (n) setPedirSenha(true);
+    else void publishSite();
+  };
 
   // Uma falha ao gerar (cifrar o NDA, montar o arquivo) não pode ser silêncio:
   // o botão parecia simplesmente não fazer nada.
@@ -1395,7 +1400,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
         <button type="button" className="tb-btn" onClick={download} title="Baixar backup (doc + imagens)">Backup</button>
         <button type="button" className="tb-btn" onClick={() => fileRef.current?.click()} title="Importar backup">Importar</button>
         <button type="button" className={`tb-peso${peso.total > LIMITE_GITHUB_BYTES ? ' acima' : peso.total > LIMITE_GITHUB_BYTES * 0.8 ? ' perto' : ''}`} onClick={onPeso} title="Peso estimado do index.html (limite do upload pelo GitHub: 25 MB). Clique para ver o que mais pesa.">≈ {formatarPeso(peso.total)}</button>
-        <button type="button" className="tb-btn primary" onClick={() => (itensNda ? setPedirSenha(true) : void publishSite())} title="Gera o index.html do site, pronto para subir no GitHub Pages">Baixar site</button>
+        <button type="button" className="tb-btn primary" onClick={baixarSite} title="Gera o index.html do site, pronto para subir no GitHub Pages">Baixar site</button>
         {pedirSenha ? (
           <NdaPasswordModal
             quantidade={itensNda}

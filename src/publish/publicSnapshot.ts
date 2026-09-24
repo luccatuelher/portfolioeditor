@@ -1,5 +1,6 @@
 import { safeClone } from '../core/access';
-import type { AssetMeta, Block, BlogItem, GalleryItem, PortfolioV4, ProjectItem, Section, SketchItem } from '../schema/v4';
+import type { AssetMeta, Block, BlogItem, GalleryItem, PortfolioV4, ProjectItem, Section, SketchItem, Visibility } from '../schema/v4';
+import { aberto, paginaVaiProSite, vaiProSite } from '../core/visibilidade';
 
 /**
  * Separa o documento em conteúdo PÚBLICO (visibility 'public') e conteúdo NDA
@@ -48,12 +49,12 @@ function collectAssetIds(node: unknown, out: Set<string>): void {
  * NDA dentro de um projeto público seria lido por qualquer um no "ver código".
  */
 function soBlocosPublicos(sections: Section[]): Section[] {
-  return sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => b.visibility === 'public') }));
+  return sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => aberto(b.visibility)) }));
 }
 
 /** Dentro de um item NDA (já cifrado inteiro), os blocos NDA vão junto; só o rascunho fica. */
 function semRascunhos(sections: Section[]): Section[] {
-  return sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => b.visibility !== 'draft') }));
+  return sections.map((s) => ({ ...s, blocks: s.blocks.filter((b) => vaiProSite(b.visibility)) }));
 }
 
 /** Recolhe os blocos NDA de um conjunto de seções públicas, lembrando o lugar de cada um. */
@@ -61,8 +62,8 @@ function recolherBlocosNda(sections: Section[], onde: NdaBlock['onde'], out: Nda
   for (const s of sections) {
     let anterior: string | null = null;
     for (const b of s.blocks) {
-      if (b.visibility === 'draft') continue;
-      if (b.visibility === 'nda') out.push({ onde, sectionId: s.id, afterId: anterior, block: b });
+      if (!vaiProSite(b.visibility)) continue;
+      if (!aberto(b.visibility)) out.push({ onde, sectionId: s.id, afterId: anterior, block: b });
       anterior = b.id;
     }
   }
@@ -71,14 +72,14 @@ function recolherBlocosNda(sections: Section[], onde: NdaBlock['onde'], out: Nda
 export function publicSnapshot(input: PortfolioV4): PublicResult {
   const d = safeClone(input);
 
-  const splitPublic = <T extends { visibility: string }>(items: T[]): T[] => items.filter((i) => i.visibility === 'public');
-  const splitNda = <T extends { visibility: string }>(items: T[]): T[] => items.filter((i) => i.visibility === 'nda');
+  const splitPublic = <T extends { visibility: Visibility }>(items: T[]): T[] => items.filter((i) => aberto(i.visibility));
+  const splitNda = <T extends { visibility: Visibility }>(items: T[]): T[] => items.filter((i) => vaiProSite(i.visibility) && !aberto(i.visibility));
   const limparSecoes = <T extends { sections: Section[] }>(items: T[]): T[] => items.map((it) => ({ ...it, sections: soBlocosPublicos(it.sections) }));
   const secoesNda = <T extends { sections: Section[] }>(items: T[]): T[] => items.map((it) => ({ ...it, sections: semRascunhos(it.sections) }));
 
   // Blocos NDA soltos: das páginas publicadas e dos projetos/notas públicos.
   const blocks: NdaBlock[] = [];
-  for (const p of d.pages) if (p.visibility !== 'draft' || p.id === 'home' || p.kind === 'template') recolherBlocosNda(p.sections, { page: p.id }, blocks);
+  for (const p of d.pages) if (paginaVaiProSite(p)) recolherBlocosNda(p.sections, { page: p.id }, blocks);
   for (const coll of ['projects', 'blog'] as const) {
     for (const it of splitPublic<ProjectItem | BlogItem>(d.collections[coll])) recolherBlocosNda(it.sections, { coll, id: it.id }, blocks);
   }
@@ -103,7 +104,7 @@ export function publicSnapshot(input: PortfolioV4): PublicResult {
   // não-públicos.
   d.pages = d.pages
     // (A Home e os modelos de detalhe ficam sempre: sem eles o site não abre.)
-    .filter((p) => p.visibility !== 'draft' || p.id === 'home' || p.kind === 'template')
+    .filter(paginaVaiProSite)
     .map((p) => ({ ...p, sections: soBlocosPublicos(p.sections) }));
 
   // Poda assets: mantém só os referenciados pelo conteúdo público.
