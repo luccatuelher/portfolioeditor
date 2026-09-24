@@ -520,12 +520,14 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
           <li><b>Borda direita</b> arraste para mudar a largura</li>
           <li>Ícones no hover: trocar imagem, recortar, editar, excluir</li>
           <li>Textos e títulos: selecione e clique de novo para escrever direto no canvas (com barra de formatação)</li>
+          <li><b>Sem mouse:</b> Tab chega às Layers e aos ícones de cada elemento (Enter em “Editar” seleciona); a aba Layout tem Subir/Descer e Posição na grade</li>
         </ul>
         <div className="insp-sub">Atalhos</div>
         <dl className="insp-keys">
           <dt>Ctrl+Z / Ctrl+Shift+Z</dt><dd>desfazer / refazer</dd>
           <dt>Ctrl+C · X · V</dt><dd>copiar · recortar · colar</dd>
           <dt>Ctrl+D</dt><dd>duplicar</dd>
+          <dt>Alt+↑ / Alt+↓</dt><dd>mover o selecionado uma posição</dd>
           <dt>Delete</dt><dd>excluir o selecionado</dd>
           <dt>Esc</dt><dd>selecionar o "pai" (bloco → seção → página)</dd>
           <dt>Ctrl+S</dt><dd>baixar o backup (o rascunho já salva sozinho)</dd>

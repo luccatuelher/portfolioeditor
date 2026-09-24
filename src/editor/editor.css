@@ -620,3 +620,19 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .insp-grade button:disabled { opacity: 0.4; cursor: default; }
 @media (pointer: coarse) { .insp-grade button, .insp-move button { min-height: 40px; } }
 .insp-move + .insp-row { margin-top: 14px; }
+
+/*
+ * Teclado: o que aparece no hover também aparece quando o foco chega nele. Os
+ * ícones de ação do canvas e as ações das linhas de seção nas Layers ficavam
+ * transparentes — o Tab parava em dezenas de botões invisíveis.
+ */
+.pe-actions:focus-within { opacity: 1; pointer-events: auto; }
+.tree-sec-actions:focus-within { opacity: 1; }
+/* E o elemento a que aqueles ícones pertencem fica marcado. */
+.editor-canvas .block:has(> .pe-actions:focus-within),
+.editor-canvas .project-card:has(.pe-actions:focus-within),
+.editor-canvas .blog-item:has(.pe-actions:focus-within),
+.editor-canvas .art-item:has(> .pe-actions:focus-within),
+.editor-canvas .sketch-item:has(> .pe-actions:focus-within),
+.editor-canvas .storyboard-cell:has(> .pe-actions:focus-within),
+.editor-canvas .hdr-el:has(> .pe-actions:focus-within) { outline: 2px solid var(--accent2); outline-offset: 3px; }

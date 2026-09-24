@@ -457,6 +457,23 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       doc.redo();
       return;
     }
+    // Alt+↑ / Alt+↓: move o selecionado (bloco, seção ou item) uma posição —
+    // o jeito de reordenar sem mouse nem arrasto, como "mover linha" nos editores.
+    if (e.altKey && !mod && (e.key === 'ArrowUp' || e.key === 'ArrowDown') && !typing && selection) {
+      e.preventDefault();
+      const dir = e.key === 'ArrowUp' ? -1 : 1;
+      if (selection.kind === 'block') doc.moveBlock(selection.ref, dir);
+      else if (selection.kind === 'section') {
+        const secs = getSections(doc.state, selection.ref.container) ?? [];
+        const i = secs.findIndex((s) => s.id === selection.ref.sectionId);
+        if (i >= 0 && i + dir >= 0 && i + dir < secs.length) doc.reorderSections(selection.ref.container, i, i + dir);
+      } else if (selection.kind === 'item') {
+        const lista = doc.state.collections[selection.collection];
+        const i = lista.findIndex((x) => x.id === selection.itemId);
+        if (i >= 0 && i + dir >= 0 && i + dir < lista.length) doc.reorderItems(selection.collection, i, i + dir);
+      }
+      return;
+    }
     // Duplicar (Ctrl+D): igual para bloco, seção e item — a cópia entra logo abaixo/depois.
     if (mod && key === 'd' && !typing && selection) {
       e.preventDefault();
