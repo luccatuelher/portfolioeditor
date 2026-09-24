@@ -99,7 +99,7 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
       <>
         <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('gallery', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }))}</Row>
         <Row label="Legenda"><I18nInput value={g.caption} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.caption = v), `${id}:cap`)} /></Row>
-        <Row label="Alt"><I18nInput value={g.image.alt} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
+        <Row label="Descrição da imagem (alt)"><I18nInput value={g.image.alt} onChange={(v) => doc.updateItem('gallery', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
         {widthRow('gallery', g)}
       </>
     );
@@ -108,7 +108,7 @@ function ItemInspector({ doc, collection, id, onUploadImage, onDeleted }: { doc:
     fields = (
       <>
         <Row label="Imagem">{uploadBtn((aid) => doc.updateItem('sketches', id, (it) => { it.image.assetId = aid; it.image.url = undefined; }))}</Row>
-        <Row label="Alt"><I18nInput value={s.image.alt} onChange={(v) => doc.updateItem('sketches', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
+        <Row label="Descrição da imagem (alt)"><I18nInput value={s.image.alt} onChange={(v) => doc.updateItem('sketches', id, (it) => void (it.image.alt = v), `${id}:alt`)} /></Row>
         {widthRow('sketches', s)}
       </>
     );
@@ -717,7 +717,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
               />
             </Row>
           ) : null}
-          <Row label="Alt"><I18nInput value={block.content.image.alt} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.image.alt = v)), gk('alt'))} /></Row>
+          <Row label="Descrição da imagem (alt)"><I18nInput value={block.content.image.alt} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.image.alt = v)), gk('alt'))} /></Row>
           <Row label="Largura (%)"><NumberInput value={block.content.widthPct ?? 100} min={25} max={100} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.widthPct = v)), gk('wpct'))} /></Row>
         </>
       );

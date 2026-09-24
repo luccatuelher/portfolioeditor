@@ -137,7 +137,7 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
     }
   }
 
-  if (missingAlt > 0) warnings.push(`${missingAlt} imagem(ns) sem texto alternativo.`);
+  if (missingAlt > 0) warnings.push(`${missingAlt} imagem(ns) sem descrição (texto alternativo) — a lista, com atalho para cada uma, está no painel Dados › Descrição das imagens.`);
   if (incompleteI18n > 0) warnings.push(`${incompleteI18n} texto(s) com PT ou EN faltando — no editor eles aparecem marcados com "sem PT"/"sem EN" no canvas.`);
 
   // Tamanho do export

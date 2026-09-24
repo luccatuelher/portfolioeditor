@@ -45,6 +45,7 @@ import type { ImageCrop, ImageRef } from '../schema/v4';
 import { LangFlag } from '../renderer/Flags';
 import { useDocument } from './useDocument';
 import { useLocalDraft, type SaveStatus } from './useLocalDraft';
+import { imagensSemDescricao, type ImagemSemDescricao } from './pendencias';
 
 export interface EditorProps {
   initial: PortfolioV4;
@@ -229,6 +230,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [leftTab, setLeftTab] = useState<'pages' | 'layers' | 'theme' | 'data'>('layers');
   // Peso estimado do index.html (runtime + dados + imagens que vão para o site).
   const peso = useMemo(() => pesoDoSite(doc.state, assets, siteShell.length), [doc.state, assets]);
+  const semDescricao = useMemo(() => imagensSemDescricao(doc.state), [doc.state]);
   // Largura do canvas: ver o site como no tablet/celular (usa o mesmo CSS responsivo do site).
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const backupRef = useRef<(() => void) | null>(null);
@@ -305,6 +307,16 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     },
     [],
   );
+
+  /** Leva ao campo de descrição de uma imagem da lista (abre a página/projeto dela e seleciona). */
+  const irParaDescricao = (p: ImagemSemDescricao): void => {
+    if (p.alvo.kind === 'block') {
+      setContainer(p.alvo.ref.container);
+      setSelection(p.alvo);
+      if (p.quadro !== undefined) setQuadroEmFoco({ blockId: p.alvo.ref.blockId, idx: p.quadro });
+    } else abrirItem(p.alvo);
+    setGaveta('direita'); // tela estreita: o campo fica no Inspector
+  };
 
   const openContainer = useCallback((c: Container) => {
     setContainer(c);
@@ -1028,7 +1040,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           ) : leftTab === 'theme' ? (
             <ThemePanel doc={doc} onUploadImage={uploadImage} onUploadFavicon={uploadFavicon} resolveAsset={resolveAsset} />
           ) : leftTab === 'data' ? (
-            <DataPanel doc={doc} onSelect={abrirItem} peso={peso} assets={assets} />
+            <DataPanel doc={doc} onSelect={abrirItem} peso={peso} assets={assets} semDescricao={semDescricao} resolver={resolveAsset} onIrPara={irParaDescricao} />
           ) : (
             <LayersPanel doc={doc} page={page} item={item} lang={lang} selection={selection} onSelect={setSelection} />
           )}

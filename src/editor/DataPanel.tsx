@@ -2,7 +2,8 @@ import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type D
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { pick } from '../renderer/text';
-import type { Visibility } from '../schema/v4';
+import type { ImageRef, Visibility } from '../schema/v4';
+import type { ImagemSemDescricao } from './pendencias';
 import type { CollectionName, Selection } from './paths';
 import { formatarPeso, LIMITE_GITHUB_BYTES, type PesoDoSite } from '../publish/peso';
 import type { DocApi } from './useDocument';
@@ -77,8 +78,39 @@ function PesoDoSitePainel({ peso, assets }: { peso: PesoDoSite; assets: Record<s
   );
 }
 
+/**
+ * Imagens publicadas sem descrição (texto alternativo), com o lugar de cada
+ * uma e um atalho que leva direto ao campo. A descrição é o que o leitor de
+ * tela lê no lugar da imagem — e o que o buscador entende dela.
+ */
+function DescricoesPainel({ itens, resolver, onIr }: { itens: ImagemSemDescricao[]; resolver: (r: ImageRef) => string; onIr: (p: ImagemSemDescricao) => void }): React.ReactElement {
+  // Recolhido: uma linha só, para não empurrar as listas do painel para baixo.
+  return (
+    <details className={`descricoes ${itens.length ? 'faltam' : 'ok'}`} data-faltam={itens.length}>
+      <summary>
+        Descrição das imagens · <b>{itens.length ? `${itens.length} sem descrição` : 'todas descritas ✓'}</b>
+      </summary>
+      {itens.length ? (
+        <>
+          <p className="peso-resumo">É o que o leitor de tela lê no lugar da imagem — e o que o buscador entende dela.</p>
+          <ol className="descricoes-lista">
+            {itens.slice(0, 8).map((p, i) => (
+              <li key={i}>
+                {resolver(p.imagem) ? <img src={resolver(p.imagem)} alt="" /> : <span />}
+                <span className="peso-onde">{p.onde}</span>
+                <button type="button" className="descricoes-ir" onClick={() => onIr(p)} aria-label={`Descrever: ${p.onde}`}>Descrever</button>
+              </li>
+            ))}
+          </ol>
+          {itens.length > 8 ? <p className="peso-resumo">e mais {itens.length - 8}.</p> : null}
+        </>
+      ) : null}
+    </details>
+  );
+}
+
 /** Painel de dados das coleções: editar, reordenar (arrastar), visibilidade, destaque. */
-export function DataPanel({ doc, onSelect, peso, assets }: { doc: DocApi; onSelect: (s: Selection) => void; peso?: PesoDoSite; assets?: Record<string, string> }): React.ReactElement {
+export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver, onIrPara }: { doc: DocApi; onSelect: (s: Selection) => void; peso?: PesoDoSite; assets?: Record<string, string>; semDescricao?: ImagemSemDescricao[]; resolver?: (r: ImageRef) => string; onIrPara?: (p: ImagemSemDescricao) => void }): React.ReactElement {
   const c = doc.state.collections;
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const sel = (collection: CollectionName, id: string): void => onSelect({ kind: 'item', collection, itemId: id });
@@ -91,6 +123,7 @@ export function DataPanel({ doc, onSelect, peso, assets }: { doc: DocApi; onSele
   return (
     <div className="panel data-panel">
       {peso ? <PesoDoSitePainel peso={peso} assets={assets ?? {}} /> : null}
+      {semDescricao && resolver && onIrPara ? <DescricoesPainel itens={semDescricao} resolver={resolver} onIr={onIrPara} /> : null}
       <div className="panel-h">Projetos</div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('projects', c.projects.map((p) => p.id))}>
         <table className="data-table">

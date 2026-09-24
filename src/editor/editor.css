@@ -655,3 +655,16 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .peso-imagens li { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; font-size: 0.68rem; }
 .peso-imagens img { width: 32px; height: 24px; object-fit: cover; border-radius: 2px; background: #eee; }
 .peso-onde { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #3a3833; }
+/* Descrição das imagens (painel Dados): lista das que faltam, com atalho */
+.descricoes { padding: 0 14px 12px; border-bottom: 1px solid #e4e0d7; margin-bottom: 8px; }
+.descricoes .panel-h { padding-left: 0; }
+.descricoes-lista { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 4px; }
+.descricoes-lista li { display: grid; grid-template-columns: 32px 1fr auto; gap: 8px; align-items: center; font-size: 0.68rem; }
+.descricoes-lista img { width: 32px; height: 24px; object-fit: cover; border-radius: 2px; background: #eee; }
+.descricoes-ir { border: 1px solid #cfcabf; background: #fff; border-radius: 4px; padding: 3px 8px; font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }
+.descricoes-ir:hover { border-color: var(--accent); color: var(--accent); }
+@media (pointer: coarse) { .descricoes-ir { min-height: 40px; } }
+.descricoes > summary { cursor: pointer; font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.08em; text-transform: uppercase; color: #5a574f; padding: 10px 0 6px; }
+.descricoes.faltam > summary b { color: #a0522d; }
+.descricoes { padding-bottom: 6px; }
+.peso-site .panel-h { margin-bottom: 4px; }
