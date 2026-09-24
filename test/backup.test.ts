@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { migrate } from '../src/migrate/migrate';
-import { buildBackup, parseBackup } from '../src/editor/backup';
+import { buildBackup, explicarErroDeImportacao, parseBackup, resumoDoBackup } from '../src/editor/backup';
 import { loadFixture } from './helpers/fixtures';
 import { upgradeDoc } from '../src/migrate/upgrade';
 
@@ -47,5 +47,26 @@ describe('backup do editor', () => {
     expect(b.doc.schemaVersion).toBe(4);
     expect(b.doc.collections.projects.some((p) => p.id === 'proj-a')).toBe(true);
     expect(Object.keys(b.assets).length).toBeGreaterThan(0);
+  });
+});
+
+describe('importação: o que não serve fica de fora, com aviso em português', () => {
+  it('só imagens (data:image/…) entram no mapa de imagens', () => {
+    const { data } = migrate(loadFixture('template-v3.json'));
+    const b = parseBackup(JSON.stringify({
+      format: 'portfolio-v4-backup',
+      doc: data,
+      assets: { boa: 'data:image/png;base64,QQ==', numero: 42, objeto: { x: 1 }, script: 'javascript:alert(1)', html: 'data:text/html,<b>x</b>' },
+    }));
+    expect(Object.keys(b.assets)).toEqual(['boa']);
+  });
+
+  it('JSON cortado vira mensagem clara; resumo conta o que vem no arquivo', () => {
+    let erro: unknown;
+    try { parseBackup('{"format":"portfolio-v4-'); } catch (e) { erro = e; }
+    expect(explicarErroDeImportacao(erro)).toContain('incompleto ou corrompido');
+    expect(explicarErroDeImportacao(new Error('Arquivo não parece um backup de portfólio.'))).toContain('Nada foi alterado');
+    const { data } = migrate(loadFixture('template-v3.json'));
+    expect(resumoDoBackup({ format: 'portfolio-v4-backup', version: 1, savedAt: '', doc: data, assets: { a: 'data:image/png;base64,QQ==' } })).toMatch(/páginas · \d+ projetos? · .* · 1 arquivo de imagem$/);
   });
 });

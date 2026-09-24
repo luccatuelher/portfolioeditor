@@ -12,7 +12,7 @@ import { mapResolver } from '../renderer/dataUrlResolver';
 import { themeToCssVars } from '../renderer/theme';
 import { siteFrame } from '../renderer/siteFrame';
 import { themeFontUrls } from '../renderer/fonts';
-import { buildBackup, parseBackup, type Backup } from './backup';
+import { buildBackup, explicarErroDeImportacao, parseBackup, resumoDoBackup, type Backup } from './backup';
 import siteShell from '../publish/site-shell.html?raw';
 import { assembleSiteHtml } from '../publish/assemble';
 import { buildPublishPayload } from '../publish/buildPayload';
@@ -1101,12 +1101,18 @@ function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onIm
     const file = e.target.files?.[0];
     e.target.value = '';
     if (!file) return;
+    let backup: Backup;
     try {
-      const backup = parseBackup(await file.text());
-      onImport?.(backup);
+      backup = parseBackup(await file.text());
     } catch (err) {
-      alert('Backup inválido: ' + (err instanceof Error ? err.message : String(err)));
+      alert(explicarErroDeImportacao(err));
+      return;
     }
+    // Importar troca o que está aberto (e o editor recomeça, sem desfazer):
+    // confirma com o resumo do arquivo e guarda o estado atual como versão.
+    if (!confirm(`Importar "${file.name}"?\n\n${resumoDoBackup(backup)}\n\nO que está aberto agora vira uma versão automática (Versões) antes da troca.`)) return;
+    await saveVersion(`Antes de importar "${file.name}"`, doc.state, true).catch(() => {});
+    onImport?.(backup);
   };
 
   // Quantos itens confidenciais existem (0 = nem pergunta a senha): itens NDA

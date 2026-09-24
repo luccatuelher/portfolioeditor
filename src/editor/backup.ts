@@ -47,13 +47,51 @@ function repairOrThrow(raw: unknown): PortfolioV4 {
   return doc;
 }
 
+/**
+ * Só entram no mapa imagens de verdade (data:image/…). Um backup editado à mão
+ * ou de outro programa podia trazer números, objetos ou endereços quaisquer,
+ * que iam parar direto no src das imagens do site.
+ */
+function soImagens(v: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!isObject(v)) return out;
+  for (const [id, url] of Object.entries(v)) if (typeof url === 'string' && /^data:image\//i.test(url)) out[id] = url;
+  return out;
+}
+
+/**
+ * O que dizer quando um arquivo não pôde ser importado. JSON.parse fala inglês
+ * técnico ("Unexpected end of JSON input"); o caso comum é um download que não
+ * terminou ou um arquivo que não é backup.
+ */
+export function explicarErroDeImportacao(err: unknown): string {
+  if (err instanceof SyntaxError) {
+    return 'O arquivo está incompleto ou corrompido: não é um JSON válido (talvez o download não tenha terminado). Nada foi alterado.';
+  }
+  const msg = err instanceof Error ? err.message : String(err);
+  return `Não consegui importar este arquivo: ${msg} Nada foi alterado.`;
+}
+
+/** Resumo do que o backup traz, para a pessoa confirmar antes de trocar o que está aberto. */
+export function resumoDoBackup(b: Backup): string {
+  const c = b.doc.collections;
+  const n = (q: number, um: string, varios: string): string => `${q} ${q === 1 ? um : varios}`;
+  return [
+    n(b.doc.pages.length, 'página', 'páginas'),
+    n(c.projects.length, 'projeto', 'projetos'),
+    n(c.blog.length, 'nota', 'notas'),
+    n(c.gallery.length + c.sketches.length, 'imagem de galeria/sketch', 'imagens de galeria/sketch'),
+    n(Object.keys(b.assets).length, 'arquivo de imagem', 'arquivos de imagem'),
+  ].join(' · ');
+}
+
 export function parseBackup(json: string): Backup {
   const raw: unknown = JSON.parse(json);
   const obj = isObject(raw) ? raw : {};
 
   if (obj['format'] === 'portfolio-v4-backup' && obj['doc']) {
     const doc = upgradeDoc(PortfolioV4Schema.safeParse(obj['doc']).data ?? repairOrThrow(obj['doc']));
-    const assets = isObject(obj['assets']) ? (obj['assets'] as Record<string, string>) : {};
+    const assets = soImagens(obj['assets']);
     return { format: 'portfolio-v4-backup', version: 1, savedAt: new Date().toISOString(), doc, assets };
   }
 

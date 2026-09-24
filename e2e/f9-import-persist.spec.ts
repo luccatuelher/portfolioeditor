@@ -19,6 +19,7 @@ test.describe('Import do app antigo + persistência local', () => {
   test('importa backup do app antigo (v3) e carrega o conteúdo', async ({ page }) => {
     await page.route(/youtube|vimeo|speakerdeck/, (r) => r.abort());
     await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
+    page.on('dialog', (d) => void d.accept()); // confirma a troca do que está aberto
 
     await page.setInputFiles('.editor-topbar input[type=file]', resolve('fixtures/legacy-synthetic-v3.json'));
 
