@@ -119,7 +119,7 @@
     -webkit-tap-highlight-color: rgba(0, 0, 0, 0.06);
     touch-action: manipulation;
   }
-.pv-mobile .lightbox-count { bottom: max(2vh, env(safe-area-inset-bottom)); }
+.pv-mobile .lightbox-bar { bottom: max(2vh, env(safe-area-inset-bottom)); }
 /* de src/renderer/styles.css: @media (max-width: 600px) */
 
 .pv-mobile .site.has-backdrop { background-attachment: scroll; }

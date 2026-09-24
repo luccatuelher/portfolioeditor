@@ -42,6 +42,8 @@ export interface LightItem {
   src: string;
   alt: string;
   crop?: import('../schema/v4').ImageCrop;
+  /** Legenda visível (galeria), embaixo da imagem no visualizador. */
+  caption?: string;
 }
 
 export const RenderContext = createContext<RenderContextValue | null>(null);

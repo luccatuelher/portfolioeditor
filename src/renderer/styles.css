@@ -205,7 +205,12 @@ a.project-card, a.blog-item { display: block; color: inherit; text-decoration: n
 .lightbox-nav:hover { background: rgba(250, 249, 247, 0.3); }
 .lightbox-nav.prev { left: 2vw; }
 .lightbox-nav.next { right: 2vw; }
-.lightbox-count { position: absolute; bottom: 2vh; left: 50%; transform: translateX(-50%); color: rgba(250, 249, 247, 0.7); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; }
+/* Rodapé do visualizador: legenda (galeria) e posição "2 / 5" */
+.lightbox-bar { position: absolute; bottom: 2vh; left: 50%; transform: translateX(-50%); display: grid; justify-items: center; gap: 6px; width: max-content; max-width: min(84vw, 720px); text-align: center; cursor: default; }
+.lightbox-caption { margin: 0; color: rgba(250, 249, 247, 0.92); font-family: var(--font-body, sans-serif); font-size: 0.92rem; line-height: 1.4; overflow-wrap: anywhere; }
+.lightbox-count { color: rgba(250, 249, 247, 0.7); font-family: 'DM Mono', monospace; font-size: 0.7rem; letter-spacing: 0.1em; }
+/* Com legenda, a imagem sobe um pouco para não ficar por baixo dela. */
+.lightbox:has(.lightbox-caption) { --lb-h: 80vh; padding-bottom: 12vh; }
 @keyframes lb-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lb-zoom { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 
@@ -406,7 +411,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     touch-action: manipulation;
   }
   /* Celular com entalhe: o contador não fica embaixo da barra do sistema. */
-  .lightbox-count { bottom: max(2vh, env(safe-area-inset-bottom)); }
+  .lightbox-bar { bottom: max(2vh, env(safe-area-inset-bottom)); }
 }
 
 /* recorte de imagem (não destrutivo): caixa com a proporção do trecho */
