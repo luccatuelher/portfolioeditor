@@ -45,7 +45,7 @@ import type { ImageCrop, ImageRef } from '../schema/v4';
 import { LangFlag } from '../renderer/Flags';
 import { useDocument } from './useDocument';
 import { useLocalDraft, type SaveStatus } from './useLocalDraft';
-import { imagensSemDescricao, type ImagemSemDescricao } from './pendencias';
+import { imagensSemDescricao, textosSemTraducao, type ImagemSemDescricao, type TextoSemTraducao } from './pendencias';
 
 export interface EditorProps {
   initial: PortfolioV4;
@@ -231,6 +231,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   // Peso estimado do index.html (runtime + dados + imagens que vão para o site).
   const peso = useMemo(() => pesoDoSite(doc.state, assets, siteShell.length), [doc.state, assets]);
   const semDescricao = useMemo(() => imagensSemDescricao(doc.state), [doc.state]);
+  const semTraducao = useMemo(() => textosSemTraducao(doc.state), [doc.state]);
   // Largura do canvas: ver o site como no tablet/celular (usa o mesmo CSS responsivo do site).
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const backupRef = useRef<(() => void) | null>(null);
@@ -316,6 +317,27 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       if (p.quadro !== undefined) setQuadroEmFoco({ blockId: p.alvo.ref.blockId, idx: p.quadro });
     } else abrirItem(p.alvo);
     setGaveta('direita'); // tela estreita: o campo fica no Inspector
+  };
+
+  /**
+   * Leva ao texto que falta traduzir: abre onde ele está, troca o idioma de
+   * edição para o que falta e põe o cursor no campo vazio do Inspector (o
+   * texto do outro idioma aparece de modelo, no placeholder).
+   */
+  const irParaTraducao = (t: TextoSemTraducao): void => {
+    setLang(t.falta);
+    const a = t.alvo;
+    if (a.kind === 'block') setContainer(a.ref.container);
+    else if (a.kind === 'page') setContainer({ on: 'page', pageId: a.pageId });
+    if (a.kind === 'item') abrirItem(a);
+    else setSelection(a);
+    setGaveta('direita');
+    // Depois de o Inspector redesenhar no outro idioma.
+    window.setTimeout(() => requestAnimationFrame(() => {
+      const campo = document.querySelector<HTMLElement>('.inspector [data-falta] :is(input, textarea, [contenteditable="true"])');
+      campo?.scrollIntoView({ block: 'center' });
+      campo?.focus();
+    }), 0);
   };
 
   const openContainer = useCallback((c: Container) => {
@@ -1040,7 +1062,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           ) : leftTab === 'theme' ? (
             <ThemePanel doc={doc} onUploadImage={uploadImage} onUploadFavicon={uploadFavicon} resolveAsset={resolveAsset} />
           ) : leftTab === 'data' ? (
-            <DataPanel doc={doc} onSelect={abrirItem} peso={peso} assets={assets} semDescricao={semDescricao} resolver={resolveAsset} onIrPara={irParaDescricao} />
+            <DataPanel doc={doc} onSelect={abrirItem} peso={peso} assets={assets} semDescricao={semDescricao} resolver={resolveAsset} onIrPara={irParaDescricao} semTraducao={semTraducao} onTraduzir={irParaTraducao} />
           ) : (
             <LayersPanel doc={doc} page={page} item={item} lang={lang} selection={selection} onSelect={setSelection} />
           )}

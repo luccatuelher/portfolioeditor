@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { migrate } from '../src/migrate/migrate';
-import { imagensSemDescricao } from '../src/editor/pendencias';
+import { imagensSemDescricao, textosSemTraducao } from '../src/editor/pendencias';
 import { loadFixture } from './helpers/fixtures';
 
 describe('imagens sem descrição', () => {
@@ -19,5 +19,37 @@ describe('imagens sem descrição', () => {
     expect(lista.filter((l) => l.alvo.kind === 'block' && l.alvo.ref.blockId === 'img3')).toHaveLength(0);
     const a1 = lista.find((l) => l.alvo.kind === 'block' && l.alvo.ref.blockId === 'img1')!;
     expect(a1.alvo.kind === 'block' && a1.alvo.ref.container).toEqual({ on: 'page', pageId: 'home' });
+  });
+});
+
+describe('textos sem tradução', () => {
+  it('acha o texto que só tem um idioma, diz qual falta e onde — rascunho, vazio e HTML vazio não', () => {
+    const d = migrate(loadFixture('template-v3.json')).data;
+    const home = d.pages.find((p) => p.id === 'home')!;
+    const base = textosSemTraducao(d).length;
+    const h = (id: string, pt: string, en: string, visibility = 'public'): never => ({ id, type: 'heading', span: 12, visibility, content: { text: { pt, en }, level: 2 } }) as never;
+    home.sections[0]!.blocks.push(h('t1', 'Trabalhos recentes', ''));
+    home.sections[0]!.blocks.push(h('t2', '', 'Recent work'));
+    home.sections[0]!.blocks.push(h('t3', 'Rascunho', '', 'draft'));
+    home.sections[0]!.blocks.push(h('t4', '', ''));
+    home.sections[0]!.blocks.push({ id: 't5', type: 'text', span: 12, visibility: 'public', content: { html: { pt: '<p>Olá</p>', en: '<p></p>' } } } as never);
+    const lista = textosSemTraducao(d);
+    expect(lista).toHaveLength(base + 3);
+    const de = (id: string) => lista.find((l) => l.alvo.kind === 'block' && l.alvo.ref.blockId === id);
+    expect(de('t1')).toMatchObject({ falta: 'en', trecho: 'Trabalhos recentes' });
+    expect(de('t2')).toMatchObject({ falta: 'pt', trecho: 'Recent work' });
+    expect(de('t3')).toBeUndefined();
+    expect(de('t4')).toBeUndefined();
+    expect(de('t5')).toMatchObject({ falta: 'en', trecho: 'Olá' });
+  });
+
+  it('vale para nome do site, título de página e de projeto', () => {
+    const d = migrate(loadFixture('template-v3.json')).data;
+    d.site.role = { pt: 'Diretora de arte', en: '' };
+    const proj = d.collections.projects.find((p) => p.visibility !== 'draft')!;
+    proj.title = { pt: 'Casa', en: '' };
+    const lista = textosSemTraducao(d);
+    expect(lista.some((l) => l.alvo.kind === 'site' && l.onde === 'função no cabeçalho')).toBe(true);
+    expect(lista.some((l) => l.alvo.kind === 'item' && l.alvo.itemId === proj.id && l.onde.startsWith('título do projeto'))).toBe(true);
   });
 });

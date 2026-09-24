@@ -138,8 +138,9 @@ export function I18nInput({ value, onChange, multiline }: { value: I18n; onChang
     onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => t.aoDigitar(e.target.value),
     onBlur: t.aoSair,
   };
+  // data-falta: só o outro idioma tem texto — é aqui que o atalho "Traduzir" põe o foco.
   return (
-    <div className="insp-i18n-field">
+    <div className="insp-i18n-field" data-falta={!value[lang].trim() && value[other].trim() ? '' : undefined}>
       <span className="insp-i18n-tag" title={lang === 'pt' ? 'Português' : 'English'}><LangFlag lang={lang} /></span>
       {multiline ? <textarea rows={4} {...common} /> : <input {...common} />}
     </div>

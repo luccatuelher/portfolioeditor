@@ -110,7 +110,7 @@ describe('preflight', () => {
     data.site.name = { pt: 'Só PT', en: '' };
     const r = runPreflight(data);
     expect(r.warnings.some((w) => /alternativo/.test(w))).toBe(true);
-    expect(r.warnings.some((w) => /PT ou EN/.test(w))).toBe(true);
+    expect(r.warnings.some((w) => /só em um idioma/.test(w))).toBe(true);
   });
 
   it('avisa sobre export grande via assetSizes', () => {

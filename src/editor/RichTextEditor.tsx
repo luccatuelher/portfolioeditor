@@ -44,8 +44,9 @@ function OneEditor({ html, onChange }: { html: string; onChange: (h: string) => 
 /** Editor rich (Tiptap) no idioma escolhido no toggle do inspector. */
 export function RichI18nInput({ value, onChange }: { value: I18n; onChange: (v: I18n) => void }): React.ReactElement {
   const lang = useEditLang();
+  const temTexto = (h: string): boolean => !!h.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim();
   return (
-    <div className="insp-i18n-field">
+    <div className="insp-i18n-field" data-falta={!temTexto(value[lang]) && temTexto(value[lang === 'pt' ? 'en' : 'pt']) ? '' : undefined}>
       <span className="insp-i18n-tag"><LangFlag lang={lang} /></span>
       <OneEditor key={lang} html={value[lang]} onChange={(h) => onChange({ ...value, [lang]: h })} />
     </div>

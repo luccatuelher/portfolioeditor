@@ -1,6 +1,6 @@
-import type { I18n } from '../core/i18n';
 import { embedSource } from '../embed/embedSource';
 import type { Block, ImageRef, PortfolioV4 } from '../schema/v4';
+import { textosSemTraducao } from '../editor/pendencias';
 
 export interface PreflightResult {
   errors: string[];
@@ -15,7 +15,6 @@ export interface PreflightOptions {
 }
 
 const hasImg = (r: ImageRef | undefined): boolean => !!r && (!!r.assetId || !!(r.url && r.url.trim()));
-const i18nIncomplete = (v: I18n): boolean => (!!v.pt.trim() && !v.en.trim()) || (!v.pt.trim() && !!v.en.trim());
 const emailValid = (s: string): boolean => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
 
 /** Endereço que aponta para um arquivo ao lado do site (cv.pdf, img/foto.jpg), e não para fora nem para dentro dele. */
@@ -54,7 +53,6 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
   const errors: string[] = [];
   const warnings: string[] = [];
   let missingAlt = 0;
-  let incompleteI18n = 0;
 
   // Compartilhamento: o que aparece quando alguém manda o link no WhatsApp,
   // no LinkedIn ou no X. Imagem embutida (data:) nenhuma rede busca.
@@ -68,25 +66,16 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
     warnings.push('A imagem de compartilhamento está embutida no arquivo — WhatsApp, LinkedIn e X só buscam imagem por endereço http. Use uma URL pública no campo de imagem do SEO.');
   }
 
-  const checkI18n = (v: I18n): void => {
-    if (i18nIncomplete(v)) incompleteI18n++;
-  };
   const checkImg = (r: ImageRef): void => {
     if (hasImg(r) && !r.alt.pt.trim() && !r.alt.en.trim()) missingAlt++;
   };
   const walkBlock = (b: Block): void => {
-    if (b.type === 'heading') checkI18n(b.content.text);
-    else if (b.type === 'text') checkI18n(b.content.html);
-    else if (b.type === 'image') checkImg(b.content.image);
+    if (b.type === 'image') checkImg(b.content.image);
     else if (b.type === 'storyboard') b.content.frames.forEach(checkImg);
     else if (b.type === 'embed' && b.visibility === 'public' && b.content.ref && !embedSource({ type: b.content.provider, id: b.content.ref })) {
       errors.push(`Embed inválido em um bloco (${b.content.provider}).`);
     }
   };
-
-  // Site
-  checkI18n(data.site.name);
-  checkI18n(data.site.role);
 
   // Páginas públicas
   for (const p of data.pages.filter((x) => x.visibility !== 'nda')) {
@@ -97,15 +86,12 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
   for (const proj of data.collections.projects.filter((p) => p.visibility === 'public')) {
     const label = proj.title.pt || proj.title.en || proj.id;
     if (!proj.title.pt.trim() && !proj.title.en.trim()) errors.push(`Projeto sem título (${proj.id}).`);
-    checkI18n(proj.title);
-    checkI18n(proj.description);
     if (!hasImg(proj.thumb)) warnings.push(`${label}: capa ausente.`);
     const mediaBlocks = proj.sections.flatMap((s) => s.blocks).filter((b) => ['image', 'embed', 'storyboard'].includes(b.type));
     if (mediaBlocks.length === 0) warnings.push(`${label}: sem imagens nem embeds.`);
     for (const s of proj.sections) for (const b of s.blocks) walkBlock(b);
   }
   for (const b of data.collections.blog.filter((x) => x.visibility === 'public')) {
-    checkI18n(b.title);
     for (const s of b.sections) for (const bl of s.blocks) walkBlock(bl);
   }
   for (const g of data.collections.gallery.filter((x) => x.visibility === 'public')) checkImg(g.image);
@@ -138,7 +124,8 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
   }
 
   if (missingAlt > 0) warnings.push(`${missingAlt} imagem(ns) sem descrição (texto alternativo) — a lista, com atalho para cada uma, está no painel Dados › Descrição das imagens.`);
-  if (incompleteI18n > 0) warnings.push(`${incompleteI18n} texto(s) com PT ou EN faltando — no editor eles aparecem marcados com "sem PT"/"sem EN" no canvas.`);
+  const semTraducao = textosSemTraducao(data).length;
+  if (semTraducao > 0) warnings.push(`${semTraducao} texto(s) só em um idioma — a lista, com atalho para traduzir cada um, está no painel Dados › Traduções.`);
 
   // Tamanho do export
   if (opts.assetSizes) {

@@ -3,7 +3,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { pick } from '../renderer/text';
 import type { ImageRef, Visibility } from '../schema/v4';
-import type { ImagemSemDescricao } from './pendencias';
+import type { ImagemSemDescricao, TextoSemTraducao } from './pendencias';
 import type { CollectionName, Selection } from './paths';
 import { formatarPeso, LIMITE_GITHUB_BYTES, type PesoDoSite } from '../publish/peso';
 import type { DocApi } from './useDocument';
@@ -86,7 +86,7 @@ function PesoDoSitePainel({ peso, assets }: { peso: PesoDoSite; assets: Record<s
 function DescricoesPainel({ itens, resolver, onIr }: { itens: ImagemSemDescricao[]; resolver: (r: ImageRef) => string; onIr: (p: ImagemSemDescricao) => void }): React.ReactElement {
   // Recolhido: uma linha só, para não empurrar as listas do painel para baixo.
   return (
-    <details className={`descricoes ${itens.length ? 'faltam' : 'ok'}`} data-faltam={itens.length}>
+    <details className={`pendencia descricoes ${itens.length ? 'faltam' : 'ok'}`} data-faltam={itens.length}>
       <summary>
         Descrição das imagens · <b>{itens.length ? `${itens.length} sem descrição` : 'todas descritas ✓'}</b>
       </summary>
@@ -109,8 +109,44 @@ function DescricoesPainel({ itens, resolver, onIr }: { itens: ImagemSemDescricao
   );
 }
 
+/**
+ * Textos publicados que só existem num idioma: o visitante do outro idioma vê
+ * o texto que existe, e o site fica pela metade. Mesma regra do "sem EN"/"sem
+ * PT" do canvas, mas do site inteiro — não só do que está na tela.
+ */
+function TraducoesPainel({ itens, onIr }: { itens: TextoSemTraducao[]; onIr: (t: TextoSemTraducao) => void }): React.ReactElement {
+  const faltaEn = itens.filter((t) => t.falta === 'en').length;
+  const faltaPt = itens.length - faltaEn;
+  const resumo = [faltaEn ? `${faltaEn} sem EN` : '', faltaPt ? `${faltaPt} sem PT` : ''].filter(Boolean).join(' · ');
+  return (
+    <details className={`pendencia traducoes ${itens.length ? 'faltam' : 'ok'}`} data-faltam={itens.length}>
+      <summary>
+        Traduções · <b>{itens.length ? resumo : 'tudo nos dois idiomas ✓'}</b>
+      </summary>
+      {itens.length ? (
+        <>
+          <p className="peso-resumo">Quem visita no outro idioma vê o texto que existe — funciona, mas fica pela metade.</p>
+          <ol className="descricoes-lista traducoes-lista">
+            {itens.slice(0, 12).map((t, i) => (
+              <li key={i}>
+                <span className="traducoes-falta">{t.falta.toUpperCase()}</span>
+                <span className="traducoes-texto">
+                  <span className="peso-onde">{t.onde}</span>
+                  <span className="traducoes-trecho">{t.trecho}</span>
+                </span>
+                <button type="button" className="descricoes-ir" onClick={() => onIr(t)} aria-label={`Traduzir para ${t.falta === 'en' ? 'inglês' : 'português'}: ${t.onde}`}>Traduzir</button>
+              </li>
+            ))}
+          </ol>
+          {itens.length > 12 ? <p className="peso-resumo">e mais {itens.length - 12}.</p> : null}
+        </>
+      ) : null}
+    </details>
+  );
+}
+
 /** Painel de dados das coleções: editar, reordenar (arrastar), visibilidade, destaque. */
-export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver, onIrPara }: { doc: DocApi; onSelect: (s: Selection) => void; peso?: PesoDoSite; assets?: Record<string, string>; semDescricao?: ImagemSemDescricao[]; resolver?: (r: ImageRef) => string; onIrPara?: (p: ImagemSemDescricao) => void }): React.ReactElement {
+export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver, onIrPara, semTraducao, onTraduzir }: { doc: DocApi; onSelect: (s: Selection) => void; peso?: PesoDoSite; assets?: Record<string, string>; semDescricao?: ImagemSemDescricao[]; resolver?: (r: ImageRef) => string; onIrPara?: (p: ImagemSemDescricao) => void; semTraducao?: TextoSemTraducao[]; onTraduzir?: (t: TextoSemTraducao) => void }): React.ReactElement {
   const c = doc.state.collections;
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const sel = (collection: CollectionName, id: string): void => onSelect({ kind: 'item', collection, itemId: id });
@@ -124,6 +160,7 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
     <div className="panel data-panel">
       {peso ? <PesoDoSitePainel peso={peso} assets={assets ?? {}} /> : null}
       {semDescricao && resolver && onIrPara ? <DescricoesPainel itens={semDescricao} resolver={resolver} onIr={onIrPara} /> : null}
+      {semTraducao && onTraduzir ? <TraducoesPainel itens={semTraducao} onIr={onTraduzir} /> : null}
       <div className="panel-h">Projetos</div>
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('projects', c.projects.map((p) => p.id))}>
         <table className="data-table">
