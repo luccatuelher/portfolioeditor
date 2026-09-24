@@ -225,6 +225,27 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [dragging, setDragging] = useState(false);
   // Tela estreita (tablet, celular): os painéis viram gavetas por cima do canvas.
   const [gaveta, setGaveta] = useState<'esquerda' | 'direita' | null>(null);
+  // Aviso curto depois de desfazer/refazer ("Desfeito: texto de Título"): com o
+  // atalho, a mudança pode acontecer fora da tela e ninguém saberia o que voltou.
+  const [avisoHistorico, setAvisoHistorico] = useState<string | null>(null);
+  const avisoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const avisar = (msg: string): void => {
+    setAvisoHistorico(msg);
+    if (avisoTimer.current) clearTimeout(avisoTimer.current);
+    avisoTimer.current = setTimeout(() => setAvisoHistorico(null), 3500);
+  };
+  const desfazer = (): void => {
+    const rotulo = doc.undoLabel;
+    if (!doc.canUndo) return;
+    doc.undo();
+    if (rotulo) avisar(`Desfeito: ${rotulo}`);
+  };
+  const refazer = (): void => {
+    const rotulo = doc.redoLabel;
+    if (!doc.canRedo) return;
+    doc.redo();
+    if (rotulo) avisar(`Refeito: ${rotulo}`);
+  };
   const [showVersions, setShowVersions] = useState(false);
   // Quadro de storyboard que o ✎ pediu para editar (destaca o campo dele).
   const [quadroEmFoco, setQuadroEmFoco] = useState<{ blockId: string; idx: number } | null>(null);
@@ -448,14 +469,14 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     if (mod && key === 'z') {
       if (typing) return; // undo nativo do campo
       e.preventDefault();
-      if (e.shiftKey) doc.redo();
-      else doc.undo();
+      if (e.shiftKey) refazer();
+      else desfazer();
       return;
     }
     if (mod && key === 'y') {
       if (typing) return;
       e.preventDefault();
-      doc.redo();
+      refazer();
       return;
     }
     // Alt+↑ / Alt+↓: move o selecionado (bloco, seção ou item) uma posição —
@@ -954,7 +975,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const frame = siteFrame(doc.state, resolveAsset);
   return (
     <div className="editor" style={styleVars(themeToCssVars(doc.state.theme))}>
-      <TopBar doc={doc} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
+      <TopBar doc={doc} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
       {notice && showNotice ? (
         <div className="editor-notice" role="status">
           <span>{notice}</span>
@@ -1097,7 +1118,7 @@ const DEVICES = [
   { id: 'mobile', label: 'Celular (390px)', curto: 'Celular' },
 ] as const;
 
-function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
+function TopBar({ doc, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; onUndo: () => void; onRedo: () => void; avisoHistorico: string | null; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pedirSenha, setPedirSenha] = useState(false);
 
@@ -1188,8 +1209,8 @@ function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onIm
         )}
       </div>
       <div className="tb-center">
-        <button type="button" disabled={!doc.canUndo} onClick={doc.undo} title="Desfazer (Ctrl+Z)">↶</button>
-        <button type="button" disabled={!doc.canRedo} onClick={doc.redo} title="Refazer (Ctrl+Shift+Z)">↷</button>
+        <button type="button" disabled={!doc.canUndo} onClick={onUndo} title={doc.undoLabel ? `Desfazer: ${doc.undoLabel} (Ctrl+Z)` : 'Nada para desfazer'} aria-label={doc.undoLabel ? `Desfazer: ${doc.undoLabel}` : 'Desfazer'}>↶</button>
+        <button type="button" disabled={!doc.canRedo} onClick={onRedo} title={doc.redoLabel ? `Refazer: ${doc.redoLabel} (Ctrl+Shift+Z)` : 'Nada para refazer'} aria-label={doc.redoLabel ? `Refazer: ${doc.redoLabel}` : 'Refazer'}>↷</button>
         <span className="tb-devices" role="group" aria-label="Ver em outra tela">
           {DEVICES.map((d) => (
             <button key={d.id} type="button" className={device === d.id ? 'on' : ''} aria-pressed={device === d.id} aria-label={`Ver como ${d.label}`} title={`Ver como ${d.label}`} onClick={() => onDevice(d.id)}>
@@ -1203,6 +1224,7 @@ function TopBar({ doc, lang, onLang, pageTitle, trilha, saveStatus, assets, onIm
           </button>
         ) : null}
         <span className={`tb-status status-${saveStatus}`}>{STATUS_LABEL[saveStatus]}</span>
+        <span className="tb-historico" role="status" aria-live="polite">{avisoHistorico ?? ''}</span>
       </div>
       <div className="tb-right">
         <div className="lang-toggle">

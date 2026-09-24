@@ -34,6 +34,9 @@ export interface Store<T> {
   redo(): boolean;
   canUndo(): boolean;
   canRedo(): boolean;
+  /** A entrada que o próximo undo/redo aplicaria (sem aplicar) — para dizer o que vai mudar. */
+  peekUndo(): HistoryEntry | undefined;
+  peekRedo(): HistoryEntry | undefined;
   subscribe(fn: (state: T) => void): () => void;
   /** Tamanho atual da pilha de undo (teste/telemetria). */
   historyLength(): number;
@@ -110,6 +113,8 @@ export function createStore<T>(initial: T, options: StoreOptions = {}): Store<T>
 
     canUndo: () => undoStack.length > 0,
     canRedo: () => redoStack.length > 0,
+    peekUndo: () => undoStack[undoStack.length - 1],
+    peekRedo: () => redoStack[redoStack.length - 1],
     historyLength: () => undoStack.length,
 
     subscribe(fn) {

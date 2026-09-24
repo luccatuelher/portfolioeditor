@@ -5,6 +5,7 @@ import { findBlock, findSection, getSections, type BlockRef, type CollectionName
 import { bi, emptyI18n } from '../core/i18n';
 import { reorderArray } from '../core/array';
 import { newBlockId, newSectionId, renewSectionIds } from './blockFactory';
+import { rotuloDaMudanca } from './historyLabel';
 import { columnIds, computeRowColumns, detachBlock, placeBlock, rowHeadId, unstackBlock, type DropZone } from './gridOps';
 
 export interface DocApi {
@@ -58,6 +59,9 @@ export interface DocApi {
   redo(): void;
   canUndo: boolean;
   canRedo: boolean;
+  /** O que o próximo desfazer/refazer muda ("texto de Título"), ou null. */
+  undoLabel: string | null;
+  redoLabel: string | null;
 }
 
 /**
@@ -391,6 +395,10 @@ export function useDocument(initial: PortfolioV4): DocApi {
     redo: () => store.redo(),
     canUndo: store.canUndo(),
     canRedo: store.canRedo(),
+    // Desfazer: a entrada descreve o que foi feito, lido no estado de agora.
+    undoLabel: store.peekUndo() ? rotuloDaMudanca(state, store.peekUndo()!.patches) : null,
+    // Refazer: o que ela refaria — os caminhos existem no estado de antes.
+    redoLabel: store.peekRedo() ? rotuloDaMudanca(state, store.peekRedo()!.patches) : null,
   };
 }
 

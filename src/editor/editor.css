@@ -636,3 +636,5 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .editor-canvas .sketch-item:has(> .pe-actions:focus-within),
 .editor-canvas .storyboard-cell:has(> .pe-actions:focus-within),
 .editor-canvas .hdr-el:has(> .pe-actions:focus-within) { outline: 2px solid var(--accent2); outline-offset: 3px; }
+/* Aviso depois de desfazer/refazer ("Desfeito: texto de Título") */
+.tb-historico:not(:empty) { font-family: var(--font-mono); font-size: 0.6rem; color: #1c1b18; background: #f0c969; padding: 3px 9px; border-radius: 999px; margin-left: 8px; white-space: nowrap; }
