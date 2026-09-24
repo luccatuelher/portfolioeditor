@@ -930,7 +930,11 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     }
     const source = src.kind === 'new' ? makeDefaultBlock(src.type) : src.id;
     const newId = typeof source === 'string' ? source : source.id;
-    if (hit.zone === 'end') d.dropBlockInSection(container, source, hit.el.getAttribute('data-add-block')!);
+    if (hit.zone === 'end') {
+      // Página vazia: o alvo não tem seção ainda (data-add-block="").
+      const sid = hit.el.getAttribute('data-add-block') || d.addSection(container);
+      if (sid) d.dropBlockInSection(container, source, sid);
+    }
     else d.dropBlock(container, source, hit.el.getAttribute('data-block-id')!, hit.zone as DropZone);
     const ref = locateBlock(docRef.current.store.getState(), container, newId);
     if (ref) {
@@ -1107,7 +1111,10 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           onClose={() => setAddMenu(null)}
           onPick={(t) => {
             const block = makeDefaultBlock(t);
-            const ref = { container, sectionId: addMenu.sectionId };
+            // Página vazia: a seção nasce junto com o primeiro bloco.
+            const sectionId = addMenu.sectionId || doc.addSection(container);
+            if (!sectionId) return;
+            const ref = { container, sectionId };
             doc.insertBlock(ref, block);
             const bref = { ...ref, blockId: block.id };
             setSelection({ kind: 'block', ref: bref });

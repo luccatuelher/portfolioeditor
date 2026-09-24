@@ -673,3 +673,5 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .traducoes-falta { font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.04em; text-align: center; border: 1px solid #d8b49a; color: #a0522d; border-radius: 3px; padding: 2px 0; }
 .traducoes-texto { display: grid; min-width: 0; }
 .traducoes-trecho { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #8a867c; font-style: italic; }
+/* Página/projeto sem nenhuma seção: um convite grande para começar */
+.editor-canvas .canvas-vazio .canvas-add-block { display: block; width: 100%; padding: 32px 12px; font-size: 0.66rem; }

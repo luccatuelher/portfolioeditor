@@ -88,9 +88,22 @@ function DetailPager({ item, kind }: { item: ProjectItem | BlogItem; kind: 'proj
   );
 }
 
+/**
+ * No editor, página ou projeto sem nenhuma seção não tinha onde clicar para
+ * começar (o "＋ Adicionar bloco" mora dentro das seções). data-add-block
+ * vazio = a seção é criada junto com o primeiro bloco.
+ */
+function PrimeiroBloco(): React.ReactElement {
+  return (
+    <div className="section canvas-vazio">
+      <button type="button" className="canvas-add-block" data-add-block="">＋ Adicionar o primeiro bloco</button>
+    </div>
+  );
+}
+
 /** Renderiza uma página estática, ou o detalhe de um item numa página template. */
 export function PageView({ page, item }: { page: Page; item?: ProjectItem | BlogItem }): React.ReactElement {
-  const { lang, data, nda } = useRender();
+  const { lang, data, nda, editing } = useRender();
 
   if (page.kind === 'template' && item) {
     const isProject = 'meta' in item;
@@ -119,6 +132,7 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
         {item.sections.map((s) => (
           <SectionView key={s.id} section={s} />
         ))}
+        {editing && !item.sections.length ? <PrimeiroBloco /> : null}
         <DetailPager item={item} kind={isProject ? 'project' : 'blog'} />
       </article>
     );
@@ -141,6 +155,7 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
           <SectionView section={s} primeira={i === 0} />
         </ErrorBoundary>
       ))}
+      {editing && !page.sections.length ? <PrimeiroBloco /> : null}
     </div>
   );
 }
