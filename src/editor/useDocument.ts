@@ -55,6 +55,11 @@ export interface DocApi {
   movePage(fromId: string, toId: string): void;
   setItemVisibility(collection: 'projects' | 'blog' | 'gallery' | 'sketches', id: string, vis: PortfolioV4['collections']['projects'][number]['visibility']): void;
   setProjectFeatured(id: string, featured: boolean): void;
+  /**
+   * Uma ação da pessoa que muda o documento em mais de uma etapa (criar a
+   * seção e pôr o bloco nela) vira UM passo de desfazer. Ver Store.transaction.
+   */
+  transacao<R>(fn: () => R): R;
   undo(): void;
   redo(): void;
   canUndo: boolean;
@@ -119,9 +124,11 @@ export function useDocument(initial: PortfolioV4): DocApi {
       store.update((d) => recipe(d.site), groupKey ? { groupKey } : undefined);
     },
     setAssetMeta(id, meta) {
+      // Tamanho e tipo do arquivo enviado: registro técnico, não passo de desfazer
+      // (era um Ctrl+Z que não mudava nada na tela depois de cada envio de imagem).
       store.update((d) => {
         d.assets[id] = meta;
-      });
+      }, { semHistorico: true });
     },
     moveBlock(ref, dir) {
       store.update((d) => {
@@ -391,6 +398,7 @@ export function useDocument(initial: PortfolioV4): DocApi {
         if (p) p.featured = featured;
       });
     },
+    transacao: (fn) => store.transaction(fn),
     undo: () => store.undo(),
     redo: () => store.redo(),
     canUndo: store.canUndo(),

@@ -6,6 +6,7 @@ import { emptyI18n } from '../core/i18n';
 import { findBlock, findSection, type CollectionName, type Selection } from './paths';
 import type { DocApi } from './useDocument';
 import { useRemover } from './remover';
+import { newBlockId } from './blockFactory';
 import { EditLangContext, I18nInput, NumberInput, Row, RangeInput, SelectInput, TextInput } from './fields';
 import { LangFlag } from '../renderer/Flags';
 import { RichI18nInput } from './RichTextEditor';
@@ -831,7 +832,7 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
           <Row label="E-mail"><TextInput value={c.email} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.email = v)), gk('em'))} /></Row>
           <Row label="Telefone"><TextInput value={c.phone} onChange={(v) => upd(refBlock, (b) => void (b.type === 'contact' && (b.content.phone = v)), gk('ph'))} /></Row>
           <Row label="CV">
-            <button type="button" className="insp-upload" onClick={() => { upd(refBlock, (b) => void (b.type === 'contact' && (b.content.cvHref = ''))); doc.insertBelow(refBlock, { id: `b_${Math.random().toString(36).slice(2, 14)}`, type: 'button', span: 4, visibility: 'public', content: { label: c.cvLabel.pt || c.cvLabel.en ? c.cvLabel : { pt: 'Baixar CV', en: 'Download CV' }, href: c.cvHref || 'cv.pdf', variant: 'solid' } }); }}>＋ Criar botão de CV logo abaixo</button>
+            <button type="button" className="insp-upload" onClick={() => doc.transacao(() => { upd(refBlock, (b) => void (b.type === 'contact' && (b.content.cvHref = ''))); doc.insertBelow(refBlock, { id: newBlockId(), type: 'button', span: 4, visibility: 'public', content: { label: c.cvLabel.pt || c.cvLabel.en ? c.cvLabel : { pt: 'Baixar CV', en: 'Download CV' }, href: c.cvHref || 'cv.pdf', variant: 'solid' } }); })}>＋ Criar botão de CV logo abaixo</button>
             <div className="insp-note">O CV é um bloco Botão: dá para mover, redimensionar e mudar texto/link como qualquer elemento.</div>
           </Row>
           {onUploadImage ? (

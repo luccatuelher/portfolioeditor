@@ -25,11 +25,25 @@ export interface HistoryEntry {
 export interface UpdateOptions {
   /** Coalesce com a entrada anterior de mesma groupKey dentro de `groupWindow`. */
   groupKey?: string;
+  /**
+   * Registro técnico, não edição da pessoa (ex.: tamanho e tipo de uma imagem
+   * recém-enviada): muda o estado sem virar passo de desfazer. Só para dados
+   * em caminho próprio, que nenhuma edição desfeita depois precisa encontrar.
+   */
+  semHistorico?: boolean;
 }
 
 export interface Store<T> {
   getState(): T;
   update(recipe: (draft: T) => void, opts?: UpdateOptions): void;
+  /**
+   * Uma ação da pessoa = um passo de desfazer, mesmo que mude o documento em
+   * várias etapas (criar a seção e pôr o bloco nela). As mudanças valem na
+   * hora (getState já as vê); quem ouve o store é avisado uma vez, no fim. Se
+   * `fn` lançar erro, tudo o que ela mudou é desfeito. Aninhada, junta-se à
+   * de fora.
+   */
+  transaction<R>(fn: () => R): R;
   undo(): boolean;
   redo(): boolean;
   canUndo(): boolean;
@@ -57,6 +71,10 @@ export function createStore<T>(initial: T, options: StoreOptions = {}): Store<T>
   const now = options.now ?? (() => Date.now());
 
   let state = initial;
+  /** Transação aberta: as mudanças se acumulam aqui até o fim dela. */
+  let tx: HistoryEntry | null = null;
+  /** Algo mudou durante a transação aberta (com ou sem histórico): avisar no fim. */
+  let txMudou = false;
   const undoStack: HistoryEntry[] = [];
   const redoStack: HistoryEntry[] = [];
   const subs = new Set<(state: T) => void>();
@@ -72,6 +90,17 @@ export function createStore<T>(initial: T, options: StoreOptions = {}): Store<T>
       const [next, patches, inverse] = produceWithPatches(state, recipe);
       if (patches.length === 0) return; // no-op não polui histórico
       state = next as T;
+      if (opts?.semHistorico) {
+        if (tx) txMudou = true;
+        else emit();
+        return;
+      }
+      if (tx) {
+        txMudou = true;
+        tx.patches.push(...patches);
+        tx.inverse.unshift(...inverse);
+        return;
+      }
 
       const at = now();
       const last = undoStack[undoStack.length - 1];
@@ -91,6 +120,28 @@ export function createStore<T>(initial: T, options: StoreOptions = {}): Store<T>
       }
       redoStack.length = 0;
       emit();
+    },
+
+    transaction<R>(fn: () => R): R {
+      if (tx) return fn();
+      const t: HistoryEntry = { patches: [], inverse: [], at: now() };
+      tx = t;
+      txMudou = false;
+      let ok = false;
+      try {
+        const r = fn();
+        ok = true;
+        return r;
+      } finally {
+        tx = null;
+        if (!ok && t.inverse.length) state = applyPatchesT(state, t.inverse);
+        if (ok && t.patches.length) {
+          undoStack.push(t);
+          if (undoStack.length > limit) undoStack.shift();
+          redoStack.length = 0;
+        }
+        if (txMudou) emit();
+      }
     },
 
     undo() {

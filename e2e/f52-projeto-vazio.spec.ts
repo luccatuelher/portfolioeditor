@@ -17,6 +17,12 @@ test('projeto novo: o canvas oferece o primeiro bloco e cria a seção junto', a
   await expect(page.locator('.editor-canvas [data-block-id]')).toHaveCount(1);
   await expect(page.locator('.editor-canvas .canvas-vazio')).toHaveCount(0);
   await expect(page.locator('.insp-head')).toHaveText('Texto');
+
+  // Seção + bloco foram UMA ação: um Ctrl+Z devolve a página vazia (sem seção vazia para trás).
+  await page.locator('.tb-left, .editor-topbar').first().click({ position: { x: 5, y: 5 } }).catch(() => {});
+  await page.keyboard.press('Control+z');
+  await expect(page.locator('.editor-canvas [data-block-id]')).toHaveCount(0);
+  await expect(page.locator('.editor-canvas .canvas-vazio .canvas-add-block')).toBeVisible();
 });
 
 test('nota nova pelo teclado: o primeiro bloco é um botão de verdade (Enter abre o menu)', async ({ page }) => {

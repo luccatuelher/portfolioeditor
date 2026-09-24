@@ -76,3 +76,62 @@ describe('store — undo/redo por patches', () => {
     expect(seen).toBe(7); // não recebe mais após unsubscribe
   });
 });
+
+describe('store — uma ação, um passo de desfazer', () => {
+  it('transação junta várias mudanças numa entrada; desfazer volta tudo de uma vez', () => {
+    const store = createStore<S>(initial());
+    const r = store.transaction(() => {
+      store.update((d) => void (d.count = 1));
+      expect(store.getState().count).toBe(1); // vale na hora, dentro da transação
+      store.update((d) => void (d.text = 'x'));
+      return 'ok';
+    });
+    expect(r).toBe('ok');
+    expect(store.historyLength()).toBe(1);
+    store.undo();
+    expect(store.getState()).toEqual({ count: 0, text: '' });
+    store.redo();
+    expect(store.getState()).toEqual({ count: 1, text: 'x' });
+  });
+
+  it('avisa quem ouve uma vez só, no fim', () => {
+    const store = createStore<S>(initial());
+    let avisos = 0;
+    store.subscribe(() => avisos++);
+    store.transaction(() => {
+      store.update((d) => void (d.count = 1));
+      store.update((d) => void (d.count = 2));
+    });
+    expect(avisos).toBe(1);
+  });
+
+  it('erro no meio desfaz o que a transação já tinha mudado, e nada entra no histórico', () => {
+    const store = createStore<S>(initial());
+    expect(() => store.transaction(() => {
+      store.update((d) => void (d.count = 5));
+      throw new Error('falhou');
+    })).toThrow('falhou');
+    expect(store.getState().count).toBe(0);
+    expect(store.historyLength()).toBe(0);
+  });
+
+  it('transação dentro de transação vira parte da de fora', () => {
+    const store = createStore<S>(initial());
+    store.transaction(() => {
+      store.update((d) => void (d.count = 1));
+      store.transaction(() => store.update((d) => void (d.text = 'y')));
+    });
+    expect(store.historyLength()).toBe(1);
+  });
+
+  it('registro técnico (semHistorico) muda o estado sem virar passo de desfazer', () => {
+    const store = createStore<S>(initial());
+    store.update((d) => void (d.count = 1));
+    store.update((d) => void (d.text = 'meta'), { semHistorico: true });
+    expect(store.historyLength()).toBe(1);
+    store.undo(); // desfaz a edição, não o registro
+    expect(store.getState()).toEqual({ count: 0, text: 'meta' });
+    store.redo();
+    expect(store.getState()).toEqual({ count: 1, text: 'meta' });
+  });
+});

@@ -437,12 +437,15 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       let sectionId = selection?.kind === 'block' || selection?.kind === 'section' ? selection.ref.sectionId : undefined;
       if (selection && (selection.kind === 'block' || selection.kind === 'section') && !sameContainer(selection.ref.container, container)) sectionId = undefined;
       const secs = getSections(d.state, container) ?? [];
-      sectionId ??= secs[secs.length - 1]?.id ?? d.addSection(container) ?? undefined;
-      if (!sectionId) return;
-      const ref = { container, sectionId };
-      if (selection?.kind === 'block' && sameContainer(selection.ref.container, container)) d.insertBelow(selection.ref, block);
-      else d.insertBlock(ref, block);
-      const bref = { container, sectionId, blockId: block.id };
+      const secaoFinal = d.transacao(() => {
+        const sid = sectionId ?? secs[secs.length - 1]?.id ?? d.addSection(container);
+        if (!sid) return null;
+        if (selection?.kind === 'block' && sameContainer(selection.ref.container, container)) d.insertBelow(selection.ref, block);
+        else d.insertBlock({ container, sectionId: sid }, block);
+        return sid;
+      });
+      if (!secaoFinal) return;
+      const bref = { container, sectionId: secaoFinal, blockId: block.id };
       setSelection({ kind: 'block', ref: bref });
       if (type === 'image') pickImage((aid) => docRef.current.updateBlock(bref, (b) => { if (b.type === 'image') { b.content.image.assetId = aid; b.content.image.url = undefined; } }));
     },
@@ -525,12 +528,14 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     }
     const b = structuredClone(clip.block);
     b.id = newBlockId();
-    const sectionId = selSec ?? secs[secs.length - 1]?.id ?? d.addSection(container) ?? undefined;
-    if (!sectionId) return;
-    const secRef = { container, sectionId };
-    if (selection?.kind === 'block' && sameContainer(selection.ref.container, container)) d.insertBelow(selection.ref, b);
-    else d.insertBlock(secRef, b);
-    setSelection({ kind: 'block', ref: { container, sectionId, blockId: b.id } });
+    const sectionId = d.transacao(() => {
+      const sid = selSec ?? secs[secs.length - 1]?.id ?? d.addSection(container);
+      if (!sid) return null;
+      if (selection?.kind === 'block' && sameContainer(selection.ref.container, container)) d.insertBelow(selection.ref, b);
+      else d.insertBlock({ container, sectionId: sid }, b);
+      return sid;
+    });
+    if (sectionId) setSelection({ kind: 'block', ref: { container, sectionId, blockId: b.id } });
   };
 
   // Atalhos: um único listener que sempre lê o estado mais recente (sem re-registrar a cada render).
@@ -972,9 +977,11 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     const source = src.kind === 'new' ? makeDefaultBlock(src.type) : src.id;
     const newId = typeof source === 'string' ? source : source.id;
     if (hit.zone === 'end') {
-      // Página vazia: o alvo não tem seção ainda (data-add-block="").
-      const sid = hit.el.getAttribute('data-add-block') || d.addSection(container);
-      if (sid) d.dropBlockInSection(container, source, sid);
+      // Página vazia: o alvo não tem seção ainda (data-add-block=""); a seção nasce junto (um passo só).
+      d.transacao(() => {
+        const sid = hit.el.getAttribute('data-add-block') || d.addSection(container);
+        if (sid) d.dropBlockInSection(container, source, sid);
+      });
     }
     else d.dropBlock(container, source, hit.el.getAttribute('data-block-id')!, hit.zone as DropZone);
     const ref = locateBlock(docRef.current.store.getState(), container, newId);
@@ -1160,11 +1167,14 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           onClose={() => setAddMenu(null)}
           onPick={(t) => {
             const block = makeDefaultBlock(t);
-            // Página vazia: a seção nasce junto com o primeiro bloco.
-            const sectionId = addMenu.sectionId || doc.addSection(container);
+            // Página vazia: a seção nasce junto com o primeiro bloco (um passo de desfazer só).
+            const sectionId = doc.transacao(() => {
+              const sid = addMenu.sectionId || doc.addSection(container);
+              if (sid) doc.insertBlock({ container, sectionId: sid }, block);
+              return sid;
+            });
             if (!sectionId) return;
             const ref = { container, sectionId };
-            doc.insertBlock(ref, block);
             const bref = { ...ref, blockId: block.id };
             setSelection({ kind: 'block', ref: bref });
             setAddMenu(null);
