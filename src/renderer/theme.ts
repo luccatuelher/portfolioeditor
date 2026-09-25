@@ -1,4 +1,5 @@
 import type { Theme } from '../schema/v4';
+import { legivel } from '../core/contrast';
 
 /**
  * Converte os tokens do tema v4 em variáveis CSS. É a ÚNICA ponte entre dados e
@@ -12,8 +13,14 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
     '--ink': c.ink,
     '--ink-soft': c.inkSoft,
     '--ink-pale': c.inkPale,
+    // Texto em cinza claro (legendas, datas, rótulos): a mesma cor, escurecida só
+    // o necessário para 4,5:1. A original segue nas linhas e bordas.
+    '--ink-pale-texto': legivel(c.inkPale, c.bg, 4.5, c.ink),
     '--rule': c.rule,
     '--accent': c.accent,
+    // Destaque em TEXTO (etiquetas, links, erro da senha): legível sobre o fundo.
+    // Botões, bordas e sublinhados seguem com a cor da marca.
+    '--accent-texto': legivel(c.accent, c.bg, 4.5, c.ink),
     '--accent2': c.accent2,
     '--font-display': `'${theme.fonts.display}', Georgia, serif`,
     '--font-body': `'${theme.fonts.body}', Helvetica, sans-serif`,

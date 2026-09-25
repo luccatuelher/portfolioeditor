@@ -479,6 +479,7 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .contrast-row { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; border: 1px solid transparent; }
 .contrast-swatch { display: grid; place-items: center; width: 26px; height: 22px; border: 1px solid #d3cfc6; border-radius: 4px; font-size: 0.7rem; }
 .contrast-name { font-size: 0.68rem; color: #5a574f; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.contrast-ajuste { display: block; white-space: normal; font-size: 0.6rem; color: #5a574f; font-style: italic; }
 .contrast-ratio { font-family: var(--font-mono); font-size: 0.64rem; color: #33312c; }
 .contrast-level { grid-column: 2 / -1; font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.04em; text-transform: uppercase; }
 .contrast-row.lv-AAA .contrast-level, .contrast-row.lv-AA .contrast-level { color: #3f7a4a; }

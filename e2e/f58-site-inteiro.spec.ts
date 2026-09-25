@@ -75,6 +75,55 @@ for (const fixture of ['template-v3.json', 'legacy-synthetic-v3.json']) {
             .map((i) => `${i.className || 'img'} ${i.getAttribute('width')}×${i.getAttribute('height')} (natural ${i.naturalWidth}×${i.naturalHeight})`);
         });
         expect(semEspaco, `imagem sem espaço reservado em ${onde}`).toEqual([]);
+        // Todo texto visível legível (WCAG AA): 4,5:1, ou 3:1 no texto grande.
+        // Só onde o fundo é cor sólida (sobre foto, o contraste depende da foto).
+        const ilegiveis = await page.evaluate(() => {
+          const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true })!;
+          const rgba = (c: string): [number, number, number, number] => {
+            ctx.clearRect(0, 0, 1, 1);
+            ctx.fillStyle = '#000';
+            ctx.fillStyle = c;
+            ctx.fillRect(0, 0, 1, 1);
+            const d = ctx.getImageData(0, 0, 1, 1).data;
+            return [d[0]!, d[1]!, d[2]!, d[3]! / 255];
+          };
+          const lum = ([r, g, b]: number[]): number => {
+            const f = (v: number): number => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+            return 0.2126 * f(r!) + 0.7152 * f(g!) + 0.0722 * f(b!);
+          };
+          const fundo = (el: Element): number[] | null => {
+            for (let e: Element | null = el; e; e = e.parentElement) {
+              const cs = getComputedStyle(e);
+              if (cs.backgroundImage !== 'none') return null;
+              const c = rgba(cs.backgroundColor);
+              if (c[3] >= 0.99) return c;
+              if (c[3] > 0) return null; // translúcido: depende do que está atrás
+            }
+            return rgba(getComputedStyle(document.body).backgroundColor);
+          };
+          const out: string[] = [];
+          for (const el of document.querySelectorAll('#root *')) {
+            const temTexto = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent!.trim());
+            if (!temTexto || el.closest('[aria-hidden="true"], .sr-only, .img-crop, iframe')) continue;
+            const r = el.getBoundingClientRect();
+            const cs = getComputedStyle(el);
+            if (!r.width || !r.height || cs.visibility === 'hidden') continue;
+            let opacidade = 1;
+            for (let e: Element | null = el; e; e = e.parentElement) opacidade *= Number(getComputedStyle(e).opacity);
+            const bg = fundo(el);
+            if (!bg || opacidade < 0.05) continue;
+            const fg = rgba(cs.color);
+            const a = fg[3] * opacidade;
+            const visto = [0, 1, 2].map((i) => fg[i]! * a + bg[i]! * (1 - a));
+            const [hi, lo] = [lum(visto), lum(bg)].sort((x, y) => y - x);
+            const razao = (hi! + 0.05) / (lo! + 0.05);
+            const px = parseFloat(cs.fontSize);
+            const grande = px >= 24 || (px >= 18.66 && Number(cs.fontWeight) >= 700);
+            if (razao < (grande ? 3 : 4.5)) out.push(`"${el.textContent!.trim().slice(0, 30)}" (${el.className || el.tagName}) ${razao.toFixed(2)}:1`);
+          }
+          return out;
+        });
+        expect(ilegiveis, `texto ilegível em ${onde}`).toEqual([]);
       }
       expect(erros).toEqual([]);
     });

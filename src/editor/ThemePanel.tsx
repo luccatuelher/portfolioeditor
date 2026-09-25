@@ -3,18 +3,19 @@ import { DEFAULT_LAYOUT, type Theme } from '../schema/v4';
 import type { AssetResolver } from '../renderer/context';
 import { emptyI18n } from '../core/i18n';
 import type { DocApi } from './useDocument';
-import { contrastLevel, contrastRatio } from '../core/contrast';
+import { contrastLevel, contrastRatio, legivel } from '../core/contrast';
 
 /**
  * Pares de cor que o leitor realmente vê juntos no site. Cada um vira um aviso
  * de contraste (WCAG 2.1): 4.5:1 para texto normal, 3:1 para texto grande.
  */
-const CONTRAST_PAIRS: { fg: keyof Theme['colors']; bg: keyof Theme['colors']; label: string; large?: boolean }[] = [
+const CONTRAST_PAIRS: { fg: keyof Theme['colors']; bg: keyof Theme['colors']; label: string; large?: boolean; ajustaNoSite?: boolean }[] = [
   { fg: 'ink', bg: 'bg', label: 'Texto sobre o fundo' },
   { fg: 'inkSoft', bg: 'bg', label: 'Texto suave sobre o fundo' },
-  { fg: 'inkPale', bg: 'bg', label: 'Texto claro (legendas)' },
+  // Em texto, o site usa esta cor escurecida só o necessário (ver legivel em core/contrast).
+  { fg: 'inkPale', bg: 'bg', label: 'Texto claro (legendas)', ajustaNoSite: true },
   { fg: 'ink', bg: 'surface', label: 'Texto sobre superfície' },
-  { fg: 'accent', bg: 'bg', label: 'Destaque (links) sobre o fundo' },
+  { fg: 'accent', bg: 'bg', label: 'Destaque (links) sobre o fundo', ajustaNoSite: true },
   { fg: 'accent2', bg: 'bg', label: 'Destaque 2 sobre o fundo', large: true },
 ];
 
@@ -284,13 +285,20 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
       <div className="panel-h">Contraste</div>
       <ul className="contrast-list">
         {CONTRAST_PAIRS.map((p) => {
-          const ratio = contrastRatio(theme.colors[p.fg], theme.colors[p.bg]);
+          const original = theme.colors[p.fg];
+          // Cor que o visitante vê no texto: a legível, quando o site ajusta este par.
+          const cor = p.ajustaNoSite ? legivel(original, theme.colors[p.bg], 4.5, theme.colors.ink) : original;
+          const ratio = contrastRatio(cor, theme.colors[p.bg]);
           if (ratio === null) return null;
           const level = contrastLevel(ratio, p.large);
+          const ajustada = cor !== original;
           return (
             <li key={p.fg + "-" + p.bg} className={"contrast-row lv-" + level}>
-              <span className="contrast-swatch" style={{ background: theme.colors[p.bg], color: theme.colors[p.fg] }}>Aa</span>
-              <span className="contrast-name">{p.label}</span>
+              <span className="contrast-swatch" style={{ background: theme.colors[p.bg], color: cor }}>Aa</span>
+              <span className="contrast-name">
+                {p.label}
+                {ajustada ? <small className="contrast-ajuste" title={`Sua cor (${original}) tem ${(contrastRatio(original, theme.colors[p.bg]) ?? 0).toFixed(1)}:1 — continua nas linhas e bordas.`}>no texto, o site escurece um pouco para ler</small> : null}
+              </span>
               <code className="contrast-ratio">{ratio.toFixed(1)}:1</code>
               <span className="contrast-level">{LEVEL_TEXT[level]}</span>
             </li>

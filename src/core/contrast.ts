@@ -44,3 +44,34 @@ export function contrastLevel(ratio: number, large = false): ContrastLevel {
   if (ratio >= 3) return large ? 'AA' : 'AA-large';
   return 'fail';
 }
+
+/** Mistura duas cores #rrggbb: t = 0 é `a`, t = 1 é `b`. */
+function misturar(a: [number, number, number], b: [number, number, number], t: number): string {
+  return `#${a.map((v, i) => Math.round(v + (b[i]! - v) * t).toString(16).padStart(2, '0')).join('')}`;
+}
+
+/**
+ * A mesma cor, só o necessário mais perto de `rumo` (a tinta do tema) para o
+ * texto ter pelo menos `alvo`:1 contra o fundo. Já legível: volta igual.
+ *
+ * O tema padrão (e o portfólio antigo) usa um cinza claro (#A09C93, 2,4:1)
+ * em legendas, datas e rótulos de 10–11 px — ilegível ao sol no celular. As
+ * cores são escolha do dono do site: em vez de trocá-las, o site deriva a
+ * versão legível para TEXTO e guarda a original para linhas e bordas.
+ */
+export function legivel(fg: string, bg: string, alvo = 4.5, rumo = '#000000'): string {
+  const a = parseHex(fg);
+  const b = parseHex(bg);
+  if (!a || !b) return fg;
+  if ((contrastRatio(fg, bg) ?? 0) >= alvo) return fg;
+  // A tinta do tema também não chega lá (tema muito apagado): vai para preto ou branco.
+  const alvoCor = (contrastRatio(rumo, bg) ?? 0) >= alvo ? parseHex(rumo)! : (luminance(bg) ?? 1) > 0.18 ? ([0, 0, 0] as [number, number, number]) : ([255, 255, 255] as [number, number, number]);
+  // Menor mistura que atinge o alvo (a luminância anda num sentido só ao misturar).
+  let [lo, hi] = [0, 1];
+  for (let i = 0; i < 24; i++) {
+    const t = (lo + hi) / 2;
+    if ((contrastRatio(misturar(a, alvoCor, t), bg) ?? 0) >= alvo) hi = t;
+    else lo = t;
+  }
+  return misturar(a, alvoCor, hi);
+}
