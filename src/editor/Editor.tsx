@@ -24,6 +24,7 @@ import { importImage } from '../assets/importImage';
 import { makeFavicon } from '../assets/favicon';
 import { assetIdFromContent } from '../core/ids';
 import { emptyI18n } from '../core/i18n';
+import { completarDimensoes } from '../core/dimensoesImagem';
 import { makeDefaultBlock, newBlockId, renewItemIds, renewSectionIds } from './blockFactory';
 import { FloatingToolbar } from './FloatingToolbar';
 import { sanitizeInlineHtml } from './sanitize';
@@ -199,7 +200,9 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [showNotice, setShowNotice] = useState(!!notice);
   // Avisos da última publicação ("Baixar site"), mostrados na barra de aviso.
   const [publishNotice, setPublishNotice] = useState<Publicado | null>(null);
-  const doc = useDocument(initial);
+  // Imagens sem tamanho gravado (migradas do site antigo, backups antigos) ganham o tamanho real ao abrir.
+  const [inicial] = useState(() => completarDimensoes(initial, assets));
+  const doc = useDocument(inicial);
   const resolveAsset = useMemo(() => mapResolver(assets), [assets]);
   const { status: saveStatus, erro: erroGravacao } = useLocalDraft(doc.state, assets, persist, gravarAoAbrir);
   const outraAba = useOutraAba('portfolio-editor', persist);

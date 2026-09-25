@@ -14,6 +14,8 @@ export interface NdaBundle {
   sketches: SketchItem[];
   /** Blocos NDA soltos em páginas e itens públicos, com o lugar de onde saíram. */
   blocks?: NdaBlock[];
+  /** Tamanho (e tipo) das imagens do conteúdo NDA — sem ele, a foto desbloqueada entra sem reservar espaço. */
+  assetsMeta?: Record<string, AssetMeta>;
 }
 
 /**
@@ -91,6 +93,11 @@ export function publicSnapshot(input: PortfolioV4): PublicResult {
     sketches: splitNda(d.collections.sketches),
     blocks,
   };
+  const idsNda = new Set<string>();
+  collectAssetIds(nda, idsNda);
+  const metaNda: Record<string, AssetMeta> = {};
+  for (const id of idsNda) if (d.assets[id]) metaNda[id] = d.assets[id]!;
+  if (idsNda.size) nda.assetsMeta = metaNda;
 
   d.collections = {
     projects: limparSecoes(splitPublic(d.collections.projects)),
@@ -130,6 +137,7 @@ export function ndaCount(nda: NdaBundle): number {
  */
 export function mergeNda(base: PortfolioV4, bundle: NdaBundle): PortfolioV4 {
   const d = safeClone(base);
+  d.assets = { ...d.assets, ...(bundle.assetsMeta ?? {}) };
   d.collections = {
     projects: [...d.collections.projects, ...bundle.projects],
     blog: [...d.collections.blog, ...bundle.blog],

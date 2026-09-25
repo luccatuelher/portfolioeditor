@@ -3,6 +3,7 @@ import type { PortfolioV4 } from '../schema/v4';
 import { encryptNda, type EncryptedNda } from './nda';
 import { ndaCount, publicSnapshot, type NdaBundle } from './publicSnapshot';
 import { repairDoc } from '../migrate/repair';
+import { completarDimensoes } from '../core/dimensoesImagem';
 
 export interface PublishPayload {
   /** Documento público (sem NDA/rascunho). */
@@ -29,12 +30,13 @@ export async function buildPublishPayload(
   migrated: { data: PortfolioV4; assets: MigratedAsset[] },
   ndaPassword?: string,
 ): Promise<PublishPayload> {
-  const snap = publicSnapshot(migrated.data);
+  const byId = new Map(migrated.assets.map((a) => [a.id, a.dataUrl]));
+  // Toda imagem sai com largura e altura (o site reserva o espaço antes de a foto chegar).
+  const snap = publicSnapshot(completarDimensoes(migrated.data, byId));
   const nda = snap.nda;
   // O site publicado valida os dados ao abrir: garante aqui que eles saem válidos.
   const publicData = repairDoc(snap.data).doc ?? snap.data;
 
-  const byId = new Map(migrated.assets.map((a) => [a.id, a.dataUrl]));
   const assetMap: Record<string, string> = {};
   const assetSizes: Record<string, number> = {};
   for (const id of Object.keys(publicData.assets)) {

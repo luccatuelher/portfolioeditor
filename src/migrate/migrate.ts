@@ -1,6 +1,7 @@
 import { asArray, asBool, asNumber, asObject, asString, isObject, safeClone } from '../core/access';
 import { assetIdFromContent, makeIdFactory } from '../core/ids';
 import { classifyImageSrc } from '../core/images';
+import { dimensoesDaImagem } from '../core/dimensoesImagem';
 import { bi, emptyI18n, type I18n } from '../core/i18n';
 import { sanitizeHtml } from '../core/sanitizeHtml';
 import { normalizeProjectRows, type NormRow } from './legacy';
@@ -67,7 +68,8 @@ class Ctx {
     const id = assetIdFromContent(c.src);
     if (!this.assets.has(id)) {
       this.assets.set(id, { id, dataUrl: c.src, mime: c.mime ?? 'image/png' });
-      this.assetsMeta[id] = { mime: c.mime ?? 'image/png', w: 0, h: 0, alt };
+      const d = dimensoesDaImagem(c.src);
+      this.assetsMeta[id] = { mime: c.mime ?? 'image/png', w: d?.w ?? 0, h: d?.h ?? 0, alt };
     }
     return { assetId: id, alt };
   }

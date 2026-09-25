@@ -56,6 +56,25 @@ for (const fixture of ['template-v3.json', 'legacy-synthetic-v3.json']) {
         expect(await page.title(), `título vazio em ${onde}`).not.toBe('');
         expect(await page.evaluate(() => document.documentElement.lang), `lang em ${onde}`).toBe(lang === 'en' ? 'en' : 'pt-BR');
         expect(await page.locator('h1').count(), `h1 em ${onde}`).toBe(1);
+        // Toda foto que carrega reservou o espaço certo antes de chegar: tem
+        // width/height, na proporção em que aparece (a página não pula).
+        const semEspaco = await page.evaluate(async () => {
+          const imgs = [...document.querySelectorAll<HTMLImageElement>('main img[src^="data:"]')];
+          // As preguiçosas fora da tela nem começam a carregar: espera pouco, uma vez só.
+          await Promise.race([Promise.all(imgs.map((i) => i.decode().catch(() => undefined))), new Promise((r) => setTimeout(r, 600))]);
+          return imgs
+            // Só onde a caixa é ditada pela foto (não num recorte nem num quadro de proporção fixa).
+            .filter((i) => i.complete && i.naturalWidth > 0 && !i.closest('.img-crop') && getComputedStyle(i).objectFit === 'fill')
+            .filter((i) => {
+              const w = Number(i.getAttribute('width'));
+              const h = Number(i.getAttribute('height'));
+              if (!(w > 0 && h > 0)) return true;
+              const r = i.getBoundingClientRect();
+              return r.width > 0 && r.height > 0 && Math.abs(r.width / r.height - w / h) > 0.02 * (w / h);
+            })
+            .map((i) => `${i.className || 'img'} ${i.getAttribute('width')}×${i.getAttribute('height')} (natural ${i.naturalWidth}×${i.naturalHeight})`);
+        });
+        expect(semEspaco, `imagem sem espaço reservado em ${onde}`).toEqual([]);
       }
       expect(erros).toEqual([]);
     });
