@@ -458,7 +458,7 @@ function HeaderControls({ doc }: { doc: DocApi }): React.ReactElement {
           <div key={el} className={`insp-list-row${hidden.has(el) ? ' off' : ''}`}>
             <label><input type="checkbox" checked={!hidden.has(el)} onChange={() => toggle(el)} /> {HEADER_LABEL[el]}</label>
             {cfg.layout === 'grid' ? (
-              <select className="insp-list-align" value={cfg.align?.[el] ?? 'start'} title="Alinhamento na célula" onChange={(e) => setHeader((h) => void (h.align = { ...(h.align ?? {}), [el]: e.target.value as 'start' | 'center' | 'end' }))}>
+              <select className="insp-list-align" value={cfg.align?.[el] ?? 'start'} title="Alinhamento na célula" aria-label={`Alinhamento de “${HEADER_LABEL[el]}” na célula`} onChange={(e) => setHeader((h) => void (h.align = { ...(h.align ?? {}), [el]: e.target.value as 'start' | 'center' | 'end' }))}>
                 <option value="start">⯇ esq.</option>
                 <option value="center">≡ centro</option>
                 <option value="end">dir. ⯈</option>

@@ -77,10 +77,10 @@ export function VersionsModal({ doc, onRestore, onClose }: { doc: PortfolioV4; o
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal versions-modal" role="dialog" aria-modal="true" aria-labelledby={titulo} ref={dialogo} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
-        <header className="modal-head">
+        <div className="modal-head">
           <h2 id={titulo}>Histórico de versões</h2>
           <button type="button" onClick={onClose} aria-label="Fechar">✕</button>
-        </header>
+        </div>
 
         <div className="versions-save">
           <input

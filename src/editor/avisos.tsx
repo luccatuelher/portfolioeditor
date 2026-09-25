@@ -120,9 +120,9 @@ function DialogoConfirmar({ c, onFim }: { c: Confirmacao; onFim: (ok: boolean) =
   return (
     <div className="modal-backdrop camada-avisos" onClick={() => onFim(false)}>
       <div className="modal dialogo-confirmar" role="alertdialog" aria-modal="true" aria-labelledby={titulo} ref={dialogo} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
-        <header className="modal-head">
+        <div className="modal-head">
           <h2 id={titulo}>{c.titulo}</h2>
-        </header>
+        </div>
         <p className="dialogo-texto">{c.texto}</p>
         <div className="dialogo-acoes">
           <button type="button" className="tb-btn" autoFocus={c.perigo} onClick={() => onFim(false)}>{c.cancelar ?? 'Cancelar'}</button>
@@ -140,10 +140,10 @@ function DialogoLink({ doc, atual, onFim }: { doc: PortfolioV4; atual: string; o
   return (
     <div className="modal-backdrop camada-avisos" onClick={() => onFim(null)}>
       <div className="modal dialogo-link" role="dialog" aria-modal="true" aria-labelledby={titulo} ref={dialogo} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
-        <header className="modal-head">
+        <div className="modal-head">
           <h2 id={titulo}>Link no texto</h2>
           <button type="button" onClick={() => onFim(null)} aria-label="Fechar">✕</button>
-        </header>
+        </div>
         <div className="dialogo-corpo">
           <LinkPicker doc={doc} href={href} onChange={setHref} />
         </div>

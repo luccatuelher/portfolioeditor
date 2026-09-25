@@ -26,10 +26,10 @@ export function NdaPasswordModal({ quantidade, onConfirm, onCancel }: { quantida
   return (
     <div className="modal-backdrop" onClick={onCancel}>
       <div className="modal nda-modal" role="dialog" aria-modal="true" aria-labelledby={titulo} ref={dialogo} tabIndex={-1} onClick={(e) => e.stopPropagation()}>
-        <header className="modal-head">
+        <div className="modal-head">
           <h2 id={titulo}>Senha da área NDA</h2>
           <button type="button" onClick={onCancel} aria-label="Fechar">✕</button>
-        </header>
+        </div>
 
         <p className="nda-modal-lead">
           {quantidade === 1 ? 'Há 1 item confidencial' : `Há ${quantidade} itens confidenciais`} para cifrar dentro do site.

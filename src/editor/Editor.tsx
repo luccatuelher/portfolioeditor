@@ -1164,7 +1164,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       </div>
       <div className={`editor-main${gaveta ? ` gaveta-${gaveta}` : ''}`}>
         {gaveta ? <button type="button" className="editor-scrim" aria-label="Fechar painel" onClick={() => setGaveta(null)} /> : null}
-        <div className="editor-left">
+        <aside className="editor-left" aria-label="Painéis: páginas, camadas, tema e dados">
           <button type="button" className="gaveta-fechar" aria-label="Fechar painel" onClick={() => setGaveta(null)}>✕</button>
           <div className="left-tabs">
             <button type="button" className={leftTab === 'pages' ? 'active' : ''} onClick={() => setLeftTab('pages')}>Páginas</button>
@@ -1184,12 +1184,15 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           {leftTab === 'pages' || leftTab === 'layers' ? (
             <ElementsPalette onAdd={addElement} onAddSection={addSectionPreset} onDragStart={(type) => { drag.current = { kind: 'new', type }; setDragging(true); }} onDragEnd={onDragEnd} />
           ) : null}
-        </div>
+        </aside>
 
         {/* O arrasto é ouvido NA ÁREA QUE ROLA: parado na borda de baixo, o
             ponteiro já saiu do canvas, e sem isso a rolagem automática nunca
             entraria em ação justamente onde ela é necessária. */}
-        <div className="editor-canvas-wrap" onDragOver={(ev) => ajustarAutoScroll(ev.clientY)} onDrop={pararAutoScroll} onDragLeave={(ev) => {
+        {/* Região principal do editor: o canvas. A prévia do site dentro dele não
+            tem <main> próprio (não pode haver dois) e o cabeçalho do site não
+            conta como um segundo "banner" para o leitor de tela. */}
+        <main className="editor-canvas-wrap" aria-label="Canvas: prévia do site" onDragOver={(ev) => ajustarAutoScroll(ev.clientY)} onDrop={pararAutoScroll} onDragLeave={(ev) => {
             // Junto da borda o navegador dispara "leave" a toda hora, mesmo com o
             // ponteiro dentro (ele troca de elemento por baixo). Conferir pelo
             // PONTO, e não pelo elemento, evita matar a rolagem em curso.
@@ -1201,18 +1204,18 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
             <RenderContext.Provider value={ctx}>
               <div className={`site canvas-site${frame.className}`} style={styleVars(frame.vars)}>
                 <SiteHeader data={doc.state} lang={lang} onLang={setLang} onNavigate={navigate} current={container.on === 'page' ? container.pageId : undefined} />
-                <main className="container">
+                <div className="container">
                   <PageView page={page} item={item} />
-                </main>
+                </div>
               </div>
             </RenderContext.Provider>
           </div>
-        </div>
+        </main>
 
-        <div className="editor-right">
+        <aside className="editor-right" aria-label="Inspector: ajustes do que está selecionado">
           <button type="button" className="gaveta-fechar" aria-label="Fechar painel" onClick={() => setGaveta(null)}>✕</button>
           <Inspector doc={doc} selection={selection} onUploadImage={uploadImage} onSelect={setSelection} lang={lang} onLang={setLang} quadroEmFoco={quadroEmFoco} resolveAsset={resolveAsset} pedidoFoco={pedidoFoco} onFocoAtendido={focoAtendido} />
-        </div>
+        </aside>
       </div>
       <FloatingToolbar fonts={doc.state.theme.fonts} colors={doc.state.theme.colors} />
       {avisos.ui}

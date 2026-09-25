@@ -52,7 +52,7 @@ test.describe.serial('F7 — site publicado (self-contained)', () => {
   test('bloco NDA solto: fora do código público, volta no mesmo lugar depois da senha', async ({ page }) => {
     await page.route(/youtube|youtu\.be|vimeo|speakerdeck|ytimg/, (r) => r.abort());
     await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
-    const titulo = page.locator('.editor-canvas main .block-heading').first();
+    const titulo = page.locator('.editor-canvas .container .block-heading').first();
     const id = (await titulo.getAttribute('data-block-id'))!;
     const vizinhoAntes = await titulo.evaluate((el) => el.previousElementSibling?.getAttribute('data-block-id') ?? null);
     await titulo.click();

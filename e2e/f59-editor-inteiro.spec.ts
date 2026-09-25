@@ -9,6 +9,20 @@ import { test, expect, type Page } from '@playwright/test';
  */
 const ABAS = ['Conteúdo', 'Layout', 'Estilo', 'Visibilidade'];
 
+/**
+ * Auditoria de acessibilidade (axe-core, WCAG 2.1 A/AA + boas práticas) da tela
+ * como está. 'nested-interactive': o card de projeto no canvas é um botão com
+ * as ações (trocar imagem, editar…) dentro — reestruturação à parte.
+ */
+async function auditar(page: Page, onde: string): Promise<void> {
+  const v = await page.evaluate(async () => {
+    const axe = (window as unknown as { axe: { run: (c: Document, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
+    const r = await axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'], rules: { 'nested-interactive': { enabled: false } } });
+    return r.violations.map((x) => `${x.id}: ${x.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' · ')}`);
+  });
+  expect(v, `acessibilidade do editor em ${onde}`).toEqual([]);
+}
+
 /** Tipos de bloco que já passaram pelas quatro abas (uma vez por tipo basta). */
 const tiposVistos = new Set<string>();
 let elementosVisitados = 0;
@@ -25,7 +39,10 @@ async function percorrerBlocos(page: Page, onde: string): Promise<void> {
     elementosVisitados++;
     if (tiposVistos.has(tipo)) continue;
     tiposVistos.add(tipo);
-    for (const aba of ABAS) await page.locator('.insp-tab', { hasText: aba }).click();
+    for (const aba of ABAS) {
+      await page.locator('.insp-tab', { hasText: aba }).click();
+      await auditar(page, `${onde} · ${tipo} · ${aba}`);
+    }
     await page.locator('.insp-tab', { hasText: 'Conteúdo' }).click();
   }
   await expect(page.locator('.block-defeito, .tela-de-erro'), `defeito em ${onde}`).toHaveCount(0);
@@ -37,6 +54,14 @@ test('toda página, projeto e nota abre, e todo elemento aceita seleção e as a
   page.on('pageerror', (e) => erros.push(String(e)));
   await page.route(/youtube|youtu\.be|vimeo|speakerdeck|ytimg|fonts\.googleapis|fonts\.gstatic/, (r) => r.abort());
   await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
+  await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
+  for (const aba of ['Tema', 'Dados']) {
+    await page.locator('.left-tabs button', { hasText: aba }).click();
+    await auditar(page, `aba ${aba}`);
+  }
+  await page.locator('.tb-btn', { hasText: 'Versões' }).click();
+  await auditar(page, 'janela de Versões');
+  await page.keyboard.press('Escape');
 
   // Páginas: pela árvore do painel Páginas.
   const paginas = page.locator('.editor-left .tree-row.pagerow .tree-main');

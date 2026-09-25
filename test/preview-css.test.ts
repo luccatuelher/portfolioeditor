@@ -10,10 +10,19 @@ import { readFileSync } from 'node:fs';
  */
 describe('CSS da prévia gerado', () => {
   it('está em dia com o CSS do site', () => {
-    const antes = readFileSync('src/editor/preview.generated.css', 'utf8');
+    // Quebra de linha não conta: o git devolve o arquivo com CRLF no Windows.
+    const ler = (): string => readFileSync('src/editor/preview.generated.css', 'utf8').replace(/\r\n/g, '\n');
+    const antes = ler();
     execFileSync(process.execPath, ['scripts/gen-preview-css.mjs'], { stdio: 'pipe' });
-    const depois = readFileSync('src/editor/preview.generated.css', 'utf8');
-    expect(depois, 'rode: npm run gen:preview').toBe(antes);
+    expect(ler(), 'rode: npm run gen:preview').toBe(antes);
+  });
+
+  it('o @import da prévia vem antes de qualquer regra (senão o navegador o ignora)', () => {
+    // Uma regra acima do @import desligava a prévia de tablet e celular inteira, sem erro.
+    const css = readFileSync('src/editor/editor.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    const antesDoImport = css.slice(0, css.indexOf('@import')).trim();
+    expect(css.indexOf('@import')).toBeGreaterThanOrEqual(0);
+    expect(antesDoImport).toBe('');
   });
 
   it('não sobrou espelho escrito à mão no editor.css', () => {

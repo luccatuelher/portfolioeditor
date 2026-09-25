@@ -14,9 +14,9 @@ const VIS_OPTS: { value: Visibility; label: string }[] = [
   { value: 'nda', label: 'NDA' },
 ];
 
-function VisSelect({ value, onChange }: { value: Visibility; onChange: (v: Visibility) => void }): React.ReactElement {
+function VisSelect({ value, onChange, nome }: { value: Visibility; onChange: (v: Visibility) => void; nome: string }): React.ReactElement {
   return (
-    <select className={`data-vis vis-${value}`} value={value} onChange={(e) => onChange(e.target.value as Visibility)}>
+    <select className={`data-vis vis-${value}`} value={value} aria-label={`Visibilidade de “${nome}”`} onChange={(e) => onChange(e.target.value as Visibility)}>
       {VIS_OPTS.map((o) => (
         <option key={o.value} value={o.value}>{o.label}</option>
       ))}
@@ -36,7 +36,7 @@ function SortableRow({ doc, collection, id, label, visibility, onSelect, extra }
       <td><span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar">⠿</span></td>
       <td><button type="button" className="data-name" onClick={() => onSelect({ kind: 'item', collection, itemId: id })}>{label || id}</button></td>
       {extra ? <td>{extra}</td> : null}
-      <td><VisSelect value={visibility} onChange={(v) => doc.setItemVisibility(collection, id, v)} /></td>
+      <td><VisSelect value={visibility} nome={label || id} onChange={(v) => doc.setItemVisibility(collection, id, v)} /></td>
     </tr>
   );
 }
@@ -181,7 +181,7 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('projects', c.projects.map((p) => p.id))}>
         <table className="data-table">
           <colgroup><col className="dc-grip" /><col /><col className="dc-feat" /><col className="dc-vis" /></colgroup>
-          <thead><tr><th /><th>Título</th><th title="Destaque na Home">★</th><th>Visib.</th></tr></thead>
+          <thead><tr><th><span className="sr-only">Arrastar</span></th><th>Título</th><th title="Destaque na Home">★</th><th>Visib.</th></tr></thead>
           <tbody>
             <SortableContext items={c.projects.map((p) => p.id)} strategy={verticalListSortingStrategy}>
               {c.projects.map((p) => (
@@ -193,7 +193,7 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
                   label={pick(p.title, 'pt')}
                   visibility={p.visibility}
                   onSelect={onSelect}
-                  extra={<input type="checkbox" checked={p.featured} title="Aparece na Home" onChange={(e) => doc.updateItem('projects', p.id, (it) => void (it.featured = e.target.checked))} />}
+                  extra={<input type="checkbox" checked={p.featured} title="Aparece na Home" aria-label={`“${pick(p.title, 'pt') || p.id}” aparece na Home`} onChange={(e) => doc.updateItem('projects', p.id, (it) => void (it.featured = e.target.checked))} />}
                 />
               ))}
             </SortableContext>
