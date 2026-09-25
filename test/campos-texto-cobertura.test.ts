@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { migrate } from '../src/migrate/migrate';
 import { camposDeTexto } from '../src/core/camposTexto';
 import { loadFixture } from './helpers/fixtures';
+import { z } from 'zod';
+import { I18nSchema, PortfolioV4Schema } from '../src/schema/v4';
 
 /**
  * Guarda estrutural: todo texto bilíngue do documento está na lista única
@@ -48,10 +50,47 @@ function todosOsI18n(no: unknown, caminho: string, out: { caminho: string; valor
   }
 }
 
+/**
+ * Preenche, guiado pelo schema, todo campo bilíngue OPCIONAL que está vazio
+ * (legenda, nome do vídeo, …). Os exemplos quase não usam esses campos: sem
+ * isto, um opcional novo esquecido fora da lista passaria despercebido.
+ */
+function preencherOpcionais(valor: unknown, schema: z.ZodType): void {
+  if (valor === undefined || valor === null) return;
+  if (schema instanceof z.ZodOptional) return preencherOpcionais(valor, schema.unwrap() as z.ZodType);
+  if (schema instanceof z.ZodDiscriminatedUnion) {
+    const tipo = (valor as { type?: unknown }).type;
+    const opcao = (schema.options as z.ZodObject[]).find((o) => (o.shape['type'] as z.ZodLiteral).value === tipo);
+    if (opcao) preencherOpcionais(valor, opcao);
+    return;
+  }
+  if (schema instanceof z.ZodArray && Array.isArray(valor)) {
+    for (const x of valor) preencherOpcionais(x, schema.element as z.ZodType);
+    return;
+  }
+  if (schema instanceof z.ZodObject && typeof valor === 'object') {
+    const r = valor as Record<string, unknown>;
+    for (const [k, s] of Object.entries(schema.shape as Record<string, z.ZodType>)) {
+      if (r[k] === undefined && s instanceof z.ZodOptional && s.unwrap() === I18nSchema) r[k] = { pt: 'Preenchido', en: '' };
+      else preencherOpcionais(r[k], s);
+    }
+  }
+}
+
 describe('lista única de textos bilíngues', () => {
-  for (const fixture of ['template-v3.json', 'legacy-synthetic-v3.json']) {
-    it(`cobre todo texto bilíngue do documento (${fixture})`, () => {
-      const doc = migrate(loadFixture(fixture)).data;
+  const casos = [
+    ...['template-v3.json', 'legacy-synthetic-v3.json'].map((f) => [f, () => migrate(loadFixture(f)).data] as const),
+    ['template-v3.json com todo bilíngue opcional preenchido', () => {
+      const doc = migrate(loadFixture('template-v3.json')).data;
+      preencherOpcionais(doc, PortfolioV4Schema);
+      // O preenchimento pegou de verdade (ex.: legenda da imagem e do quadro).
+      expect(JSON.stringify(doc)).toContain('"caption":{"pt":"Preenchido"');
+      return doc;
+    }] as const,
+  ];
+  for (const [nome, carregar] of casos) {
+    it(`cobre todo texto bilíngue do documento (${nome})`, () => {
+      const doc = carregar();
       const naLista = new Set<object>(camposDeTexto(doc).map((c) => c.valor));
       const encontrados: { caminho: string; valor: object }[] = [];
       todosOsI18n({ site: doc.site, pages: doc.pages, collections: doc.collections }, '', encontrados);

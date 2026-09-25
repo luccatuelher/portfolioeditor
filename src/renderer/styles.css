@@ -144,7 +144,10 @@ a.project-card, a.blog-item { display: block; color: inherit; text-decoration: n
 
 .art-item { margin: 0; }
 .art-img { width: 100%; height: auto; display: block; background: transparent; cursor: zoom-in; }
-.art-caption { font-family: var(--font-mono); font-size: 0.65rem; color: var(--ink-pale); letter-spacing: 0.08em; padding-top: 8px; text-transform: uppercase; }
+.art-caption, .media-caption { font-family: var(--font-mono); font-size: 0.65rem; color: var(--ink-pale); letter-spacing: 0.08em; padding-top: 8px; text-transform: uppercase; }
+/* Legenda do bloco Imagem e do quadro de storyboard: mesmo visual da galeria. */
+.media-caption { margin: 0; line-height: 1.5; overflow-wrap: anywhere; }
+figure.block-image-inner, figure.storyboard-cell { margin: 0; }
 .sketch-item img { width: 100%; height: auto; display: block; background: transparent; }
 
 /* ------------------------------------------------------------- contato */

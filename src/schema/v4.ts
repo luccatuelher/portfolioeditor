@@ -119,7 +119,12 @@ export const TextBlockSchema = z.strictObject({
 export const ImageBlockSchema = z.strictObject({
   ...blockBase,
   type: z.literal('image'),
-  content: z.strictObject({ image: ImageRefSchema, widthPct: z.number().min(25).max(100).optional() }),
+  content: z.strictObject({
+    image: ImageRefSchema,
+    widthPct: z.number().min(25).max(100).optional(),
+    /** Legenda visível embaixo da imagem (a descrição/alt é para leitor de tela). */
+    caption: I18nSchema.optional(),
+  }),
 });
 
 export const EmbedBlockSchema = z.strictObject({
@@ -128,10 +133,13 @@ export const EmbedBlockSchema = z.strictObject({
   content: EmbedRefSchema,
 });
 
+/** Quadro de storyboard: a imagem e, se quiser, a legenda (plano, ação, diálogo). */
+export const StoryboardFrameSchema = ImageRefSchema.extend({ caption: I18nSchema.optional() });
+
 export const StoryboardBlockSchema = z.strictObject({
   ...blockBase,
   type: z.literal('storyboard'),
-  content: z.strictObject({ label: I18nSchema.optional(), frames: z.array(ImageRefSchema) }),
+  content: z.strictObject({ label: I18nSchema.optional(), frames: z.array(StoryboardFrameSchema) }),
 });
 
 export const CollectionBlockSchema = z.strictObject({

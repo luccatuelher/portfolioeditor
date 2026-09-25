@@ -27,7 +27,9 @@ export type CampoId =
   | 'content.heading'
   | 'content.body'
   | 'content.image.alt'
-  | `frames.${number}.alt`;
+  | 'content.caption'
+  | `frames.${number}.alt`
+  | `frames.${number}.caption`;
 
 export interface CampoDoBloco {
   campo: CampoId;
@@ -43,10 +45,16 @@ export function camposDoBloco(b: Block): CampoDoBloco[] {
     case 'heading': return [{ campo: 'content.text', rotulo: 'Título', valor: b.content.text }];
     case 'text': return [{ campo: 'content.html', rotulo: 'Texto', valor: b.content.html }];
     case 'button': return [{ campo: 'content.label', rotulo: 'Botão', valor: b.content.label }];
-    case 'image': return [{ campo: 'content.image.alt', rotulo: 'Descrição da imagem', valor: b.content.image.alt, imagem: { ref: b.content.image, nome: 'Imagem' } }];
+    case 'image': return [
+      { campo: 'content.image.alt', rotulo: 'Descrição da imagem', valor: b.content.image.alt, imagem: { ref: b.content.image, nome: 'Imagem' } },
+      ...(b.content.caption ? [{ campo: 'content.caption' as const, rotulo: 'Legenda da imagem', valor: b.content.caption }] : []),
+    ];
     // Nome da aba do vídeo no carrossel da prévia do projeto.
     case 'embed': return b.content.label ? [{ campo: 'content.label', rotulo: 'Nome do vídeo', valor: b.content.label }] : [];
-    case 'storyboard': return b.content.frames.map((f, i) => ({ campo: `frames.${i}.alt` as const, rotulo: `Quadro ${i + 1} (descrição)`, valor: f.alt, imagem: { ref: f, nome: `Quadro ${i + 1} do storyboard` } }));
+    case 'storyboard': return b.content.frames.flatMap((f, i) => [
+      { campo: `frames.${i}.alt` as const, rotulo: `Quadro ${i + 1} (descrição)`, valor: f.alt, imagem: { ref: f, nome: `Quadro ${i + 1} do storyboard` } },
+      ...(f.caption ? [{ campo: `frames.${i}.caption` as const, rotulo: `Quadro ${i + 1} (legenda)`, valor: f.caption }] : []),
+    ]);
     case 'contact': return [
       { campo: 'content.heading', rotulo: 'Contato (título)', valor: b.content.heading },
       { campo: 'content.body', rotulo: 'Contato (texto)', valor: b.content.body },

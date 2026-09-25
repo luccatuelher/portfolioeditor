@@ -812,31 +812,41 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
         return wrap(<InlineEditable key={`${block.id}:${lang}`} className="block-text-body" initial={pick(block.content.html, lang)} onCommit={(v) => onInlineText(block.id, v, 'text')} />);
       }
       return wrap(<RichText className="block-text-body" html={pick(block.content.html, lang)} />);
-    case 'image':
+    case 'image': {
+      const legenda = pick(block.content.caption, lang);
+      const Caixa = legenda ? 'figure' : 'div';
       return wrap(
-        <div className="block-image-inner" style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
+        <Caixa className="block-image-inner" style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
           <Img image={block.content.image} className="block-image-img" eager={topo} />
           {editing && !block.content.image.assetId && !block.content.image.url ? (
             <button type="button" className="pe-img-placeholder" data-block-upload={block.id}>＋ Enviar imagem</button>
           ) : null}
-        </div>,
+          {legenda ? <figcaption className="media-caption">{legenda}</figcaption> : null}
+        </Caixa>,
       );
+    }
     case 'embed':
       return wrap(<EmbedFrame provider={block.content.provider} refValue={block.content.ref} options={block.content.options} />);
     case 'storyboard': {
       const frames = block.content.frames;
-      const light = frames.map((f) => ({ src: resolveAsset(f), alt: pick(f.alt, lang), crop: f.crop }));
+      const light = frames.map((f) => ({ src: resolveAsset(f), alt: pick(f.alt, lang), crop: f.crop, caption: pick(f.caption, lang) }));
       return wrap(
         <div className="storyboard-grid">
-          {frames.map((f, i) => (
-            <div key={i} className="storyboard-cell" style={styleVars(spanVars({ desktop: f.span ?? 3, tablet: f.spanTablet, mobile: f.spanMobile }, 'media'))} {...(editing ? { draggable: true, 'data-frame-block': block.id, 'data-frame-idx': i } : {})}>
-              <button type="button" className="storyboard-frame-btn" onClick={() => onOpenLightbox?.(light, i)} aria-label={`${t('abrirQuadro')} ${i + 1}${pick(f.alt, lang) ? `: ${pick(f.alt, lang)}` : ''}`}>
-                <Img image={f} className="storyboard-frame" />
-              </button>
-              <EditActions target={{ target: 'frame', id: block.id, idx: i }} acts={['image', 'crop', 'edit', 'delete']} nome={`quadro ${i + 1} do storyboard`} />
-              {onSetItemSpan ? <SpanHandle span={f.span ?? 3} onSpan={(n) => onSetItemSpan({ blockId: block.id, frame: i }, n)} /> : null}
-            </div>
-          ))}
+          {frames.map((f, i) => {
+            // Com legenda, o quadro vira <figure> (a legenda fica ligada à imagem).
+            const legenda = pick(f.caption, lang);
+            const Celula = legenda ? 'figure' : 'div';
+            return (
+              <Celula key={i} className="storyboard-cell" style={styleVars(spanVars({ desktop: f.span ?? 3, tablet: f.spanTablet, mobile: f.spanMobile }, 'media'))} {...(editing ? { draggable: true, 'data-frame-block': block.id, 'data-frame-idx': i } : {})}>
+                <button type="button" className="storyboard-frame-btn" onClick={() => onOpenLightbox?.(light, i)} aria-label={`${t('abrirQuadro')} ${i + 1}${pick(f.alt, lang) ? `: ${pick(f.alt, lang)}` : ''}`}>
+                  <Img image={f} className="storyboard-frame" />
+                </button>
+                {legenda ? <figcaption className="media-caption">{legenda}</figcaption> : null}
+                <EditActions target={{ target: 'frame', id: block.id, idx: i }} acts={['image', 'crop', 'edit', 'delete']} nome={`quadro ${i + 1} do storyboard`} />
+                {onSetItemSpan ? <SpanHandle span={f.span ?? 3} onSpan={(n) => onSetItemSpan({ blockId: block.id, frame: i }, n)} /> : null}
+              </Celula>
+            );
+          })}
           {editing ? <button type="button" className="pe-add-tile" data-frame-add={block.id}>＋ Quadro</button> : null}
         </div>,
       );
