@@ -1,5 +1,5 @@
 import type { PublishPayload } from './buildPayload';
-import { prerenderHome, PREENCHER_IMAGENS } from './prerender';
+import { prerenderHome } from './prerender';
 import { themeFontUrls } from '../renderer/fonts';
 
 const jsonSafe = (o: unknown): string => JSON.stringify(o).replace(/</g, '\\u003c');
@@ -11,12 +11,13 @@ const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;'
  * pelo botão "Baixar site" do editor.
  */
 export function assembleSiteHtml(shell: string, payload: PublishPayload): string {
-  // Ordem: dados e imagens → preencher as imagens da Home → NDA cifrado (que
+  // Home pré-renderizada: nunca uma página branca, mesmo sem JavaScript.
+  const home = prerenderHome(payload.publicData);
+  // Ordem: dados → imagens da Home, uma a uma → as demais → NDA cifrado (que
   // pode ser grande e não precisa atrasar a primeira foto).
   const dataScript =
-    `<script>window.__PORTFOLIO_DATA__=${jsonSafe(payload.publicData)};` +
-    `window.__ASSETS__=${jsonSafe(payload.assetMap)};</script>` +
-    PREENCHER_IMAGENS +
+    `<script>window.__PORTFOLIO_DATA__=${jsonSafe(payload.publicData)};</script>` +
+    scriptsDasImagens(payload.assetMap, home) +
     (payload.ndaBlob ? `<script>window.__NDA__=${jsonSafe(payload.ndaBlob)};</script>` : '');
 
   const name = payload.publicData.site.name.pt || payload.publicData.site.name.en || 'Portfolio';
@@ -85,10 +86,30 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
   // do usuário seriam interpretados pelo replace e corromperiam o JS do site.
   let html = shell.replace('<!--PORTFOLIO_META-->', () => meta).replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(name)}</title>`);
   html = html.includes('<!--PORTFOLIO_DATA-->') ? html.replace('<!--PORTFOLIO_DATA-->', () => dataScript) : html.replace(/<script/, () => `${dataScript}<script`);
-  // Home pré-renderizada: nunca uma página branca, mesmo sem JavaScript.
-  const home = prerenderHome(payload.publicData);
   if (home) html = html.replace('<div id="root"></div>', () => `<div id="root">${home}</div>`);
   return runtimeNoFim(html);
+}
+
+/**
+ * O mapa de imagens (window.__ASSETS__) em pedaços, na ordem em que a Home
+ * pré-renderizada as usa. O navegador roda cada <script> assim que o lê, então
+ * cada foto da Home aparece quando os bytes DELA chegam — primeiro a do topo.
+ * Antes o mapa era um bloco só: a primeira foto esperava todas as imagens do
+ * portfólio (projetos, galeria, sketches) baixarem. As demais vêm num bloco só
+ * no fim: só o runtime usa, e ele roda depois de tudo lido. Cada imagem continua
+ * aparecendo uma vez só no arquivo.
+ */
+export function scriptsDasImagens(assets: Record<string, string>, home: string): string {
+  const daHome = [...new Set([...home.matchAll(/ data-asset="([\w-]+)"/g)].map((m) => m[1]!))].filter((id) => Object.hasOwn(assets, id));
+  const primeiro = new Set(daHome);
+  const resto = Object.fromEntries(Object.entries(assets).filter(([id]) => !primeiro.has(id)));
+  const preencher =
+    "<script>window.__ASSETS__={};function __IMG__(i,u){__ASSETS__[i]=u;var l=document.querySelectorAll('img[data-asset=\"'+i+'\"]');for(var k=0;k<l.length;k++)l[k].src=u;}</script>";
+  return (
+    preencher +
+    daHome.map((id) => `<script>__IMG__(${jsonSafe(id)},${jsonSafe(assets[id])})</script>`).join('') +
+    (Object.keys(resto).length ? `<script>Object.assign(__ASSETS__,${jsonSafe(resto)})</script>` : '')
+  );
 }
 
 /**

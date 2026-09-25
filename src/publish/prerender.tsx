@@ -9,8 +9,8 @@ import { Site } from '../renderer/Site';
  *
  * Imagens embutidas (data URL) não são repetidas aqui — dobraria o peso do
  * arquivo. Cada uma sai como <img data-asset="id"> (com largura e altura, sem
- * pulo de layout) e o PREENCHER_IMAGENS, logo depois do mapa de imagens, põe o
- * src assim que o mapa chega: a foto aparece sem esperar o runtime inteiro.
+ * pulo de layout) e o src chega depois, imagem por imagem (ver
+ * scriptsDasImagens em assemble.ts): a foto aparece sem esperar o runtime.
  */
 const MARCA = 'prerender-asset:';
 
@@ -29,7 +29,3 @@ export function prerenderHome(data: PortfolioV4): string {
     return '';
   }
 }
-
-/** Põe o src nas imagens pré-renderizadas assim que o mapa de imagens foi lido. */
-export const PREENCHER_IMAGENS =
-  "<script>(function(){var a=window.__ASSETS__||{},l=document.querySelectorAll('img[data-asset]');for(var i=0;i<l.length;i++){var u=a[l[i].getAttribute('data-asset')];if(u)l[i].src=u;}})();</script>";

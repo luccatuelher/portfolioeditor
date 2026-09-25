@@ -42,11 +42,33 @@ describe('assembleSiteHtml', () => {
     // Nenhum preload apontando para um id de imagem (seria um pedido a endereço inexistente).
     expect(root).not.toMatch(/<link[^>]*href="asset_/);
     for (const url of Object.values(payload.assetMap)) expect(html.split(url).length - 1).toBe(1);
-    // O preenchimento vem logo depois do mapa de imagens e antes do runtime.
-    const mapa = html.indexOf('window.__ASSETS__');
-    const preencher = html.indexOf("querySelectorAll('img[data-asset]')");
-    expect(preencher).toBeGreaterThan(mapa);
-    expect(preencher).toBeLessThan(html.indexOf('<script type="module"'));
+  });
+
+  it('imagens da Home chegam primeiro, uma a uma e na ordem da página — não esperam as do resto do portfólio', async () => {
+    const mig = migrate(loadFixture('template-v3.json'));
+    // O NDA cifrado entra no arquivo: tem de vir depois das fotos da Home.
+    mig.data.collections.projects[mig.data.collections.projects.length - 1]!.visibility = 'nda';
+    const payload = await buildPublishPayload(mig, 'senha-longa-de-teste-123');
+    expect(payload.ndaBlob).not.toBeNull();
+    const html = assembleSiteHtml(shell, payload);
+    const root = html.slice(html.indexOf('<div id="root">'), html.indexOf('window.__PORTFOLIO_DATA__'));
+    const daHome = [...new Set([...root.matchAll(/ data-asset="([\w-]+)"/g)].map((m) => m[1]!))];
+    const outras = Object.keys(payload.assetMap).filter((id) => !daHome.includes(id));
+    // O exemplo tem das duas: fotos na Home e fotos só dentro dos projetos.
+    expect(daHome.length).toBeGreaterThan(1);
+    expect(outras.length).toBeGreaterThan(0);
+
+    const pos = (id: string): number => html.indexOf(payload.assetMap[id]!);
+    const chegadaDaHome = daHome.map((id) => html.indexOf(`<script>__IMG__("${id}",`));
+    // Cada foto da Home tem o próprio <script>, na ordem em que aparece na página.
+    for (const p of chegadaDaHome) expect(p).toBeGreaterThan(0);
+    expect([...chegadaDaHome].sort((a, b) => a - b)).toEqual(chegadaDaHome);
+    // Nenhuma imagem de fora da Home vem antes da última da Home.
+    const ultimaDaHome = Math.max(...daHome.map(pos));
+    for (const id of outras) expect(pos(id), id).toBeGreaterThan(ultimaDaHome);
+    // Tudo antes do NDA cifrado e do runtime.
+    expect(ultimaDaHome).toBeLessThan(html.indexOf('window.__NDA__'));
+    expect(ultimaDaHome).toBeLessThan(html.indexOf('<script type="module"'));
   });
 
   it('dados com "$&" e "$\'" não corrompem o HTML', async () => {
