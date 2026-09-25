@@ -11,13 +11,12 @@ const ABAS = ['Conteúdo', 'Layout', 'Estilo', 'Visibilidade'];
 
 /**
  * Auditoria de acessibilidade (axe-core, WCAG 2.1 A/AA + boas práticas) da tela
- * como está. 'nested-interactive': o card de projeto no canvas é um botão com
- * as ações (trocar imagem, editar…) dentro — reestruturação à parte.
+ * como está — todas as regras, inclusive a de botão dentro de botão.
  */
 async function auditar(page: Page, onde: string): Promise<void> {
   const v = await page.evaluate(async () => {
     const axe = (window as unknown as { axe: { run: (c: Document, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
-    const r = await axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'], rules: { 'nested-interactive': { enabled: false } } });
+    const r = await axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] });
     return r.violations.map((x) => `${x.id}: ${x.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' · ')}`);
   });
   expect(v, `acessibilidade do editor em ${onde}`).toEqual([]);

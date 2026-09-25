@@ -117,6 +117,11 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 /* galeria: exibição dedicada em masonry (colunas) */
 
 .project-card { cursor: pointer; }
+/* Título que abre (TituloQueAbre): é o botão para teclado e leitor de tela,
+   com a cara do título; o anel de foco envolve o card inteiro. */
+.card-abrir { display: inline; background: none; border: 0; padding: 0; margin: 0; font: inherit; color: inherit; letter-spacing: inherit; text-transform: inherit; text-align: inherit; cursor: inherit; }
+.card-abrir:focus-visible { outline: none; }
+.project-card:has(.card-abrir:focus-visible), .blog-item:has(.card-abrir:focus-visible) { outline: 2px solid var(--accent); outline-offset: 4px; }
 .project-card.is-open .card-title { color: var(--accent-texto, var(--accent)); }
 
 /* prévia inline do projeto na Home */

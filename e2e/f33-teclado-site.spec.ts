@@ -6,7 +6,8 @@ test.describe('Site pelo teclado', () => {
   test('prévia do projeto: aria-expanded, Esc fecha e o foco volta ao card', async ({ page }) => {
     await page.route(/youtube|vimeo|speakerdeck|ytimg/, (r) => r.abort());
     await page.goto('/preview.html', { waitUntil: 'load' });
-    const card = page.locator('.project-card').first();
+    // O que abre a prévia é o botão do título (o card não é mais um botão com botões dentro).
+    const card = page.locator('.project-card .card-abrir').first();
     await expect(card).toHaveAttribute('aria-expanded', 'false');
     await card.focus();
     await page.keyboard.press('Enter');

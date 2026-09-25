@@ -178,14 +178,16 @@ function EditBadges({ visibility, featured }: { visibility: string; featured?: b
   );
 }
 
-function onCardKey(onClick?: () => void): ((e: React.KeyboardEvent) => void) | undefined {
-  if (!onClick) return undefined;
-  return (e) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onClick();
-    }
-  };
+/**
+ * Título de um card que abre algo (prévia do projeto, página da nota) quando o
+ * card não é um link. O botão é o TÍTULO — teclado e leitor de tela chegam
+ * nele —; o clique no card todo continua valendo (o do botão sobe até o card:
+ * abre uma vez só). Antes o card inteiro era role="button" com os botões de
+ * editar/trocar imagem DENTRO: botão dentro de botão, que o leitor de tela não
+ * consegue separar.
+ */
+function TituloQueAbre({ className, abre, children, ...aria }: { className: string; abre: boolean; children: React.ReactNode; onKeyDown?: (e: React.KeyboardEvent) => void; 'aria-expanded'?: boolean; 'aria-controls'?: string }): React.ReactElement {
+  return <div className={className}>{abre ? <button type="button" className="card-abrir" {...aria}>{children}</button> : children}</div>;
 }
 
 /**
@@ -196,7 +198,6 @@ function onCardKey(onClick?: () => void): ((e: React.KeyboardEvent) => void) | u
 function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link }: { item: ProjectItem; cols: number; onClick?: () => void; selected?: boolean; previewId?: string; onEscape?: () => void; link?: ReturnType<typeof linkInterno> }): React.ReactElement {
   const { lang, editing } = useRender();
   const span = itemWidth(item, cols);
-  const onKey = onCardKey(onClick);
   const aria = previewId ? { 'aria-expanded': !!selected, 'aria-controls': selected ? previewId : undefined } : {};
   const estilo = styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'));
   // No site, o card que leva à página do projeto é um link de verdade (nova aba, copiar endereço).
@@ -215,14 +216,7 @@ function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link 
       className={`project-card ${selected ? 'is-open' : ''}${useItemSel(item.id)}`}
       style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))}
       onClick={onClick}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
       data-card={item.id}
-      {...aria}
-      onKeyDown={onKey ? (e) => {
-        if (e.key === 'Escape' && selected && onEscape && !editing) { e.preventDefault(); onEscape(); return; }
-        onKey(e);
-      } : undefined}
       {...itemDrag(editing, 'projects', item.id)}
     >
       <div className="card-thumb-wrap">
@@ -230,7 +224,16 @@ function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link 
         <EditBadges visibility={item.visibility} featured={item.featured} />
         <EditActions target={{ target: 'item', coll: 'projects', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`projeto “${pick(item.title, lang)}”`} />
       </div>
-      <div className="card-title">{pick(item.title, lang)}</div>
+      <TituloQueAbre
+        className="card-title"
+        abre={!!onClick}
+        {...aria}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape' && selected && onEscape && !editing) { e.preventDefault(); onEscape(); }
+        }}
+      >
+        {pick(item.title, lang)}
+      </TituloQueAbre>
       <ItemResize coll="projects" id={item.id} span={span} />
     </div>
   );
@@ -474,14 +477,14 @@ function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.React
     );
   }
   return (
-    <div className={`blog-item${useItemSel(item.id)}`} style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))} onClick={onNavigate ? () => onNavigate(`blog/${item.id}`) : undefined} role={onNavigate ? 'button' : undefined} tabIndex={onNavigate ? 0 : undefined} onKeyDown={onCardKey(onNavigate ? () => onNavigate(`blog/${item.id}`) : undefined)} {...itemDrag(editing, 'blog', item.id)}>
+    <div className={`blog-item${useItemSel(item.id)}`} style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))} onClick={onNavigate ? () => onNavigate(`blog/${item.id}`) : undefined} {...itemDrag(editing, 'blog', item.id)}>
       <EditBadges visibility={item.visibility} />
       <span className="blog-date">{pick(item.date, lang)}</span>
       <div className="blog-thumb-wrap">
         <Img image={item.thumb} className="blog-thumb" decorativa />
         <EditActions target={{ target: 'item', coll: 'blog', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`nota “${pick(item.title, lang)}”`} />
       </div>
-      <div className="blog-title">{pick(item.title, lang)}</div>
+      <TituloQueAbre className="blog-title" abre={!!onNavigate}>{pick(item.title, lang)}</TituloQueAbre>
       <p className="blog-excerpt">{pick(item.excerpt, lang)}</p>
       <ItemResize coll="blog" id={item.id} span={span} />
     </div>
@@ -543,7 +546,8 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
     setExpandedId(null);
     if (!id) return;
     const card = [...(gridRef.current?.querySelectorAll<HTMLElement>('[data-card]') ?? [])].find((el) => el.dataset.card === id);
-    card?.focus({ preventScroll: true });
+    // O foco volta ao botão do card (o título), de onde ela foi aberta.
+    (card?.querySelector<HTMLElement>('.card-abrir') ?? card)?.focus({ preventScroll: true });
   };
   // NDA é um mundo à parte: listas públicas nunca mostram NDA; a lista 'nda' só mostra NDA.
   // Rascunhos aparecem (esmaecidos) só no editor.
