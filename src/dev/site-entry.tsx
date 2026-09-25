@@ -6,7 +6,7 @@ import type { AssetResolver } from '../renderer/context';
 import { initialVisitorLang, Site } from '../renderer/Site';
 import { htmlLang, textoUi } from '../renderer/ui';
 import { ErrorBoundary } from '../renderer/ErrorBoundary';
-import { decryptNda, type EncryptedNda } from '../publish/nda';
+import { abrirPacoteNda, type EncryptedNda } from '../publish/nda';
 import { mergeNda, type NdaBundle } from '../publish/publicSnapshot';
 import type { PortfolioV4 } from '../schema/v4';
 import { reporBasico } from '../migrate/formaMinima';
@@ -93,7 +93,8 @@ function App(): React.ReactElement {
     const pacote = await pacoteNda();
     if (!pacote) return 'sem NDA';
     try {
-      const payload = await decryptNda<{ items: NdaBundle; assets: Record<string, string> }>(pacote, password);
+      // Imagens do NDA viram blob: URL — nada de recodificar megabytes em base64 no celular.
+      const payload = await abrirPacoteNda<NdaBundle>(pacote, password, (mime, bytes) => URL.createObjectURL(new Blob([bytes as BlobPart], { type: mime })));
       Object.assign(assets, payload.assets);
       setData(mergeNda(publicData, payload.items));
       setUnlocked(true);

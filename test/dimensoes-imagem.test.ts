@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { completarDimensoes, dimensoesDaImagem } from '../src/core/dimensoesImagem';
 import { migrate } from '../src/migrate/migrate';
 import { buildPublishPayload } from '../src/publish/buildPayload';
-import { decryptNda } from '../src/publish/nda';
+import { abrirPacoteNda } from '../src/publish/nda';
 import { mergeNda, type NdaBundle } from '../src/publish/publicSnapshot';
 import type { PortfolioV4 } from '../src/schema/v4';
 import { loadFixture } from './helpers/fixtures';
@@ -156,7 +156,7 @@ describe('guarda: imagem que vai para o site sai com largura e altura', () => {
     expect(Object.keys(p.publicData.assets).length).toBeGreaterThan(3);
     for (const [id, m] of Object.entries(p.publicData.assets)) expect(m.w * m.h, id).toBeGreaterThan(0);
 
-    const aberto = await decryptNda<{ items: NdaBundle; assets: Record<string, string> }>(p.ndaBlob!, 'senha-longa-de-teste-123');
+    const aberto = await abrirPacoteNda<NdaBundle>(p.ndaBlob!, 'senha-longa-de-teste-123');
     const site = mergeNda(p.publicData, aberto.items);
     for (const id of idsDoNda) expect(site.assets[id]?.w ?? 0, `NDA ${id}`).toBeGreaterThan(0);
   });

@@ -98,7 +98,12 @@ test('senha do NDA digitada antes de o pacote cifrado chegar: espera por ele e a
     await expect(page.locator('.nda-unlock-error')).toHaveCount(0);
 
     srv.soltar();
-    await expect(page.locator('.project-card', { hasText: 'Projeto B' })).toBeVisible();
+    const cartao = page.locator('.project-card', { hasText: 'Projeto B' });
+    await expect(cartao).toBeVisible();
+    // As imagens do NDA chegam como bytes e viram blob: URL (sem recodificar base64).
+    await cartao.click();
+    await expect(page.locator('main#conteudo[data-route^="project/"]')).toBeVisible();
+    await expect(page.locator('main img[src^="blob:"]').first()).toBeAttached();
   } finally {
     srv.fechar();
   }

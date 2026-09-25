@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { migrate } from '../src/migrate/migrate';
 import { publicSnapshot } from '../src/publish/publicSnapshot';
-import { encryptNda, decryptNda } from '../src/publish/nda';
+import { abrirPacoteNda, encryptNda, decryptNda } from '../src/publish/nda';
 import { runPreflight } from '../src/publish/preflight';
 import { buildPublishPayload } from '../src/publish/buildPayload';
 import { loadFixture } from './helpers/fixtures';
@@ -84,7 +84,7 @@ describe('buildPublishPayload', () => {
     for (const id of Object.keys(payload.assetMap)) expect(payload.publicData.assets[id]).toBeDefined();
     // NDA cifrado e recuperável com a senha.
     expect(payload.ndaBlob).not.toBeNull();
-    const back = await decryptNda<{ items: { projects: { id: string }[] } }>(payload.ndaBlob!, 'senha-nda');
+    const back = await abrirPacoteNda<{ projects: { id: string }[] }>(payload.ndaBlob!, 'senha-nda');
     expect(back.items.projects.map((p) => p.id)).toEqual(['proj-b']);
   });
 

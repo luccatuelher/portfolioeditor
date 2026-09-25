@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { migrate } from '../src/migrate/migrate';
 import { mergeNda, ndaCount, publicSnapshot } from '../src/publish/publicSnapshot';
 import { buildPublishPayload } from '../src/publish/buildPayload';
-import { decryptNda } from '../src/publish/nda';
+import { abrirPacoteNda } from '../src/publish/nda';
 import type { Block, PortfolioV4 } from '../src/schema/v4';
 import { loadFixture } from './helpers/fixtures';
 
@@ -61,7 +61,7 @@ describe('blocos NDA soltos', () => {
     expect(ndaCount(publicSnapshot(d).nda)).toBe(1);
     const out = await buildPublishPayload({ data: d, assets: [] }, 'senha-bem-longa-1');
     expect(out.ndaBlob).not.toBeNull();
-    const aberto = await decryptNda<{ items: { blocks: { block: Block }[] } }>(out.ndaBlob!, 'senha-bem-longa-1');
+    const aberto = await abrirPacoteNda<{ blocks: { block: Block }[] }>(out.ndaBlob!, 'senha-bem-longa-1');
     expect(aberto.items.blocks.map((b) => b.block.id)).toEqual(['x_so_bloco']);
   });
 });

@@ -1,6 +1,6 @@
 import type { MigratedAsset } from '../migrate/migrate';
 import type { PortfolioV4 } from '../schema/v4';
-import { encryptNda, type EncryptedNda } from './nda';
+import { selarPacoteNda, type EncryptedNda } from './nda';
 import { ndaCount, publicSnapshot, type NdaBundle } from './publicSnapshot';
 import { repairDoc } from '../migrate/repair';
 import { completarDimensoes } from '../core/dimensoesImagem';
@@ -64,7 +64,7 @@ export async function buildPublishPayload(
       }
     };
     collect(nda);
-    ndaBlob = await encryptNda({ items: nda as NdaBundle, assets: ndaAssets }, ndaPassword);
+    ndaBlob = await selarPacoteNda({ items: nda as NdaBundle, assets: ndaAssets }, ndaPassword);
   }
 
   return { publicData, assetMap, ndaBlob, assetSizes };
