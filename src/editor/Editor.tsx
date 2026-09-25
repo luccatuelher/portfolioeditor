@@ -53,6 +53,7 @@ import { RemoverContext } from './remover';
 import { chaveDaSelecao, type PedidoFoco } from './focoCampo';
 import type { CampoId } from '../core/camposTexto';
 import { imagensSemDescricao, textosSemTraducao, type ImagemSemDescricao, type TextoSemTraducao } from './pendencias';
+import { avisoDeArmazenamento, lerUltimoBackup, marcarBackup, protegerRascunho } from './armazenamento';
 
 /** Nome do item no aviso de exclusão. */
 const COLL_NOME: Record<CollectionName, string> = { projects: 'projeto', blog: 'nota', gallery: 'imagem da galeria', sketches: 'sketch' };
@@ -196,6 +197,9 @@ function resolveView(doc: PortfolioV4, c: Container): { page: Page; item?: Proje
   return item ? { page, item } : { page };
 }
 
+/** Fechou o aviso de proteção do rascunho: não volta nesta sessão (o editor remonta ao importar). */
+let protecaoDispensada = false;
+
 export function Editor({ initial, assets, onImport, onAddAsset, persist = true, gravarAoAbrir = false, notice }: EditorProps): React.ReactElement {
   const [showNotice, setShowNotice] = useState(!!notice);
   // Avisos da última publicação ("Baixar site"), mostrados na barra de aviso.
@@ -256,6 +260,18 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   // Largura do canvas: ver o site como no tablet/celular (usa o mesmo CSS responsivo do site).
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const backupRef = useRef<(() => void) | null>(null);
+  // Rascunho protegido da limpeza automática do navegador (ver armazenamento.ts).
+  const [protecao, setProtecao] = useState<string | null>(null);
+  useEffect(() => {
+    if (!persist || protecaoDispensada) return;
+    let vivo = true;
+    void protegerRascunho().then((e) => {
+      if (vivo) setProtecao(avisoDeArmazenamento(e, lerUltimoBackup()));
+    });
+    return () => {
+      vivo = false;
+    };
+  }, [persist]);
   const clipboard = useRef<Clip | null>(null);
   const drag = useRef<DragSource | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -1109,11 +1125,18 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     <AvisosContext.Provider value={avisos.api}>
     <RemoverContext.Provider value={removeSelection}>
     <div className="editor" style={styleVars(themeToCssVars(doc.state.theme))}>
-      <TopBar doc={doc} peso={peso} onPeso={() => { setLeftTab('data'); setGaveta('esquerda'); }} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onVersions={() => setShowVersions(true)} />
+      <TopBar doc={doc} peso={peso} onPeso={() => { setLeftTab('data'); setGaveta('esquerda'); }} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onBackup={() => setProtecao(null)} onVersions={() => setShowVersions(true)} />
       {erroGravacao ? (
         <div className="editor-notice editor-alerta" role="alert">
           <span><b>Não estou conseguindo salvar neste navegador.</b> {erroGravacao} O que está aberto continua aqui — baixe um backup para não perder.</span>
           <button type="button" className="editor-alerta-acao" onClick={() => backupRef.current?.()}>Baixar backup</button>
+        </div>
+      ) : null}
+      {protecao ? (
+        <div className="editor-notice editor-alerta editor-protecao" role="status">
+          <span>{protecao}</span>
+          <button type="button" className="editor-alerta-acao" onClick={() => backupRef.current?.()}>Baixar backup</button>
+          <button type="button" onClick={() => { protecaoDispensada = true; setProtecao(null); }} aria-label="Fechar aviso">✕</button>
         </div>
       ) : null}
       {outraAba ? (
@@ -1274,7 +1297,7 @@ const DEVICES = [
   { id: 'mobile', label: 'Celular (390px)', curto: 'Celular' },
 ] as const;
 
-function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onVersions }: { doc: ReturnType<typeof useDocument>; peso: PesoDoSite; onPeso: () => void; onUndo: () => void; onRedo: () => void; avisoHistorico: string | null; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onVersions?: () => void }): React.ReactElement {
+function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onBackup, onVersions }: { doc: ReturnType<typeof useDocument>; peso: PesoDoSite; onPeso: () => void; onUndo: () => void; onRedo: () => void; avisoHistorico: string | null; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onBackup?: () => void; onVersions?: () => void }): React.ReactElement {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pedirSenha, setPedirSenha] = useState(false);
   const dialogos = useAvisos();
@@ -1291,6 +1314,8 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+    marcarBackup();
+    onBackup?.();
   };
 
   const onFile = async (e: React.ChangeEvent<HTMLInputElement>): Promise<void> => {

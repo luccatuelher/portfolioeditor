@@ -1,0 +1,9 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "http://localhost:5199",
+      "localStorage": [{ "name": "portfolio-ultimo-backup", "value": "32503680000000" }]
+    }
+  ]
+}

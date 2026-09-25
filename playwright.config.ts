@@ -16,6 +16,10 @@ export default defineConfig({
     baseURL: 'http://localhost:5199',
     viewport: { width: 1280, height: 900 },
     locale: 'pt-BR',
+    // Um backup "recente" registrado: o aviso de proteção do rascunho
+    // (editor/armazenamento.ts) não entra no meio dos outros testes. O teste
+    // dele (f63) começa com o navegador limpo.
+    storageState: 'e2e/fixtures/navegador-com-backup.json',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
 });
