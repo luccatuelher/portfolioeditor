@@ -69,6 +69,20 @@ describe('assembleSiteHtml', () => {
     // Tudo antes do NDA cifrado e do runtime.
     expect(ultimaDaHome).toBeLessThan(html.indexOf('window.__NDA__'));
     expect(ultimaDaHome).toBeLessThan(html.indexOf('<script type="module"'));
+
+    // O runtime começa sem esperar o resto: `async` (um módulo embutido sem ele
+    // só roda com o arquivo inteiro lido) e ANTES das demais imagens e do NDA.
+    const runtime = html.indexOf('<script type="module" async');
+    expect(runtime).toBeGreaterThan(ultimaDaHome);
+    for (const id of outras) {
+      expect(pos(id), id).toBeGreaterThan(runtime);
+      expect(html.indexOf(`<script>__IMG__("${id}",`), `${id} no próprio <script>`).toBeGreaterThan(runtime);
+    }
+    expect(html.indexOf('window.__NDA__=')).toBeGreaterThan(runtime);
+    // O runtime sabe desde o início que há NDA a caminho.
+    expect(html.indexOf('window.__TEM_NDA__=true')).toBeLessThan(runtime);
+    expect(html).not.toContain('<!--PORTFOLIO_RUNTIME-->');
+    expect(html.match(/<script type="module"/g)?.length).toBe(1);
   });
 
   it('dados com "$&" e "$\'" não corrompem o HTML', async () => {

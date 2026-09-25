@@ -10,7 +10,7 @@ import { Site } from '../renderer/Site';
  * Imagens embutidas (data URL) não são repetidas aqui — dobraria o peso do
  * arquivo. Cada uma sai como <img data-asset="id"> (com largura e altura, sem
  * pulo de layout) e o src chega depois, imagem por imagem (ver
- * scriptsDasImagens em assemble.ts): a foto aparece sem esperar o runtime.
+ * scriptsDasImagens em assemble.ts): a foto aparece antes do runtime.
  */
 const MARCA = 'prerender-asset:';
 
