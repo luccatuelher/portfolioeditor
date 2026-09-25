@@ -3,6 +3,8 @@ import { migrate } from '../src/migrate/migrate';
 import { camposDeTexto, type Dono } from '../src/core/camposTexto';
 import { publicSnapshot, type PublicResult } from '../src/publish/publicSnapshot';
 import { loadFixture } from './helpers/fixtures';
+import { readFileSync } from 'node:fs';
+import { blocosQueVaoProSite } from '../src/core/visibilidade';
 import type { Block, PortfolioV4, Section } from '../src/schema/v4';
 
 /**
@@ -57,5 +59,30 @@ describe('uma regra de "vai para o site"', () => {
     const do_ = (blockId: string) => campos.find((c) => c.dono.tipo === 'bloco' && c.dono.blockId === blockId)!;
     expect(do_('b-rasc').publicado).toBe(false);
     expect(do_('b-nda').publicado).toBe(true);
+  });
+});
+
+describe('blocosQueVaoProSite — o mesmo que o publicSnapshot publica', () => {
+  it('cada bloco que vai (e só ele), com NDA marcado onde é cifrado', () => {
+    const d = doc();
+    const snap = publicSnapshot(d);
+    const abertos = new Set([
+      ...snap.data.pages.flatMap((p) => blocosDe(p.sections)),
+      ...[...snap.data.collections.projects, ...snap.data.collections.blog].flatMap((i) => blocosDe(i.sections)),
+    ]);
+    const cifrados = new Set([
+      ...[...snap.nda.projects, ...snap.nda.blog].flatMap((i) => blocosDe(i.sections)),
+      ...(snap.nda.blocks ?? []).map((b) => b.block.id),
+    ]);
+    const lista = blocosQueVaoProSite(d);
+    expect(new Set(lista.map((b) => b.bloco.id))).toEqual(new Set([...abertos, ...cifrados]));
+    for (const b of lista) expect(b.nda, b.bloco.id).toBe(cifrados.has(b.bloco.id));
+    expect(lista.some((b) => b.bloco.id === 'b-rasc')).toBe(false);
+    expect(lista.find((b) => b.bloco.id === 'b-nda')?.nda).toBe(true);
+  });
+
+  it('a conferência antes de publicar não filtra por conta própria (usa a regra única)', () => {
+    const fonte = readFileSync('src/publish/preflight.ts', 'utf8');
+    expect(fonte.match(/visibility\s*[!=]==/g) ?? []).toEqual([]);
   });
 });

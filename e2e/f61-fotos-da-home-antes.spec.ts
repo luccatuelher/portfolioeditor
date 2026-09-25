@@ -29,7 +29,8 @@ function publicarSemRuntime(): string {
 test('toda foto da Home aparece antes (e sem) o runtime, com o tamanho certo', async ({ page }) => {
   const erros: string[] = [];
   page.on('pageerror', (e) => erros.push(String(e)));
-  await page.route(/fonts\.googleapis|fonts\.gstatic|ytimg/, (r) => r.abort());
+  // Sem rede externa: o vídeo da Home (iframe do YouTube) solta erro de rede sob carga.
+  await page.route(/youtube|youtu\.be|vimeo|speakerdeck|ytimg|fonts\.googleapis|fonts\.gstatic/, (r) => r.abort());
   await page.goto(publicarSemRuntime(), { waitUntil: 'load' });
 
   const fotos = await page.evaluate(() =>

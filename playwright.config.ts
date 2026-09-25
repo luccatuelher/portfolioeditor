@@ -21,5 +21,17 @@ export default defineConfig({
     // dele (f63) começa com o navegador limpo.
     storageState: 'e2e/fixtures/navegador-com-backup.json',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        // Nenhum teste depende da internet: todo endereço fora do localhost
+        // falha na hora (YouTube, Vimeo, fontes do Google…). Antes cada teste
+        // bloqueava a sua lista, e o que esquecia um (o vídeo da Home) ficava
+        // instável sob carga — erro de rede do iframe caindo na página.
+        launchOptions: { args: ['--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1'] },
+      },
+    },
+  ],
 });

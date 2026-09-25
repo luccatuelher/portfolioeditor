@@ -1364,7 +1364,10 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     const doc0 = doc.state;
     const migratedAssets: MigratedAsset[] = Object.entries(assets).map(([id, dataUrl]) => ({ id, dataUrl, mime: '' }));
     const payload = await buildPublishPayload({ data: doc0, assets: migratedAssets }, password);
-    const pf = runPreflight(payload.publicData, { assetSizes: payload.assetSizes });
+    // O que vai de fato para o site: com senha, o NDA vai junto (cifrado) e
+    // também é conferido; sem senha, só o público.
+    const vaiProSite = payload.ndaBlob ? doc0 : payload.publicData;
+    const pf = runPreflight(vaiProSite, { assetSizes: payload.assetSizes });
     if (pf.errors.length && !(await dialogos.confirmar({
       titulo: pf.errors.length === 1 ? 'Um problema impede o site de ficar certo' : `${pf.errors.length} problemas impedem o site de ficar certo`,
       texto: pf.errors.join('\n'),
@@ -1378,7 +1381,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     const html = assembleSiteHtml(siteShell, payload);
     const blob = new Blob([html], { type: 'text/html' });
     // Os arquivos relativos já aparecem na lista própria do aviso: não repetem nos avisos.
-    const arquivos = arquivosAoLado(payload.publicData);
+    const arquivos = arquivosAoLado(vaiProSite);
     const avisos = pf.warnings.filter((w) => !arquivos.some((a) => w.includes(`"${a}"`)));
     onPublished?.({ arquivos, avisos, mb: blob.size / (1024 * 1024) });
     const url = URL.createObjectURL(blob);

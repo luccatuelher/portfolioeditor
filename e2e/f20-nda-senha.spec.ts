@@ -45,6 +45,22 @@ test.describe('Senha da área NDA', () => {
     await expect(page.locator('.nda-modal')).toHaveCount(0);
   });
 
+  test('com a senha, o NDA também é conferido: o aviso conta o mesmo que o painel Dados', async ({ page }) => {
+    // O 1º projeto (com 4 imagens sem descrição) vira NDA: continua indo para o site, cifrado.
+    await comItemNda(page);
+    const noPainel = Number(await page.locator('.descricoes').getAttribute('data-faltam'));
+    expect(noPainel).toBeGreaterThan(4);
+
+    await page.locator('.tb-btn.primary', { hasText: 'Baixar site' }).click();
+    await page.locator('.nda-modal-row button', { hasText: 'Sugerir' }).click();
+    const baixou = page.waitForEvent('download', { timeout: 15000 });
+    await page.locator('.nda-modal-acoes .primary').click();
+    await baixou;
+    const avisos = page.locator('.publish-notice details');
+    await avisos.locator('summary').click();
+    await expect(avisos).toContainText(`${noPainel} imagem(ns) sem descrição`);
+  });
+
   test('sem item confidencial, nem pergunta', async ({ page }) => {
     await page.route(/youtube|vimeo|speakerdeck/, (r) => r.abort());
     await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });

@@ -1,6 +1,6 @@
 import { embedSource } from '../embed/embedSource';
-import { paginaVaiProSite, vaiProSite } from '../core/visibilidade';
-import type { Block, ImageRef, PortfolioV4 } from '../schema/v4';
+import { aberto, blocosQueVaoProSite, paginaVaiProSite, vaiProSite, type BlocoNoSite } from '../core/visibilidade';
+import type { ImageRef, PortfolioV4 } from '../schema/v4';
 import { imagensSemDescricao, textosSemTraducao } from '../editor/pendencias';
 import { linksDoDocumento, problemaDoLink, type LinkNoDocumento } from '../core/links';
 
@@ -37,17 +37,20 @@ export function arquivosAoLado(data: PortfolioV4): string[] {
     const r = relativo(h);
     if (r) out.add(r);
   };
-  const walk = (b: Block): void => {
-    if (b.visibility !== 'public') return;
+  for (const { bloco: b } of blocosQueVaoProSite(data)) {
     if (b.type === 'button') add(b.content.href);
     else if (b.type === 'contact') {
       add(b.content.cvHref);
       for (const s of b.content.socials) add(s.href);
     } else if (b.type === 'image') add(b.content.image.url);
-  };
-  for (const p of data.pages) for (const s of p.sections) s.blocks.forEach(walk);
-  for (const coll of [data.collections.projects, data.collections.blog]) for (const it of coll) for (const s of it.sections) s.blocks.forEach(walk);
+  }
   return [...out];
+}
+
+/** "no projeto “A Travessia” (NDA)", "na página Sobre": onde está o bloco do aviso. */
+function ondeEsta({ dono, nda }: BlocoNoSite): string {
+  const nome = 'page' in dono ? `página ${dono.page.title.pt || dono.page.title.en || dono.page.slug}` : `${dono.coll === 'projects' ? 'projeto' : 'nota'} “${dono.item.title.pt || dono.item.title.en || dono.item.id}”`;
+  return `${nome}${nda ? ' (NDA)' : ''}`;
 }
 
 /** Verificação de pré-publicação expandida (F7), pura e testável. */
@@ -69,52 +72,42 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
     warnings.push('A imagem de compartilhamento está embutida no arquivo — WhatsApp, LinkedIn e X só buscam imagem por endereço http. Use uma URL pública no campo de imagem do SEO.');
   }
 
-  const walkBlock = (b: Block): void => {
-    if (b.type === 'embed' && b.visibility === 'public' && b.content.ref && !embedSource({ type: b.content.provider, id: b.content.ref })) {
-      errors.push(`Embed inválido em um bloco (${b.content.provider}).`);
+  // Tudo o que vai para o site: páginas, projetos e notas — o NDA também, que
+  // aparece depois da senha. Quem chama passa o que vai de fato (sem senha, o
+  // NDA fica de fora da publicação e dos avisos).
+  const noSite = blocosQueVaoProSite(data);
+  for (const nb of noSite) {
+    const b = nb.bloco;
+    if (b.type === 'embed' && b.content.ref && !embedSource({ type: b.content.provider, id: b.content.ref })) {
+      errors.push(`Embed inválido (${b.content.provider}) — ${ondeEsta(nb)}.`);
     }
-  };
-
-  // Páginas públicas
-  for (const p of data.pages.filter((x) => x.visibility !== 'nda')) {
-    for (const s of p.sections) for (const b of s.blocks.filter((x) => x.visibility === 'public')) walkBlock(b);
   }
 
-  // Projetos públicos
-  for (const proj of data.collections.projects.filter((p) => p.visibility === 'public')) {
-    const label = proj.title.pt || proj.title.en || proj.id;
+  for (const proj of data.collections.projects.filter((p) => vaiProSite(p.visibility))) {
+    const label = `${proj.title.pt || proj.title.en || proj.id}${aberto(proj.visibility) ? '' : ' (NDA)'}`;
     if (!proj.title.pt.trim() && !proj.title.en.trim()) errors.push(`Projeto sem título (${proj.id}).`);
     if (!hasImg(proj.thumb)) warnings.push(`${label}: capa ausente.`);
-    const mediaBlocks = proj.sections.flatMap((s) => s.blocks).filter((b) => ['image', 'embed', 'storyboard'].includes(b.type));
+    const mediaBlocks = proj.sections.flatMap((s) => s.blocks).filter((b) => vaiProSite(b.visibility) && ['image', 'embed', 'storyboard'].includes(b.type));
     if (mediaBlocks.length === 0) warnings.push(`${label}: sem imagens nem embeds.`);
-    for (const s of proj.sections) for (const b of s.blocks) walkBlock(b);
-  }
-  for (const b of data.collections.blog.filter((x) => x.visibility === 'public')) {
-    for (const s of b.sections) for (const bl of s.blocks) walkBlock(bl);
   }
 
-  // Links: bloco Contato (legado) e botões — em páginas, projetos e notas publicados.
-  const allSections = [
-    ...data.pages.flatMap((p) => p.sections),
-    ...data.collections.projects.filter((x) => x.visibility === 'public').flatMap((x) => x.sections),
-    ...data.collections.blog.filter((x) => x.visibility === 'public').flatMap((x) => x.sections),
-  ];
-  for (const s of allSections) {
-    for (const b of s.blocks) {
-      if (b.visibility !== 'public') continue;
-      if (b.type === 'contact') {
-        if (!emailValid(b.content.email)) warnings.push('Contato: e-mail ausente ou inválido.');
-        for (const soc of b.content.socials) if (!soc.href || soc.href === '#') warnings.push(`Rede social "${soc.label || 'sem nome'}": link ausente (não aparece no site).`);
-        // O site publicado é UM arquivo. Um caminho relativo (cv.pdf) só funciona
-        // se você subir o arquivo junto, no mesmo lugar — senão o botão baixa nada.
-        if (b.content.cvHref.trim() && !/^(https?:|mailto:|tel:)/i.test(b.content.cvHref.trim())) {
-          warnings.push(`CV aponta para "${b.content.cvHref}": como o site é um arquivo só, suba o PDF no mesmo lugar ou use um endereço https completo.`);
-        }
-      } else if (b.type === 'button') {
-        if (!b.content.href.trim() || b.content.href.trim() === '#') warnings.push(`Botão "${b.content.label.pt || b.content.label.en}": sem link.`);
-        else if (!/^(https?:|mailto:|tel:|#)/i.test(b.content.href.trim())) {
-          warnings.push(`Botão "${b.content.label.pt || b.content.label.en}" aponta para "${b.content.href}": arquivo relativo só funciona se for publicado junto do site.`);
-        }
+  // Links: bloco Contato (legado) e botões.
+  for (const nb of noSite) {
+    const b = nb.bloco;
+    // Só o NDA diz onde está: é o que ninguém ia imaginar que também é conferido.
+    const noNda = nb.nda ? ` — ${ondeEsta(nb)}` : '';
+    if (b.type === 'contact') {
+      if (!emailValid(b.content.email)) warnings.push(`Contato: e-mail ausente ou inválido${noNda}.`);
+      for (const soc of b.content.socials) if (!soc.href || soc.href === '#') warnings.push(`Rede social "${soc.label || 'sem nome'}": link ausente (não aparece no site)${noNda}.`);
+      // O site publicado é UM arquivo. Um caminho relativo (cv.pdf) só funciona
+      // se você subir o arquivo junto, no mesmo lugar — senão o botão baixa nada.
+      if (b.content.cvHref.trim() && !/^(https?:|mailto:|tel:)/i.test(b.content.cvHref.trim())) {
+        warnings.push(`CV aponta para "${b.content.cvHref}": como o site é um arquivo só, suba o PDF no mesmo lugar ou use um endereço https completo.`);
+      }
+    } else if (b.type === 'button') {
+      if (!b.content.href.trim() || b.content.href.trim() === '#') warnings.push(`Botão "${b.content.label.pt || b.content.label.en}": sem link${noNda}.`);
+      else if (!/^(https?:|mailto:|tel:|#)/i.test(b.content.href.trim())) {
+        warnings.push(`Botão "${b.content.label.pt || b.content.label.en}" aponta para "${b.content.href}": arquivo relativo só funciona se for publicado junto do site.`);
       }
     }
   }

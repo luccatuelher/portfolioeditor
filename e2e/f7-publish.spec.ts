@@ -12,6 +12,9 @@ const publish = (env: Record<string, string> = {}): void => {
 
 // Serial: cada cenário republica dist/site.html, então não podem correr em paralelo.
 test.describe.serial('F7 — site publicado (self-contained)', () => {
+  // Cada cenário roda o build do runtime (vite) antes: sob a suíte em paralelo, 30 s não bastavam.
+  test.describe.configure({ timeout: 120_000 });
+
   test('template: renderiza standalone, sem NDA e sem código de edição', async ({ page }) => {
     publish({ PUBLISH_FIXTURE: 'template-v3.json' });
     await page.route(/youtube|youtu\.be|vimeo|speakerdeck/, (r) => r.abort());
