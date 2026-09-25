@@ -46,6 +46,7 @@ for (const fixture of ['template-v3.json', 'legacy-synthetic-v3.json']) {
         ];
       });
       expect(rotas.length).toBeGreaterThan(3);
+      await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
 
       for (const rota of rotas) {
         await page.evaluate((r) => { location.hash = r ? `#${r}` : '#'; }, rota);
@@ -124,8 +125,33 @@ for (const fixture of ['template-v3.json', 'legacy-synthetic-v3.json']) {
           return out;
         });
         expect(ilegiveis, `texto ilegível em ${onde}`).toEqual([]);
+        // Auditoria de acessibilidade (axe-core): WCAG 2.1 A/AA e boas práticas.
+        const violacoes = await page.evaluate(async () => {
+          const axe = (window as unknown as { axe: { run: (c: Document, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
+          const r = await axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] });
+          return r.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' · ')}`);
+        });
+        expect(violacoes, `acessibilidade em ${onde}`).toEqual([]);
       }
       expect(erros).toEqual([]);
     });
   }
 }
+
+test('menos movimento (preferência do sistema): o visualizador abre sem animação', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.goto(publicar('template-v3.json'), { waitUntil: 'load' });
+  await page.evaluate(() => { location.hash = '#gallery'; });
+  await page.locator('.art-img-btn').first().click();
+  const img = page.locator('.lightbox .lightbox-img');
+  await expect(img).toBeVisible();
+  expect(await img.evaluate((el) => getComputedStyle(el).animationName)).toBe('none');
+  await page.keyboard.press('Escape');
+  // A capa do card também não desliza ao passar o mouse.
+  await page.evaluate(() => { location.hash = '#'; });
+  const capa = page.locator('.card-thumb').first();
+  expect(await capa.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0s');
+  // Sem a preferência, as animações continuam lá (a regra não vale para todos).
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  expect(await capa.evaluate((el) => getComputedStyle(el).transitionDuration)).not.toBe('0s');
+});

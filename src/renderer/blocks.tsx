@@ -17,7 +17,10 @@ import { projectCategory } from '../core/category';
 import { linkInterno } from './links';
 
 // ----------------------------------------------------------------- primitivos
-function Img({ image, className, eager }: { image: ImageRef; className?: string; eager?: boolean }): React.ReactElement | null {
+/** A pessoa pediu menos movimento no sistema: nada de rolagem suave nem animação. */
+const menosMovimento = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function Img({ image, className, eager, decorativa }: { image: ImageRef; className?: string; eager?: boolean; decorativa?: boolean }): React.ReactElement | null {
   const { resolveAsset, lang, data } = useRender();
   const src = resolveAsset(image);
   if (!src) return null;
@@ -26,11 +29,13 @@ function Img({ image, className, eager }: { image: ImageRef; className?: string;
   const c = image.crop;
   // A imagem do topo carrega na frente (é a maior pintura da tela); o resto é preguiçoso.
   const carga = eager ? ({ loading: 'eager', fetchPriority: 'high' } as const) : ({ loading: 'lazy', decoding: 'async' } as const);
-  if (!c) return <img className={className} {...carga} src={src} alt={pick(image.alt, lang)} {...dims} />;
+  // Decorativa (capa de card: o link já diz o título): alt vazio, senão o leitor de tela lê o nome duas vezes.
+  const alt = decorativa ? '' : pick(image.alt, lang);
+  if (!c) return <img className={className} {...carga} src={src} alt={alt} {...dims} />;
   // Recorte: a caixa tem a proporção do trecho; a imagem inteira é ampliada/deslocada dentro dela.
   return (
     <span className={`${className ?? ''} img-crop`} style={{ aspectRatio: String(c.ar) }}>
-      <img {...carga} src={src} alt={pick(image.alt, lang)} style={cropImgStyle(c)} />
+      <img {...carga} src={src} alt={alt} style={cropImgStyle(c)} />
     </span>
   );
 }
@@ -199,7 +204,7 @@ function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link 
     return (
       <a className="project-card" style={estilo} data-card={item.id} {...link}>
         <div className="card-thumb-wrap">
-          <Img image={item.thumb} className="card-thumb" />
+          <Img image={item.thumb} className="card-thumb" decorativa />
         </div>
         <div className="card-title">{pick(item.title, lang)}</div>
       </a>
@@ -221,7 +226,7 @@ function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link 
       {...itemDrag(editing, 'projects', item.id)}
     >
       <div className="card-thumb-wrap">
-        <Img image={item.thumb} className="card-thumb" />
+        <Img image={item.thumb} className="card-thumb" decorativa />
         <EditBadges visibility={item.visibility} featured={item.featured} />
         <EditActions target={{ target: 'item', coll: 'projects', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`projeto “${pick(item.title, lang)}”`} />
       </div>
@@ -334,7 +339,7 @@ function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () 
   // Abriu: traz a prévia para a tela. Sem isso, no celular ela nasce abaixo do
   // que cabe na janela e o toque parece não ter feito nada.
   useEffect(() => {
-    panel.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    panel.current?.scrollIntoView({ behavior: menosMovimento() ? 'auto' : 'smooth', block: 'nearest' });
   }, [item.id]);
   const { lang, onNavigate, editing, onEditPreview } = ctx;
   const pv = effectivePreview(item);
@@ -461,7 +466,7 @@ function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.React
       <a className="blog-item" style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))} {...linkInterno(`blog/${item.id}`, onNavigate)}>
         <span className="blog-date">{pick(item.date, lang)}</span>
         <div className="blog-thumb-wrap">
-          <Img image={item.thumb} className="blog-thumb" />
+          <Img image={item.thumb} className="blog-thumb" decorativa />
         </div>
         <div className="blog-title">{pick(item.title, lang)}</div>
         <p className="blog-excerpt">{pick(item.excerpt, lang)}</p>
@@ -473,7 +478,7 @@ function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.React
       <EditBadges visibility={item.visibility} />
       <span className="blog-date">{pick(item.date, lang)}</span>
       <div className="blog-thumb-wrap">
-        <Img image={item.thumb} className="blog-thumb" />
+        <Img image={item.thumb} className="blog-thumb" decorativa />
         <EditActions target={{ target: 'item', coll: 'blog', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`nota “${pick(item.title, lang)}”`} />
       </div>
       <div className="blog-title">{pick(item.title, lang)}</div>
@@ -805,7 +810,10 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
         return wrap(<InlineEditable key={`${block.id}:${lang}`} className="block-heading-text" initial={pick(block.content.text, lang)} onCommit={(v) => onInlineText(block.id, v, 'heading')} />);
       }
       // Títulos aceitam a mesma formatação inline dos textos (cor, fonte, tamanho, link…).
-      return wrap(<Tag className="block-heading-text" dangerouslySetInnerHTML={{ __html: sanitizeRich(pick(block.content.text, lang)) }} />);
+      const html = sanitizeRich(pick(block.content.text, lang));
+      // Vazio no site: sem <h2> mudo para o leitor de tela (o lugar na grade fica).
+      if (!editing && !html.replace(/<[^>]*>/g, '').trim()) return wrap(null);
+      return wrap(<Tag className="block-heading-text" dangerouslySetInnerHTML={{ __html: html }} />);
     }
     case 'text':
       if (editing && onInlineText && selectedId === block.id) {

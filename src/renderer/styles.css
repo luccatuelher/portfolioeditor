@@ -534,3 +534,11 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 
 /* rede social sem link: visível só no editor, para o dono completar */
 .social-link.sem-link, .btn.sem-link { opacity: 0.45; text-decoration: line-through; cursor: default; }
+
+/* Menos movimento (preferência do sistema — labirintite, enjoo de movimento):
+   sem animações, transições nem rolagem suave; o estado final é o mesmo. O
+   #root dá peso de id: vence as regras de classe (e as que vierem) sem
+   !important, que este CSS não usa. Tudo do site vive dentro do #root. */
+@media (prefers-reduced-motion: reduce) {
+  #root *, #root *::before, #root *::after { animation: none; transition: none; scroll-behavior: auto; }
+}
