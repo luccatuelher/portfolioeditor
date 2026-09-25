@@ -44,6 +44,11 @@ export const UI_PADRAO = {
   erroTexto: bi('Tente de novo ou recarregue a página.', 'Try again or reload the page.'),
   tentarDeNovo: bi('Tentar de novo', 'Try again'),
   recarregar: bi('Recarregar', 'Reload'),
+  paginaNaoEncontrada: bi('Esta página não está aqui', 'This page isn’t here'),
+  projetoNaoEncontrado: bi('Este projeto não está aqui', 'This project isn’t here'),
+  notaNaoEncontrada: bi('Esta nota não está aqui', 'This note isn’t here'),
+  enderecoMudou: bi('O endereço pode ter mudado, ou o conteúdo saiu do site.', 'The address may have changed, or the content was taken down.'),
+  irParaInicio: bi('Ir para o início', 'Go to the home page'),
   secaoComDefeito: bi('Uma seção desta página não pôde ser exibida. O resto continua aqui.', 'A section of this page could not be shown. The rest is still here.'),
 } satisfies Record<string, I18n>;
 

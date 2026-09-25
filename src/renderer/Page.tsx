@@ -1,6 +1,6 @@
-import type { BlogItem, I18n, Page, ProjectItem } from '../schema/v4';
-import { useUi } from './ui';
-import { blocoNoSite, SectionView } from './blocks';
+import type { BlogItem, I18n, Page, PortfolioV4, ProjectItem } from '../schema/v4';
+import { useUi, type UiChave } from './ui';
+import { blocoNoSite, NdaUnlock, SectionView } from './blocks';
 import { ErrorBoundary } from './ErrorBoundary';
 import { useRender } from './context';
 import { pick } from './text';
@@ -27,6 +27,45 @@ const META_VALUES: Record<string, Record<string, I18n>> = {
 const META_ORDER = ['year', 'client', 'role', 'category', 'skills', 'contribution', 'credits', 'sequenceLabel', 'storyType', 'processNotes'];
 
 
+/** A página que lista uma coleção (a de NDA, para item NDA); a Home só se não houver outra. */
+function paginaDaLista(data: PortfolioV4, nome: 'projects' | 'blog', nda: boolean): Page | undefined {
+  const listas = data.pages.filter((p) =>
+    p.kind === 'static' && (p.visibility === 'nda') === nda &&
+    p.sections.some((sec) => sec.blocks.some((b) => b.type === 'collection' && b.content.collection === nome)),
+  );
+  return listas.find((p) => p.id !== 'home') ?? listas[0];
+}
+
+export const TITULO_NAO_ENCONTRADO: Record<'project' | 'blog' | 'pagina', UiChave> = {
+  project: 'projetoNaoEncontrado',
+  blog: 'notaNaoEncontrada',
+  pagina: 'paginaNaoEncontrada',
+};
+
+/**
+ * Endereço que não leva a nada do site (link antigo, projeto excluído, página
+ * renomeada): diz isso e oferece saídas, em vez de mostrar a Home calada. Se
+ * o site tem área NDA trancada, o projeto pode ser confidencial: a senha é
+ * pedida aqui mesmo — destrancou, o projeto aparece neste mesmo endereço.
+ */
+export function NaoEncontrado({ tipo }: { tipo: 'project' | 'blog' | 'pagina' }): React.ReactElement {
+  const { data, nda, onNavigate } = useRender();
+  const t = useUi();
+  const lista = tipo === 'pagina' ? undefined : paginaDaLista(data, tipo === 'project' ? 'projects' : 'blog', false);
+  const ir = (rota: string): Record<string, unknown> => (onNavigate ? linkInterno(rota, onNavigate) : { href: rota ? `#${rota}` : '#' });
+  return (
+    <section className="nao-encontrado" data-nao-encontrado={tipo}>
+      <h1>{t(TITULO_NAO_ENCONTRADO[tipo])}</h1>
+      <p>{t('enderecoMudou')}</p>
+      {tipo !== 'pagina' && nda?.locked ? <NdaUnlock /> : null}
+      <p className="nao-encontrado-saidas">
+        {lista ? <a {...ir(lista.slug || lista.id)}>{t(tipo === 'project' ? 'allProjects' : 'todasNotas')}</a> : null}
+        <a {...ir('')}>{t('irParaInicio')}</a>
+      </p>
+    </section>
+  );
+}
+
 /**
  * Fim da página de um projeto (ou nota): anterior, a lista inteira e o
  * próximo, na ordem da lista. Sem isto, quem chegava ao fim tinha de rolar
@@ -45,12 +84,7 @@ function DetailPager({ item, kind }: { item: ProjectItem | BlogItem; kind: 'proj
   const i = irmaos.findIndex((it) => it.id === item.id);
   const prev = i > 0 ? irmaos[i - 1] : undefined;
   const next = i >= 0 && i < irmaos.length - 1 ? irmaos[i + 1] : undefined;
-  // A página que lista esta coleção (a de NDA, para item NDA); a Home só se não houver outra.
-  const listas = data.pages.filter((p) =>
-    p.kind === 'static' && (p.visibility === 'nda') === mundoNda &&
-    p.sections.some((sec) => sec.blocks.some((b) => b.type === 'collection' && b.content.collection === nome)),
-  );
-  const lista = listas.find((p) => p.id !== 'home') ?? listas[0];
+  const lista = paginaDaLista(data, nome, mundoNda);
   if (!prev && !next && !lista) return null;
   const ir = (route: string): Record<string, unknown> =>
     editing ? { onClick: () => onNavigate(route), role: 'link' } : linkInterno(route, onNavigate);

@@ -6,7 +6,7 @@ import type { AssetResolver, Lang, LightItem, RenderContextValue } from './conte
 import { RenderContext } from './context';
 import { styleVars } from './css';
 import { Lightbox } from './Lightbox';
-import { PageView } from './Page';
+import { NaoEncontrado, PageView, TITULO_NAO_ENCONTRADO } from './Page';
 import { SiteHeader, StickyNav } from './Header';
 import { themeToCssVars } from './theme';
 import { siteFrame } from './siteFrame';
@@ -15,6 +15,12 @@ import { pick } from './text';
 interface Resolved {
   page: Page;
   item?: ProjectItem | BlogItem;
+  /**
+   * O endereço aponta para algo que não está no site (link antigo, projeto
+   * excluído ou confidencial ainda trancado, página renomeada). Antes caía
+   * calado na Home: quem chegava pelo link não entendia o que houve.
+   */
+  naoEncontrado?: 'project' | 'blog' | 'pagina';
 }
 
 /** Resolve uma rota (slug ou `project/<id>` / `blog/<id>`) para página + item. */
@@ -37,11 +43,11 @@ export function resolveRoute(data: PortfolioV4, route: string): Resolved {
       const page = byId('blog-detail');
       if (item && page) return { page, item };
     }
-    return { page: home };
+    return { page: home, naoEncontrado: kind === 'project' ? 'project' : 'blog' };
   }
 
   const page = data.pages.find((p) => p.slug === clean || p.id === clean);
-  return { page: page ?? home };
+  return page ? { page } : { page: home, naoEncontrado: 'pagina' };
 }
 
 /**
@@ -99,7 +105,7 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
   const lbPushed = useRef(false);
   // history.back() disparado por nós mesmos ao fechar a imagem: o popstate seguinte deve ser ignorado.
   const ignorePop = useRef(false);
-  const { page, item } = resolveRoute(data, route);
+  const { page, item, naoEncontrado } = resolveRoute(data, route);
 
   const navigate = useCallback(
     (rota: string) => {
@@ -168,7 +174,7 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
 
   // Título da aba por página ("Projetos — Nome"), útil no histórico e nos favoritos.
   const siteName = pick(data.site.name, lang);
-  const pageName = item ? pick(item.title, lang) : page.id === 'home' ? '' : pick(page.title, lang);
+  const pageName = naoEncontrado ? textoUi(data, lang, TITULO_NAO_ENCONTRADO[naoEncontrado]) : item ? pick(item.title, lang) : page.id === 'home' ? '' : pick(page.title, lang);
   useEffect(() => {
     if (editing || typeof document === 'undefined') return;
     document.title = pageName ? `${pageName} — ${siteName}` : siteName;
@@ -206,7 +212,7 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
         <SiteHeader data={data} lang={lang} onLang={setLang} onNavigate={navigate} current={route} />
         {!editing ? <StickyNav data={data} lang={lang} onLang={setLang} onNavigate={navigate} current={route} /> : null}
         <main className="container" id="conteudo" data-route={route || 'home'}>
-          <PageView page={page} item={item} />
+          {naoEncontrado ? <NaoEncontrado tipo={naoEncontrado} /> : <PageView page={page} item={item} />}
         </main>
       </div>
       {lightbox ? (

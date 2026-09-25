@@ -14,10 +14,10 @@ import { tmpdir } from 'node:os';
  * Publica num arquivo próprio (PUBLISH_OUTPUT) a partir do shell já gerado
  * (PUBLISH_SHELL): não disputa o dist/site.html com os outros testes.
  */
-function publicar(fixture: string): string {
+function publicar(fixture: string, senhaNda?: string): string {
   const saida = resolve(mkdtempSync(resolve(tmpdir(), 'site-inteiro-')), 'index.html');
   execFileSync(process.execPath, [resolve('node_modules/vitest/vitest.mjs'), 'run', '--config', 'vite.emit.config.ts'], {
-    env: { ...process.env, PUBLISH_FIXTURE: fixture, PUBLISH_SHELL: 'src/publish/site-shell.html', PUBLISH_OUTPUT: saida },
+    env: { ...process.env, PUBLISH_FIXTURE: fixture, PUBLISH_SHELL: 'src/publish/site-shell.html', PUBLISH_OUTPUT: saida, ...(senhaNda ? { PUBLISH_NDA_PASSWORD: senhaNda } : {}) },
     stdio: 'ignore',
   });
   return pathToFileURL(saida).href;
@@ -154,4 +154,41 @@ test('menos movimento (preferência do sistema): o visualizador abre sem animaç
   // Sem a preferência, as animações continuam lá (a regra não vale para todos).
   await page.emulateMedia({ reducedMotion: 'no-preference' });
   expect(await capa.evaluate((el) => getComputedStyle(el).transitionDuration)).not.toBe('0s');
+});
+
+for (const lang of ['pt', 'en'] as const) {
+  test(`endereço quebrado diz que não encontrou e oferece saídas — ${lang.toUpperCase()}`, async ({ page }) => {
+    const erros: string[] = [];
+    page.on('pageerror', (e) => erros.push(String(e)));
+    await page.addInitScript((l) => { if (window.top === window) localStorage.setItem('portfolio-lang', l); }, lang);
+    await page.goto(publicar('template-v3.json'), { waitUntil: 'load' });
+    await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
+    const titulos = { 'project/nao-existe': ['Este projeto não está aqui', 'This project isn’t here'], 'blog/nao-existe': ['Esta nota não está aqui', 'This note isn’t here'], 'pagina-que-sumiu': ['Esta página não está aqui', 'This page isn’t here'] } as const;
+    for (const [rota, [pt, en]] of Object.entries(titulos)) {
+      await page.evaluate((r) => { location.hash = r; }, rota);
+      const aviso = page.locator('.nao-encontrado');
+      await expect(aviso, rota).toBeVisible();
+      await expect(page.locator('h1')).toHaveCount(1);
+      await expect(page.locator('h1')).toHaveText(lang === 'en' ? en : pt);
+      expect(await page.title()).toContain(lang === 'en' ? en : pt);
+      const v = await page.evaluate(async () => (await (window as unknown as { axe: { run: (d: Document, o: object) => Promise<{ violations: { id: string }[] }> } }).axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] })).violations.map((x) => x.id));
+      expect(v, rota).toEqual([]);
+    }
+    // Saída: o link para o início leva à Home de verdade.
+    await page.locator('.nao-encontrado-saidas a').last().click();
+    await expect(page.locator('main#conteudo[data-route="home"]')).toBeVisible();
+    await expect(page.locator('.nao-encontrado')).toHaveCount(0);
+    expect(erros).toEqual([]);
+  });
+}
+
+test('link direto para um projeto confidencial: pede a senha ali mesmo e abre o projeto', async ({ page }) => {
+  await page.goto(publicar('legacy-synthetic-v3.json', 'segredo123') + '#project/proj-b', { waitUntil: 'load' });
+  const aviso = page.locator('.nao-encontrado');
+  await expect(aviso).toBeVisible();
+  await aviso.locator('.nda-unlock input').fill('segredo123');
+  await aviso.locator('.nda-unlock button').click();
+  // Destrancou: o mesmo endereço agora é o projeto.
+  await expect(page.locator('main#conteudo[data-route="project/proj-b"] h1')).toContainText('Projeto B');
+  await expect(page.locator('.nao-encontrado')).toHaveCount(0);
 });

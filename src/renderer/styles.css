@@ -550,3 +550,12 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion: reduce) {
   #root *, #root *::before, #root *::after { animation: none; transition: none; scroll-behavior: auto; }
 }
+
+/* Endereço que não leva a nada do site: diz isso e oferece saídas. */
+.nao-encontrado { max-width: 36rem; margin: 4rem auto 6rem; text-align: center; }
+.nao-encontrado h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(1.8rem, 4vw, 2.6rem); line-height: 1.15; margin: 0 0 1rem; color: var(--ink); }
+.nao-encontrado p { color: var(--ink-soft); line-height: 1.6; margin: 0 0 1.5rem; }
+.nao-encontrado .nda-unlock { margin: 0 auto 1.5rem; text-align: left; }
+.nao-encontrado-saidas { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; }
+.nao-encontrado-saidas a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 4px; }
+.nao-encontrado-saidas a:hover { color: var(--accent-texto, var(--accent)); }

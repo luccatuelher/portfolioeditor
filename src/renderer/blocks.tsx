@@ -648,7 +648,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
 }
 
 /** Senha da área NDA, exibida no lugar da lista confidencial enquanto trancada. */
-function NdaUnlock(): React.ReactElement {
+export function NdaUnlock(): React.ReactElement {
   const { nda } = useRender();
   const t = useUi();
   const [pw, setPw] = useState('');

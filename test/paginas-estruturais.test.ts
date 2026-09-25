@@ -35,3 +35,21 @@ describe('páginas estruturais', () => {
     expect(JSON.stringify(d.pages)).toBe(antes);
   });
 });
+
+describe('endereço que não leva a nada do site', () => {
+  const d = migrate(loadFixture('template-v3.json')).data;
+
+  it('é dito (naoEncontrado), não trocado calado pela Home', () => {
+    expect(resolveRoute(d, 'project/nao-existe').naoEncontrado).toBe('project');
+    expect(resolveRoute(d, 'blog/nao-existe').naoEncontrado).toBe('blog');
+    expect(resolveRoute(d, 'pagina-que-sumiu').naoEncontrado).toBe('pagina');
+  });
+
+  it('o que existe continua sem o aviso', () => {
+    expect(resolveRoute(d, '').naoEncontrado).toBeUndefined();
+    expect(resolveRoute(d, 'home').naoEncontrado).toBeUndefined();
+    expect(resolveRoute(d, `project/${d.collections.projects[0]!.id}`).naoEncontrado).toBeUndefined();
+    const sobre = d.pages.find((p) => p.kind === 'static' && p.id !== 'home')!;
+    expect(resolveRoute(d, sobre.slug || sobre.id).naoEncontrado).toBeUndefined();
+  });
+});
