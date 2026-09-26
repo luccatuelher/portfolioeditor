@@ -61,15 +61,15 @@ export function runPreflight(data: PortfolioV4, opts: PreflightOptions = {}): Pr
   const missingAlt = imagensSemDescricao(data).length;
 
   // Compartilhamento: o que aparece quando alguém manda o link no WhatsApp,
-  // no LinkedIn ou no X. Imagem embutida (data:) nenhuma rede busca.
+  // no LinkedIn ou no X. A imagem enviada no editor vai como arquivo ao lado
+  // (imagemSocial.ts) e as redes a buscam pelo endereço do site — que, fora
+  // isso, é opcional (no GitHub Pages o site funciona sem ele).
   const home = data.pages.find((pg) => pg.id === 'home');
   const socialImg = home?.seo?.image;
-  // (O endereço do site é opcional: no GitHub Pages o site funciona sem ele,
-  // e a imagem de compartilhamento já vai por URL completa. Não é aviso.)
   if (!socialImg) {
     warnings.push('Sem imagem de compartilhamento (inspector da Home › SEO): o link vai aparecer sem miniatura.');
-  } else if (socialImg.assetId) {
-    warnings.push('A imagem de compartilhamento está embutida no arquivo — WhatsApp, LinkedIn e X só buscam imagem por endereço http. Use uma URL pública no campo de imagem do SEO.');
+  } else if (socialImg.assetId && !(data.site.url ?? '').trim()) {
+    warnings.push('A imagem de compartilhamento precisa do endereço do site (Tema › Endereço do site, ex.: https://seunome.github.io/portfolio): é por ele que LinkedIn, WhatsApp e X buscam a imagem.');
   }
 
   // Tudo o que vai para o site: páginas, projetos e notas — o NDA também, que

@@ -39,7 +39,9 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
   const absoluto = (u: string): string => (/^https?:\/\//i.test(u) ? u : siteUrl && u ? `${siteUrl}/${u.replace(/^\//, '')}` : '');
   // A imagem social só entra se der para buscá-la de fora. Uma embutida (data:)
   // não vira preview em rede nenhuma e ainda repetiria a foto inteira no <head>.
-  const socialImg = homeImg && !homeImg.assetId && homeImg.url ? absoluto(homeImg.url) : '';
+  // Enviada no editor: vai como arquivo ao lado (payload.arquivoSocial) e é
+  // apontada pelo endereço do site. Por URL: usada como está.
+  const socialImg = !homeImg ? '' : homeImg.assetId ? (payload.arquivoSocial ? absoluto(payload.arquivoSocial) : '') : homeImg.url ? absoluto(homeImg.url) : '';
   // Snippet de analytics: é código do próprio dono do site, então entra cru —
   // só barramos o que fecharia o <head> ou escaparia do que ele colou.
   const analytics = (payload.publicData.site.analytics ?? '').trim();
@@ -76,6 +78,7 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
     `<meta property="og:locale" content="pt_BR"><meta property="og:locale:alternate" content="en_US">` +
     (siteUrl ? `<meta property="og:url" content="${esc(siteUrl)}"><link rel="canonical" href="${esc(siteUrl)}">` : '') +
     (socialImg ? `<meta property="og:image" content="${esc(socialImg)}">` : '') +
+    (socialImg && payload.arquivoSocial ? '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' : '') +
     // X/Twitter: sem esta linha o link vira só texto, sem cartão.
     `<meta name="twitter:card" content="${socialImg ? 'summary_large_image' : 'summary'}">` +
     `<meta name="twitter:title" content="${esc(name)}"><meta name="twitter:description" content="${esc(role)}">` +

@@ -15,6 +15,8 @@ export interface PublishPayload {
   ndaBlob: EncryptedNda | null;
   /** assetId → bytes (para preflight de tamanho). */
   assetSizes: Record<string, number>;
+  /** Imagem de compartilhamento gerada como arquivo ao lado (ver imagemSocial.ts). */
+  arquivoSocial?: string;
 }
 
 function dataUrlBytes(dataUrl: string): number {

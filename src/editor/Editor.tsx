@@ -20,7 +20,8 @@ import { arquivosAoLado, runPreflight } from '../publish/preflight';
 import { ndaCount, publicSnapshot } from '../publish/publicSnapshot';
 import { formatarPeso, LIMITE_GITHUB_BYTES, pesoDoSite, type PesoDoSite } from '../publish/peso';
 import type { MigratedAsset } from '../migrate/migrate';
-import { blobToDataUrl, importImage, miniaturaDeDataUrl } from '../assets/importImage';
+import { blobToDataUrl, imagemDeCompartilhar, importImage, miniaturaDeDataUrl } from '../assets/importImage';
+import { ARQUIVO_SOCIAL, imagemSocialEmbutida } from '../publish/imagemSocial';
 import { makeFavicon } from '../assets/favicon';
 import { assetIdFromContent } from '../core/ids';
 import { emptyI18n } from '../core/i18n';
@@ -74,6 +75,19 @@ export interface EditorProps {
   gravarAoAbrir?: boolean;
   /** Aviso exibido no topo (ex.: rascunho recuperado com ajustes). */
   notice?: string;
+}
+
+/** Baixa um arquivo gerado no navegador (site, imagem de compartilhamento, backup). */
+function baixarArquivo(blob: Blob, nome: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // Revogar na hora cancelava o segundo download em alguns navegadores.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 /** Nome curto do que está selecionado, para o botão que abre o Inspector na tela estreita. */
@@ -135,7 +149,7 @@ function AvisoPublicado({ p, onClose }: { p: Publicado; onClose: () => void }): 
         ) : null}
         {p.arquivos.length ? (
           <p>
-            Suba também, na mesma pasta do index.html: {p.arquivos.map((a, i) => <span key={a}>{i ? ', ' : ''}<code>{a}</code></span>)}. Sem eles, esses links não abrem nada.
+            Suba também, na mesma pasta do index.html: {p.arquivos.map((a, i) => <span key={a}>{i ? ', ' : ''}<code>{a}</code></span>)}. Sem eles, o que aponta para eles não funciona (links, imagem de compartilhamento).
           </p>
         ) : null}
         {p.avisos.length ? (
@@ -1300,14 +1314,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
   const download = (): void => {
     const backup = buildBackup(doc.state, assets);
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `portfolio-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    baixarArquivo(blob, `portfolio-backup-${new Date().toISOString().slice(0, 10)}.json`);
     marcarBackup();
     onBackup?.();
   };
@@ -1373,21 +1380,22 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     // Toda publicação vira um ponto de retorno (automático) no histórico.
     void saveVersion(`Publicado em ${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}`, doc0, true).catch(() => {});
 
+    // Imagem de compartilhamento: vira um arquivo no tamanho do cartão das
+    // redes, ao lado do index.html (com o endereço do site, dá para apontá-la).
+    const social = imagemSocialEmbutida(payload.publicData);
+    const fonteSocial = social?.assetId ? assets[social.assetId] : undefined;
+    const jpg = fonteSocial && (payload.publicData.site.url ?? '').trim() ? await imagemDeCompartilhar(fonteSocial, social?.crop).catch(() => null) : null;
+    if (jpg) payload.arquivoSocial = ARQUIVO_SOCIAL;
+
     const html = assembleSiteHtml(siteShell, payload);
     const blob = new Blob([html], { type: 'text/html' });
     // Os arquivos relativos já aparecem na lista própria do aviso: não repetem nos avisos.
-    const arquivos = arquivosAoLado(vaiProSite);
+    const arquivos = [...arquivosAoLado(vaiProSite), ...(jpg ? [ARQUIVO_SOCIAL] : [])];
     const avisos = pf.warnings.filter((w) => !arquivos.some((a) => w.includes(`"${a}"`)));
     onPublished?.({ arquivos, avisos, mb: blob.size / (1024 * 1024) });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
     // index.html: é o arquivo que o GitHub Pages (e qualquer hospedagem) abre sozinho no endereço do site.
-    a.download = 'index.html';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    baixarArquivo(blob, 'index.html');
+    if (jpg) baixarArquivo(jpg, ARQUIVO_SOCIAL);
   };
 
   return (

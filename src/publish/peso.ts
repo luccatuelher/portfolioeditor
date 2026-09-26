@@ -27,7 +27,8 @@ function idsEm(node: unknown, out: Set<string>): void {
   else if (node && typeof node === 'object') {
     const r = node as Record<string, unknown>;
     if (typeof r['assetId'] === 'string') out.add(r['assetId']);
-    for (const v of Object.values(r)) idsEm(v, out);
+    // A imagem de SEO não vai no index.html (vai como arquivo ao lado).
+    for (const [k, v] of Object.entries(r)) if (k !== 'seo') idsEm(v, out);
   }
 }
 

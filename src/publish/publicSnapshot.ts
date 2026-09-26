@@ -35,13 +35,18 @@ export interface PublicResult {
   nda: NdaBundle;
 }
 
+/**
+ * Imagens que o site mostra. A de SEO (compartilhamento) fica de fora: o site
+ * nunca a exibe — ela vai como arquivo ao lado (imagemSocial.ts), e embutida
+ * era peso morto no index.html.
+ */
 function collectAssetIds(node: unknown, out: Set<string>): void {
   if (Array.isArray(node)) {
     for (const x of node) collectAssetIds(x, out);
   } else if (node && typeof node === 'object') {
     const rec = node as Record<string, unknown>;
     if (typeof rec['assetId'] === 'string') out.add(rec['assetId']);
-    for (const v of Object.values(rec)) collectAssetIds(v, out);
+    for (const [k, v] of Object.entries(rec)) if (k !== 'seo') collectAssetIds(v, out);
   }
 }
 

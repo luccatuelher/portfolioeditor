@@ -190,3 +190,30 @@ export async function miniaturaDeDataUrl(dataUrl: string, largura: number): Prom
   const b = await miniatura(dataUrlToBlob(dataUrl), largura);
   return b ? blobToDataUrl(b) : null;
 }
+
+/** Tamanho do cartão das redes (LinkedIn, WhatsApp, X, Facebook): 1,91 : 1. */
+export const CARTAO_SOCIAL = { w: 1200, h: 630 } as const;
+
+/**
+ * A imagem de compartilhamento como arquivo: 1200 × 630, preenchendo o cartão
+ * (corta o que sobra, centralizado) e respeitando o recorte escolhido no
+ * editor. JPEG com fundo branco — as redes não mostram transparência.
+ */
+export async function imagemDeCompartilhar(dataUrl: string, crop?: { x: number; y: number; w: number; h: number }): Promise<Blob> {
+  const bmp = await decodeImage(dataUrlToBlob(dataUrl));
+  const { w: W, h: H } = CARTAO_SOCIAL;
+  const c = crop ?? { x: 0, y: 0, w: 1, h: 1 };
+  // Trecho da foto que vale (o recorte), em pixels.
+  const sw = bmp.width * c.w;
+  const sh = bmp.height * c.h;
+  const escala = Math.max(W / sw, H / sh);
+  const canvas = new OffscreenCanvas(W, H);
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas 2D indisponível.');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  // A foto inteira, ampliada e deslocada: o trecho recortado fica centrado no cartão.
+  ctx.drawImage(bmp as CanvasImageSource, -bmp.width * c.x * escala + (W - sw * escala) / 2, -bmp.height * c.y * escala + (H - sh * escala) / 2, bmp.width * escala, bmp.height * escala);
+  bmp.close?.();
+  return canvas.convertToBlob({ type: 'image/jpeg', quality: 0.86 });
+}
