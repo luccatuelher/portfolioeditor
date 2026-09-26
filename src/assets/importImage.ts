@@ -159,3 +159,34 @@ export async function decodeImage(source: Blob): Promise<{ width: number; height
     }
   }
 }
+
+export function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+/**
+ * Miniatura em WebP com a largura dada (a altura acompanha) — para a grade do
+ * site (core/miniaturas). null quando a foto já não é mais larga que isso.
+ */
+export async function miniatura(source: Blob, largura: number, env: CanvasEnv = defaultEnv()): Promise<Blob | null> {
+  const bmp = await env.createImageBitmap(source);
+  if (bmp.width <= largura) {
+    bmp.close?.();
+    return null;
+  }
+  const size: TargetSize = { w: largura, h: Math.max(1, Math.round((bmp.height * largura) / bmp.width)), scale: largura / bmp.width };
+  const blob = await encode(env, bmp, size, DEFAULT_QUALITY);
+  bmp.close?.();
+  return blob;
+}
+
+/** A miniatura de um data URL, como data URL (o gerador que a publicação do editor usa). */
+export async function miniaturaDeDataUrl(dataUrl: string, largura: number): Promise<string | null> {
+  const b = await miniatura(dataUrlToBlob(dataUrl), largura);
+  return b ? blobToDataUrl(b) : null;
+}

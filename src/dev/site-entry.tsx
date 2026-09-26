@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '../renderer/styles.css';
 import './site-entry.css';
 import type { AssetResolver } from '../renderer/context';
+import { resolverDoMapa } from '../renderer/dataUrlResolver';
 import { initialVisitorLang, Site } from '../renderer/Site';
 import { htmlLang, textoUi } from '../renderer/ui';
 import { ErrorBoundary } from '../renderer/ErrorBoundary';
@@ -84,7 +85,10 @@ function App(): React.ReactElement {
   const versao = useImagensChegando();
   // Identidade nova a cada imagem que chega: quem mostra imagem pinta de novo.
   const resolver = useMemo<AssetResolver>(
-    () => (ref) => (ref.assetId ? assets[ref.assetId] ?? reserva(ref.assetId, data) : ref.url ?? ''),
+    () => {
+      const doMapa = resolverDoMapa((id) => assets[id]);
+      return (ref, uso) => doMapa(ref, uso) || (ref.assetId ? reserva(ref.assetId, data) : '');
+    },
     [versao, data],
   );
 

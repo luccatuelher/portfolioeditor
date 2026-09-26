@@ -1,6 +1,8 @@
 import type { PortfolioV4 } from '../schema/v4';
 import { pick } from '../renderer/text';
 import { ndaCount, publicSnapshot } from './publicSnapshot';
+import { pesoEstimadoDasMiniaturas } from '../core/miniaturas';
+import { completarDimensoes } from '../core/dimensoesImagem';
 
 /** O upload pelo navegador do GitHub não aceita arquivo acima disso. */
 export const LIMITE_GITHUB_BYTES = 25 * 1024 * 1024;
@@ -35,7 +37,7 @@ function idsEm(node: unknown, out: Set<string>): void {
  * entra). Serve para ver, antes de baixar, se o index.html cabe no upload do
  * GitHub e quais imagens mais pesam.
  */
-export function pesoDoSite(doc: PortfolioV4, assets: Record<string, string>, runtimeBytes: number): PesoDoSite {
+export function pesoDoSite(doc: PortfolioV4, assets: Record<string, string>, runtimeBytes: number, opts: { miniaturas?: boolean } = {}): PesoDoSite {
   const { data, nda } = publicSnapshot(doc);
   const dados = JSON.stringify(data).length + (ndaCount(nda) ? Math.round(JSON.stringify(nda).length * 1.4) : 0);
 
@@ -63,8 +65,10 @@ export function pesoDoSite(doc: PortfolioV4, assets: Record<string, string>, run
     .filter((id) => assets[id])
     .map((id) => ({ id, bytes: assets[id]!.length, onde: onde.get(id)! }))
     .sort((a, b) => b.bytes - a.bytes);
+  // Publicando pelo editor, as imagens em grade ganham miniatura (core/miniaturas).
+  const miniaturas = opts.miniaturas ? pesoEstimadoDasMiniaturas(completarDimensoes(data, assets), (id) => assets[id]?.length ?? 0) : 0;
   const somaImagens = imagens.reduce((s, i) => s + i.bytes, 0);
-  return { total: runtimeBytes + dados + somaImagens, runtime: runtimeBytes, dados, imagens };
+  return { total: runtimeBytes + dados + somaImagens + miniaturas, runtime: runtimeBytes, dados, imagens };
 }
 
 /** "3,4 MB" / "820 KB". */

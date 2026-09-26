@@ -4,6 +4,7 @@ import { selarPacoteNda, type EncryptedNda } from './nda';
 import { ndaCount, publicSnapshot, type NdaBundle } from './publicSnapshot';
 import { repairDoc } from '../migrate/repair';
 import { completarDimensoes } from '../core/dimensoesImagem';
+import { miniaturasDoSite, type GerarMiniatura } from '../core/miniaturas';
 
 export interface PublishPayload {
   /** Documento público (sem NDA/rascunho). */
@@ -29,6 +30,7 @@ function dataUrlBytes(dataUrl: string): number {
 export async function buildPublishPayload(
   migrated: { data: PortfolioV4; assets: MigratedAsset[] },
   ndaPassword?: string,
+  opts: { miniatura?: GerarMiniatura } = {},
 ): Promise<PublishPayload> {
   const byId = new Map(migrated.assets.map((a) => [a.id, a.dataUrl]));
   // Toda imagem sai com largura e altura (o site reserva o espaço antes de a foto chegar).
@@ -42,6 +44,15 @@ export async function buildPublishPayload(
   for (const id of Object.keys(publicData.assets)) {
     const url = byId.get(id);
     if (url) {
+      assetMap[id] = url;
+      assetSizes[id] = dataUrlBytes(url);
+    }
+  }
+
+  // Miniaturas das imagens em grade (quem publica tem canvas: o editor). Sem
+  // gerador — publicação pela linha de comando —, a grade usa a foto inteira.
+  if (opts.miniatura) {
+    for (const [id, url] of Object.entries(await miniaturasDoSite(publicData, assetMap, opts.miniatura))) {
       assetMap[id] = url;
       assetSizes[id] = dataUrlBytes(url);
     }

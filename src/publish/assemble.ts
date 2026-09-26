@@ -12,7 +12,7 @@ const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;'
  */
 export function assembleSiteHtml(shell: string, payload: PublishPayload): string {
   // Home pré-renderizada: nunca uma página branca, mesmo sem JavaScript.
-  const home = prerenderHome(payload.publicData);
+  const home = prerenderHome(payload.publicData, new Set(Object.keys(payload.assetMap)));
   // Ordem do arquivo (o navegador roda cada <script> assim que o lê): dados →
   // imagens da Home, uma a uma → runtime (começa já, sem esperar o resto) →
   // as demais imagens, uma a uma → NDA cifrado (que pode ser grande).

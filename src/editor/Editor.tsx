@@ -20,7 +20,7 @@ import { arquivosAoLado, runPreflight } from '../publish/preflight';
 import { ndaCount, publicSnapshot } from '../publish/publicSnapshot';
 import { formatarPeso, LIMITE_GITHUB_BYTES, pesoDoSite, type PesoDoSite } from '../publish/peso';
 import type { MigratedAsset } from '../migrate/migrate';
-import { importImage } from '../assets/importImage';
+import { blobToDataUrl, importImage, miniaturaDeDataUrl } from '../assets/importImage';
 import { makeFavicon } from '../assets/favicon';
 import { assetIdFromContent } from '../core/ids';
 import { emptyI18n } from '../core/i18n';
@@ -74,15 +74,6 @@ export interface EditorProps {
   gravarAoAbrir?: boolean;
   /** Aviso exibido no topo (ex.: rascunho recuperado com ajustes). */
   notice?: string;
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(r.error);
-    r.readAsDataURL(blob);
-  });
 }
 
 /** Nome curto do que está selecionado, para o botão que abre o Inspector na tela estreita. */
@@ -254,7 +245,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [lang, setLang] = useState<Lang>('pt');
   const [leftTab, setLeftTab] = useState<'pages' | 'layers' | 'theme' | 'data'>('layers');
   // Peso estimado do index.html (runtime + dados + imagens que vão para o site).
-  const peso = useMemo(() => pesoDoSite(doc.state, assets, siteShell.length), [doc.state, assets]);
+  const peso = useMemo(() => pesoDoSite(doc.state, assets, siteShell.length, { miniaturas: true }), [doc.state, assets]);
   const semDescricao = useMemo(() => imagensSemDescricao(doc.state), [doc.state]);
   const semTraducao = useMemo(() => textosSemTraducao(doc.state), [doc.state]);
   // Largura do canvas: ver o site como no tablet/celular (usa o mesmo CSS responsivo do site).
@@ -1366,7 +1357,8 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
   const gerarSite = async (password?: string): Promise<void> => {
     const doc0 = doc.state;
     const migratedAssets: MigratedAsset[] = Object.entries(assets).map(([id, dataUrl]) => ({ id, dataUrl, mime: '' }));
-    const payload = await buildPublishPayload({ data: doc0, assets: migratedAssets }, password);
+    // Miniaturas das imagens em grade: geradas aqui, no navegador (o canvas faz o trabalho).
+    const payload = await buildPublishPayload({ data: doc0, assets: migratedAssets }, password, { miniatura: miniaturaDeDataUrl });
     // O que vai de fato para o site: com senha, o NDA vai junto (cifrado) e
     // também é conferido; sem senha, só o público.
     const vaiProSite = payload.ndaBlob ? doc0 : payload.publicData;

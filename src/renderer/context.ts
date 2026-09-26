@@ -4,7 +4,11 @@ import type { ImageRef, PortfolioV4 } from '../schema/v4';
 export type Lang = 'pt' | 'en';
 
 /** Resolve um ImageRef (assetId ou url) numa URL utilizável pelo <img>. */
-export type AssetResolver = (ref: ImageRef) => string;
+/**
+ * Endereço de uma imagem. `uso: 'miniatura'` = a imagem aparece em grade
+ * (card, galeria, quadro): vale a miniatura, se houver (ver core/miniaturas).
+ */
+export type AssetResolver = (ref: ImageRef, uso?: 'miniatura') => string;
 
 export interface RenderContextValue {
   data: PortfolioV4;

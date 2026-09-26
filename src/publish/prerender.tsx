@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { PortfolioV4 } from '../schema/v4';
 import { Site } from '../renderer/Site';
+import { miniId } from '../core/miniaturas';
 
 /**
  * HTML estático da Home para ir dentro do #root do site publicado: o site
@@ -14,9 +15,11 @@ import { Site } from '../renderer/Site';
  */
 const MARCA = 'prerender-asset:';
 
-export function prerenderHome(data: PortfolioV4): string {
+export function prerenderHome(data: PortfolioV4, noMapa: ReadonlySet<string> = new Set()): string {
+  // Em grade, marca a miniatura quando a publicação gerou uma (é ela que vem primeiro).
+  const marcar = (id: string, uso?: 'miniatura'): string => MARCA + (uso === 'miniatura' && noMapa.has(miniId(id)) ? miniId(id) : id);
   try {
-    const html = renderToStaticMarkup(<Site data={data} initialLang="pt" resolveAsset={(ref) => (ref.assetId ? MARCA + ref.assetId : ref.url ?? '')} />);
+    const html = renderToStaticMarkup(<Site data={data} initialLang="pt" resolveAsset={(ref, uso) => (ref.assetId ? marcar(ref.assetId, uso) : ref.url ?? '')} />);
     return html
       // O React põe um <link rel="preload" as="image"> para a imagem prioritária;
       // com o marcador, seria um pedido a um endereço que não existe.

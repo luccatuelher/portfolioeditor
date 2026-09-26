@@ -20,9 +20,10 @@ import { linkInterno } from './links';
 /** A pessoa pediu menos movimento no sistema: nada de rolagem suave nem animação. */
 const menosMovimento = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function Img({ image, className, eager, decorativa }: { image: ImageRef; className?: string; eager?: boolean; decorativa?: boolean }): React.ReactElement | null {
+function Img({ image, className, eager, decorativa, miniatura }: { image: ImageRef; className?: string; eager?: boolean; decorativa?: boolean; miniatura?: boolean }): React.ReactElement | null {
   const { resolveAsset, lang, data } = useRender();
-  const src = resolveAsset(image);
+  // Em grade (card, galeria, quadro): a miniatura, se a publicação gerou uma.
+  const src = resolveAsset(image, miniatura ? 'miniatura' : undefined);
   if (!src) return null;
   const meta = image.assetId ? data.assets[image.assetId] : undefined;
   const dims = meta && meta.w > 0 && meta.h > 0 ? { width: meta.w, height: meta.h } : {};
@@ -205,7 +206,7 @@ function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link 
     return (
       <a className="project-card" style={estilo} data-card={item.id} {...link}>
         <div className="card-thumb-wrap">
-          <Img image={item.thumb} className="card-thumb" decorativa />
+          <Img image={item.thumb} className="card-thumb" decorativa miniatura />
         </div>
         <div className="card-title">{pick(item.title, lang)}</div>
       </a>
@@ -220,7 +221,7 @@ function ProjectCard({ item, cols, onClick, selected, previewId, onEscape, link 
       {...itemDrag(editing, 'projects', item.id)}
     >
       <div className="card-thumb-wrap">
-        <Img image={item.thumb} className="card-thumb" decorativa />
+        <Img image={item.thumb} className="card-thumb" decorativa miniatura />
         <EditBadges visibility={item.visibility} featured={item.featured} />
         <EditActions target={{ target: 'item', coll: 'projects', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`projeto “${pick(item.title, lang)}”`} />
       </div>
@@ -469,7 +470,7 @@ function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.React
       <a className="blog-item" style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'card'))} {...linkInterno(`blog/${item.id}`, onNavigate)}>
         <span className="blog-date">{pick(item.date, lang)}</span>
         <div className="blog-thumb-wrap">
-          <Img image={item.thumb} className="blog-thumb" decorativa />
+          <Img image={item.thumb} className="blog-thumb" decorativa miniatura />
         </div>
         <div className="blog-title">{pick(item.title, lang)}</div>
         <p className="blog-excerpt">{pick(item.excerpt, lang)}</p>
@@ -481,7 +482,7 @@ function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.React
       <EditBadges visibility={item.visibility} />
       <span className="blog-date">{pick(item.date, lang)}</span>
       <div className="blog-thumb-wrap">
-        <Img image={item.thumb} className="blog-thumb" decorativa />
+        <Img image={item.thumb} className="blog-thumb" decorativa miniatura />
         <EditActions target={{ target: 'item', coll: 'blog', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`nota “${pick(item.title, lang)}”`} />
       </div>
       <TituloQueAbre className="blog-title" abre={!!onNavigate}>{pick(item.title, lang)}</TituloQueAbre>
@@ -497,7 +498,7 @@ function GalleryCard({ item, cols, onOpen }: { item: GalleryItem; cols: number; 
   return (
     <figure className={`art-item${useItemSel(item.id)}`} style={styleVars(spanVars({ desktop: span, tablet: item.widthTablet, mobile: item.widthMobile }, 'media'))} {...itemDrag(editing, 'gallery', item.id)}>
       <button type="button" className="art-img-btn" onClick={onOpen} aria-label={pick(item.caption, lang) || 'Abrir imagem'}>
-        <Img image={item.image} className="art-img" />
+        <Img image={item.image} className="art-img" miniatura />
         {editing && !item.image.assetId && !item.image.url ? <span className="pe-img-empty">Sem imagem</span> : null}
       </button>
       <EditBadges visibility={item.visibility} />
@@ -518,7 +519,7 @@ function SketchCard({ item, cols, onOpen }: { item: SketchItem; cols: number; on
       <EditActions target={{ target: 'item', coll: 'sketches', id: item.id }} acts={['image', 'crop', 'edit', 'delete']} nome="sketch" />
       <ItemResize coll="sketches" id={item.id} span={span} />
       <button type="button" className="sketch-img-btn" onClick={onOpen} aria-label={`${t('abrirImagem')}${desc ? `: ${desc}` : ''}`}>
-        <Img image={item.image} />
+        <Img image={item.image} miniatura />
       </button>
       <EditBadges visibility={item.visibility} />
     </div>
@@ -851,7 +852,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
             return (
               <Celula key={i} className="storyboard-cell" style={styleVars(spanVars({ desktop: f.span ?? 3, tablet: f.spanTablet, mobile: f.spanMobile }, 'media'))} {...(editing ? { draggable: true, 'data-frame-block': block.id, 'data-frame-idx': i } : {})}>
                 <button type="button" className="storyboard-frame-btn" onClick={() => onOpenLightbox?.(light, i)} aria-label={`${t('abrirQuadro')} ${i + 1}${pick(f.alt, lang) ? `: ${pick(f.alt, lang)}` : ''}`}>
-                  <Img image={f} className="storyboard-frame" />
+                  <Img image={f} className="storyboard-frame" miniatura />
                 </button>
                 {legenda ? <figcaption className="media-caption">{legenda}</figcaption> : null}
                 <EditActions target={{ target: 'frame', id: block.id, idx: i }} acts={['image', 'crop', 'edit', 'delete']} nome={`quadro ${i + 1} do storyboard`} />
