@@ -91,7 +91,8 @@ test('senha do NDA digitada antes de o pacote cifrado chegar: espera por ele e a
   try {
     await semRedeExterna(page);
     await page.goto(srv.url, { waitUntil: 'commit' });
-    await page.locator('.site-header nav .nav-nda').click();
+    // Antes do runtime, a Home pré-renderizada existe nos dois idiomas (uma escondida): o link visível.
+    await page.locator('.site-header nav .nav-nda:visible').click();
     await page.locator('.nda-unlock input').fill('segredo123');
     await page.locator('.nda-unlock button').click();
     expect(await page.evaluate(() => document.readyState)).toBe('loading');

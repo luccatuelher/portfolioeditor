@@ -631,10 +631,19 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
                 {page.slug && doc.state.pages.some((p) => p.id !== page.id && p.slug === page.slug) ? <div className="insp-note insp-warn">Outra página já usa este endereço — os links vão abrir a primeira.</div> : null}
               </Row>
             ) : null}
-            <label className="insp-check">
-              <input type="checkbox" checked={doc.state.site.nav.includes(page.id)} onChange={() => doc.toggleNav(page.id)} />
-              Mostrar no menu
-            </label>
+            {page.visibility === 'nda' ? (
+              // A área NDA entra no menu pelo próprio cadeado (não pela lista do menu).
+              <label className="insp-check">
+                <input type="checkbox" checked={doc.state.site.ndaNoMenu !== false} onChange={(e) => doc.updateSite((s) => void (s.ndaNoMenu = e.target.checked ? undefined : false))} />
+                Mostrar no menu (com o cadeado)
+              </label>
+            ) : (
+              <label className="insp-check">
+                <input type="checkbox" checked={doc.state.site.nav.includes(page.id)} onChange={() => doc.toggleNav(page.id)} />
+                Mostrar no menu
+              </label>
+            )}
+            {page.visibility === 'nda' && doc.state.site.ndaNoMenu === false ? <div className="insp-note">Fora do menu, a área NDA continua no ar: quem tem o endereço (e a senha) entra.</div> : null}
             <Group id="seo" title="SEO e compartilhamento" defaultOpen={false}>
               <Row label="Descrição (Google e redes sociais)">
                 <I18nInput campo="seo.description" multiline value={page.seo?.description ?? emptyI18n()} onChange={(v) => doc.updatePage(page.id, (p) => void ((p.seo ??= {}).description = v), `${page.id}:seodesc`)} />

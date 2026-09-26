@@ -16,7 +16,7 @@ const NOME_DO_ELEMENTO: Record<HeaderElement, string> = { brand: 'nome e funçã
 function menuPages(data: PortfolioV4): { nav: Page[]; nda: Page[] } {
   return {
     nav: data.site.nav.map((id) => data.pages.find((p) => p.id === id || p.slug === id)).filter((p): p is Page => !!p && p.visibility !== 'nda'),
-    nda: data.pages.filter((p) => p.kind === 'static' && p.visibility === 'nda'),
+    nda: data.site.ndaNoMenu === false ? [] : data.pages.filter((p) => p.kind === 'static' && p.visibility === 'nda'),
   };
 }
 

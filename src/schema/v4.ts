@@ -396,6 +396,12 @@ export const SiteSchema = z.strictObject({
   role: I18nSchema,
   locales: z.tuple([z.literal('pt'), z.literal('en')]),
   nav: z.array(z.string()),
+  /**
+   * Link da área NDA (com cadeado) no menu. Sem o campo, aparece — como sempre
+   * foi. false: some do menu público; a página segue acessível pelo endereço
+   * (o link que se manda ao cliente, junto com a senha).
+   */
+  ndaNoMenu: z.boolean().optional(),
   /** Dicionário i18n de strings de UI/chrome (label da barra, "Voltar", etc.). */
   ui: z.record(z.string(), I18nSchema),
   /** Overrides rich de texto por id de DOM (portado de meta.elementText do v3). */
