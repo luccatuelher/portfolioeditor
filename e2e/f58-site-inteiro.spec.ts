@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { auditarAcessibilidade } from './helpers/axe';
 import { execFileSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
@@ -46,7 +47,6 @@ for (const fixture of ['template-v3.json', 'legacy-synthetic-v3.json']) {
         ];
       });
       expect(rotas.length).toBeGreaterThan(3);
-      await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
 
       for (const rota of rotas) {
         await page.evaluate((r) => { location.hash = r ? `#${r}` : '#'; }, rota);
@@ -125,13 +125,7 @@ for (const fixture of ['template-v3.json', 'legacy-synthetic-v3.json']) {
           return out;
         });
         expect(ilegiveis, `texto ilegível em ${onde}`).toEqual([]);
-        // Auditoria de acessibilidade (axe-core): WCAG 2.1 A/AA e boas práticas.
-        const violacoes = await page.evaluate(async () => {
-          const axe = (window as unknown as { axe: { run: (c: Document, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
-          const r = await axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] });
-          return r.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' · ')}`);
-        });
-        expect(violacoes, `acessibilidade em ${onde}`).toEqual([]);
+        await auditarAcessibilidade(page, onde);
       }
       expect(erros).toEqual([]);
     });
@@ -162,7 +156,6 @@ for (const lang of ['pt', 'en'] as const) {
     page.on('pageerror', (e) => erros.push(String(e)));
     await page.addInitScript((l) => { if (window.top === window) localStorage.setItem('portfolio-lang', l); }, lang);
     await page.goto(publicar('template-v3.json'), { waitUntil: 'load' });
-    await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
     const titulos = { 'project/nao-existe': ['Este projeto não está aqui', 'This project isn’t here'], 'blog/nao-existe': ['Esta nota não está aqui', 'This note isn’t here'], 'pagina-que-sumiu': ['Esta página não está aqui', 'This page isn’t here'] } as const;
     for (const [rota, [pt, en]] of Object.entries(titulos)) {
       await page.evaluate((r) => { location.hash = r; }, rota);
@@ -171,8 +164,7 @@ for (const lang of ['pt', 'en'] as const) {
       await expect(page.locator('h1')).toHaveCount(1);
       await expect(page.locator('h1')).toHaveText(lang === 'en' ? en : pt);
       expect(await page.title()).toContain(lang === 'en' ? en : pt);
-      const v = await page.evaluate(async () => (await (window as unknown as { axe: { run: (d: Document, o: object) => Promise<{ violations: { id: string }[] }> } }).axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] })).violations.map((x) => x.id));
-      expect(v, rota).toEqual([]);
+      await auditarAcessibilidade(page, `endereço quebrado ${rota}`);
     }
     // Saída: o link para o início leva à Home de verdade.
     await page.locator('.nao-encontrado-saidas a').last().click();

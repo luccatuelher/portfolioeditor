@@ -1145,7 +1145,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       <div className="sr-only" aria-live="polite">{selection ? `Selecionado: ${descreverSelecao(doc.state, selection)}` : ''}</div>
       {publishNotice ? <AvisoPublicado p={publishNotice} onClose={() => setPublishNotice(null)} /> : null}
       {/* Só em tela estreita (CSS): abre os painéis, que viram gavetas por cima do canvas. */}
-      <div className="editor-gavetas" role="group" aria-label="Painéis">
+      <div className="editor-gavetas" role="region" aria-label="Abrir painéis">
         <button type="button" className={gaveta === 'esquerda' ? 'on' : ''} aria-expanded={gaveta === 'esquerda'} onClick={() => setGaveta((g) => (g === 'esquerda' ? null : 'esquerda'))}>
           ☰ Páginas e painéis
         </button>

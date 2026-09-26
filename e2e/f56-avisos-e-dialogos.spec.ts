@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { auditarAcessibilidade } from './helpers/axe';
 
 // Avisos e perguntas no visual do editor: nenhum alert/confirm/prompt do navegador.
 test.beforeEach(async ({ page }) => {
@@ -14,6 +15,7 @@ test('diálogo sobre diálogo: o Esc fecha só o de cima', async ({ page }) => {
   await page.locator('.versions-list li', { hasText: 'ponto' }).locator('.tb-btn').click();
   const pergunta = page.locator('.dialogo-confirmar');
   await expect(pergunta).toContainText('Restaurar “ponto”?');
+  await auditarAcessibilidade(page, 'confirmação sobre as Versões');
   await page.keyboard.press('Escape');
   await expect(pergunta).toHaveCount(0);
   await expect(page.locator('.versions-modal')).toBeVisible(); // o de baixo continua
@@ -32,6 +34,7 @@ test('link no texto: escolhe a página na lista e grava pelo id', async ({ page 
   await page.locator('.pe-toolbar button[title="Link no texto selecionado"]').dispatchEvent('mousedown');
   const dialogo = page.locator('.dialogo-link');
   await expect(dialogo).toBeVisible();
+  await auditarAcessibilidade(page, 'escolha de link, com a barra de formatação aberta');
   const lista = dialogo.locator('select[aria-label="Leva para"]');
   const valor = await lista.locator('option', { hasText: 'Sobre' }).first().getAttribute('value');
   expect(valor).toMatch(/^#/);

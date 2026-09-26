@@ -25,6 +25,11 @@
 .tb-btn { font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 14px; border-radius: 6px; border: 1px solid #3a3833; background: none; color: #faf9f7; cursor: pointer; }
 .tb-btn.primary { background: var(--accent); border-color: var(--accent); }
 .tb-btn:disabled { opacity: 0.45; cursor: default; }
+/* Nas janelas (fundo claro): o .tb-btn nasceu para a barra escura do topo —
+   texto quase branco — e o secundário (Cancelar, Restaurar, Sugerir…) ficava
+   invisível, a 1,06:1. Aqui ele é escuro sobre branco. */
+.modal .tb-btn:not(.primary) { color: #33312c; background: #fff; border-color: #b9b4aa; }
+.modal .tb-btn:not(.primary):hover:not(:disabled) { border-color: var(--accent); color: color-mix(in srgb, var(--accent) 72%, #000); }
 
 /* main grid */
 .editor-main { flex: 1; display: grid; grid-template-columns: 260px 1fr 340px; min-height: 0; }

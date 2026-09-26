@@ -1,4 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
+import { auditarAcessibilidade } from './helpers/axe';
 
 /**
  * Guarda ampla do editor: abre TODA página, todo projeto e toda nota, seleciona
@@ -9,18 +10,8 @@ import { test, expect, type Page } from '@playwright/test';
  */
 const ABAS = ['Conteúdo', 'Layout', 'Estilo', 'Visibilidade'];
 
-/**
- * Auditoria de acessibilidade (axe-core, WCAG 2.1 A/AA + boas práticas) da tela
- * como está — todas as regras, inclusive a de botão dentro de botão.
- */
-async function auditar(page: Page, onde: string): Promise<void> {
-  const v = await page.evaluate(async () => {
-    const axe = (window as unknown as { axe: { run: (c: Document, o: object) => Promise<{ violations: { id: string; nodes: { target: string[] }[] }[] }> } }).axe;
-    const r = await axe.run(document, { runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice'] });
-    return r.violations.map((x) => `${x.id}: ${x.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' · ')}`);
-  });
-  expect(v, `acessibilidade do editor em ${onde}`).toEqual([]);
-}
+/** Auditoria de acessibilidade (helpers/axe) da tela do editor como está. */
+const auditar = (page: Page, onde: string): Promise<void> => auditarAcessibilidade(page, `editor · ${onde}`);
 
 /** Tipos de bloco que já passaram pelas quatro abas (uma vez por tipo basta). */
 const tiposVistos = new Set<string>();
@@ -53,7 +44,6 @@ test('toda página, projeto e nota abre, e todo elemento aceita seleção e as a
   page.on('pageerror', (e) => erros.push(String(e)));
   await page.route(/youtube|youtu\.be|vimeo|speakerdeck|ytimg|fonts\.googleapis|fonts\.gstatic/, (r) => r.abort());
   await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
-  await page.addScriptTag({ path: 'node_modules/axe-core/axe.min.js' });
   for (const aba of ['Tema', 'Dados']) {
     await page.locator('.left-tabs button', { hasText: aba }).click();
     await auditar(page, `aba ${aba}`);
@@ -87,6 +77,9 @@ test('toda página, projeto e nota abre, e todo elemento aceita seleção e as a
       await percorrerBlocos(page, `${tabela ? 'nota' : 'projeto'} ${nome}`);
     }
   }
+  // Tela estreita (celular): painéis viram gavetas, com os botões que as abrem.
+  await page.setViewportSize({ width: 390, height: 800 });
+  await auditar(page, 'tela estreita');
   expect(erros).toEqual([]);
   // Alcance: o teste passou por muitos elementos e por todos os tipos do exemplo.
   expect(elementosVisitados).toBeGreaterThan(20);

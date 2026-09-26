@@ -108,43 +108,46 @@ export function FloatingToolbar({ fonts, colors }: { fonts: Theme['fonts']; colo
   ];
 
   return (
-    <div className="pe-toolbar" ref={bar} style={{ top: pos.top, left: pos.left }} onMouseDown={(e) => { if (!(e.target as HTMLElement).closest('select, input')) e.preventDefault(); }}>
-      <select title="Estilo do parágrafo" defaultValue="" onChange={(e) => { if (e.target.value) exec('formatBlock', e.target.value); e.target.value = ''; }}>
-        <option value="" disabled>Estilo</option>
-        <option value="p">Parágrafo</option>
-        <option value="h2">Título grande</option>
-        <option value="h3">Título médio</option>
-        <option value="h4">Título pequeno</option>
-        <option value="blockquote">Citação</option>
-      </select>
-      <select title="Fonte" defaultValue="" onChange={(e) => { if (e.target.value) exec('fontName', e.target.value); e.target.value = ''; }}>
-        {fontOpts.map((f) => <option key={f.label} value={f.value} disabled={!f.value}>{f.label}</option>)}
-      </select>
-      <select title="Tamanho" defaultValue="" onChange={(e) => { if (e.target.value) setSize(Number(e.target.value)); e.target.value = ''; }}>
-        <option value="" disabled>Tam.</option>
-        {SIZES.map((s) => <option key={s} value={s}>{s}px</option>)}
-      </select>
-      <span className="pe-tb-sep" />
-      <button type="button" onMouseDown={btn('bold')} title="Negrito"><b>B</b></button>
-      <button type="button" onMouseDown={btn('italic')} title="Itálico"><i>I</i></button>
-      <button type="button" onMouseDown={btn('underline')} title="Sublinhado"><u>U</u></button>
-      <span className="pe-tb-colors" title="Cor do texto">
-        {Object.entries(colors).map(([k, c]) => (
-          <button key={k} type="button" className="pe-swatch" style={{ background: c }} title={k} onMouseDown={btn('foreColor', c)} />
-        ))}
-        <label className="pe-swatch pe-swatch-custom" title="Outra cor">
-          <input type="color" onChange={(e) => exec('foreColor', e.target.value)} />
-        </label>
-      </span>
-      <span className="pe-tb-sep" />
-      <button type="button" onMouseDown={btn('justifyLeft')} title="Alinhar à esquerda">⯇</button>
-      <button type="button" onMouseDown={btn('justifyCenter')} title="Centralizar">≡</button>
-      <button type="button" onMouseDown={btn('justifyRight')} title="Alinhar à direita">⯈</button>
-      <button type="button" onMouseDown={btn('justifyFull')} title="Justificar">☰</button>
-      <span className="pe-tb-sep" />
-      <button type="button" onMouseDown={btn('insertUnorderedList')} title="Lista">•</button>
-      <button type="button" onMouseDown={link} title="Link no texto selecionado">🔗</button>
-      <button type="button" onMouseDown={btn('removeFormat')} title="Limpar formatação">⌫</button>
+    // Região nomeada: a barra flutua fora dos painéis, e o leitor de tela precisa achá-la.
+    <div role="region" aria-label="Formatação do texto">
+      <div className="pe-toolbar" role="toolbar" aria-label="Formatação" ref={bar} style={{ top: pos.top, left: pos.left }} onMouseDown={(e) => { if (!(e.target as HTMLElement).closest('select, input')) e.preventDefault(); }}>
+        <select title="Estilo do parágrafo" aria-label="Estilo do parágrafo" defaultValue="" onChange={(e) => { if (e.target.value) exec('formatBlock', e.target.value); e.target.value = ''; }}>
+          <option value="" disabled>Estilo</option>
+          <option value="p">Parágrafo</option>
+          <option value="h2">Título grande</option>
+          <option value="h3">Título médio</option>
+          <option value="h4">Título pequeno</option>
+          <option value="blockquote">Citação</option>
+        </select>
+        <select title="Fonte" aria-label="Fonte" defaultValue="" onChange={(e) => { if (e.target.value) exec('fontName', e.target.value); e.target.value = ''; }}>
+          {fontOpts.map((f) => <option key={f.label} value={f.value} disabled={!f.value}>{f.label}</option>)}
+        </select>
+        <select title="Tamanho" aria-label="Tamanho" defaultValue="" onChange={(e) => { if (e.target.value) setSize(Number(e.target.value)); e.target.value = ''; }}>
+          <option value="" disabled>Tam.</option>
+          {SIZES.map((s) => <option key={s} value={s}>{s}px</option>)}
+        </select>
+        <span className="pe-tb-sep" />
+        <button type="button" onMouseDown={btn('bold')} title="Negrito"><b>B</b></button>
+        <button type="button" onMouseDown={btn('italic')} title="Itálico"><i>I</i></button>
+        <button type="button" onMouseDown={btn('underline')} title="Sublinhado"><u>U</u></button>
+        <span className="pe-tb-colors" title="Cor do texto">
+          {Object.entries(colors).map(([k, c]) => (
+            <button key={k} type="button" className="pe-swatch" style={{ background: c }} title={k} onMouseDown={btn('foreColor', c)} />
+          ))}
+          <label className="pe-swatch pe-swatch-custom" title="Outra cor">
+            <input type="color" aria-label="Outra cor" onChange={(e) => exec('foreColor', e.target.value)} />
+          </label>
+        </span>
+        <span className="pe-tb-sep" />
+        <button type="button" onMouseDown={btn('justifyLeft')} title="Alinhar à esquerda">⯇</button>
+        <button type="button" onMouseDown={btn('justifyCenter')} title="Centralizar">≡</button>
+        <button type="button" onMouseDown={btn('justifyRight')} title="Alinhar à direita">⯈</button>
+        <button type="button" onMouseDown={btn('justifyFull')} title="Justificar">☰</button>
+        <span className="pe-tb-sep" />
+        <button type="button" onMouseDown={btn('insertUnorderedList')} title="Lista">•</button>
+        <button type="button" onMouseDown={link} title="Link no texto selecionado">🔗</button>
+        <button type="button" onMouseDown={btn('removeFormat')} title="Limpar formatação">⌫</button>
+      </div>
     </div>
   );
 }

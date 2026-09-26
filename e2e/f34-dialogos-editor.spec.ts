@@ -1,4 +1,5 @@
 import { test, expect, type Locator, type Page } from '@playwright/test';
+import { auditarAcessibilidade } from './helpers/axe';
 
 // Diálogos do editor (Versões, senha NDA, recorte): modais de verdade para o
 // leitor de tela, o Tab não escapa para o editor atrás, o Esc fecha e o foco
@@ -20,6 +21,8 @@ async function modalDeVerdade(dialogo: Locator): Promise<void> {
   await expect(dialogo.locator(`[id="${titulo}"]`)).toBeVisible();
   // Abriu: o foco já está dentro.
   await expect.poll(() => dialogo.evaluate((d) => d.contains(document.activeElement))).toBe(true);
+  // E passa na auditoria de acessibilidade (os botões secundários eram invisíveis: 1,06:1).
+  await auditarAcessibilidade(dialogo.page(), `diálogo ${await dialogo.getAttribute('class')}`);
 }
 
 test.describe('Diálogos do editor', () => {
