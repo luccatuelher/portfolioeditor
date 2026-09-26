@@ -25,8 +25,11 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
     '--font-display': `'${theme.fonts.display}', Georgia, serif`,
     '--font-body': `'${theme.fonts.body}', Helvetica, sans-serif`,
     '--font-mono': `'${theme.fonts.mono}', 'Courier New', monospace`,
-    '--type-base': `${theme.type.base}px`,
-    '--type-ratio': String(theme.type.ratio),
+    // Tema › Tamanho do texto: todo texto do site acompanha (16 px = como veio).
+    '--escala-texto': String(theme.type.base / 16),
+    // Tema › Contraste entre tamanhos: os títulos crescem (ou encolhem) em
+    // relação ao texto — 1,25 (terça maior) é o desenho original.
+    '--escala-titulos': String(Math.round((theme.type.ratio / 1.25) ** 2 * 1000) / 1000),
     '--space-unit': `${theme.space.unit}px`,
     '--radius': `${theme.radius}px`,
     '--grid-cols': String(theme.grid.cols),

@@ -16,6 +16,29 @@ test.describe('Painel Tema', () => {
     await expect(page.locator('.editor-canvas .header-name')).toHaveText('Lucca Tuelher — Storyboard');
   });
 
+  test('escala tipográfica faz efeito: "Tamanho do texto" escala tudo; "Contraste entre tamanhos", só os títulos', async ({ page }) => {
+    const px = (sel: string) => page.locator(`.editor-canvas ${sel}`).first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
+    const antes = { titulo: await px('.header-name'), nav: await px('.nav-link') };
+
+    await page.getByLabel('Tamanho do texto').selectOption('20'); // 16 → 20: tudo × 1,25
+    await expect.poll(() => px('.nav-link')).toBeCloseTo(antes.nav * 1.25, 0);
+    await expect.poll(() => px('.header-name')).toBeCloseTo(antes.titulo * 1.25, 0);
+
+    await page.getByLabel('Contraste entre tamanhos').selectOption('1.5'); // 1,25 → 1,5: títulos × 1,44
+    await expect.poll(() => px('.header-name')).toBeCloseTo(antes.titulo * 1.25 * 1.44, 0);
+    expect(await px('.nav-link')).toBeCloseTo(antes.nav * 1.25, 0); // texto comum não muda
+  });
+
+  test('"Destaque 2" é a cor do anel de foco no site', async ({ page }) => {
+    const cor = page.locator('input[type=color][data-token="accent2"]');
+    await cor.fill('#00aa55');
+    const link = page.locator('.editor-canvas .nav-link').first();
+    await link.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    await expect.poll(() => page.evaluate(() => getComputedStyle(document.activeElement!).outlineColor)).toBe('rgb(0, 170, 85)');
+  });
+
   test('fontes: lista de opções, com "Outra" para digitar qualquer nome', async ({ page }) => {
     const titulos = page.getByLabel('Títulos (display)');
     await expect(titulos).toHaveJSProperty('tagName', 'SELECT');

@@ -28,11 +28,11 @@
 
 .pv-mobile .detail-pager { grid-template-columns: 1fr 1fr; grid-template-areas: "prev next" "all all"; margin-top: 3rem; }
 .pv-mobile .pager-all { justify-self: center; min-height: 44px; display: inline-flex; align-items: center; }
-.pv-mobile .pager-title { font-size: 1.1rem; }
+.pv-mobile .pager-title { font-size: calc(1.1rem * var(--escala-texto, 1)); }
 /* de src/renderer/styles.css: @media (max-width: 700px) */
 
 .pv-mobile .sticky-nav { gap: 8px; padding: 6px 10px; }
-.pv-mobile .sticky-nav .nav-link { padding: 9px 8px; font-size: 0.66rem; }
+.pv-mobile .sticky-nav .nav-link { padding: 9px 8px; font-size: calc(0.66rem * var(--escala-texto, 1)); }
 /* de src/renderer/styles.css: @media (max-width: 600px) */
 
 .pv-mobile .sticky-nav { flex-wrap: nowrap; justify-content: space-between; gap: 4px; padding: 4px 8px; }
@@ -91,7 +91,7 @@
 .pv-mobile .nda-unlock-row { width: 100%; }
 .pv-mobile .nda-unlock input { min-width: 0; flex: 1; }
 .pv-mobile .lightbox { padding: 2vh 7.8px; }
-.pv-mobile .lightbox-nav { width: 44px; height: 44px; font-size: 1.5rem; background: rgba(24, 23, 21, 0.45); }
+.pv-mobile .lightbox-nav { width: 44px; height: 44px; font-size: calc(1.5rem * var(--escala-texto, 1)); background: rgba(24, 23, 21, 0.45); }
 .pv-mobile .nav-link, .pv-mobile .flag-btn, .pv-mobile .filter-btn, .pv-mobile .social-link, .pv-mobile .contact-phone, .pv-mobile .contact-email, .pv-mobile .home-preview-go {
     display: inline-flex; align-items: center; justify-content: center; min-height: 44px;
   }
@@ -109,7 +109,7 @@
 .pv-mobile .contact-email { font-size: 15px; align-self: flex-start; }
 .pv-mobile .empty-collection, .pv-mobile .empty-section { font-size: 13px; }
 .pv-mobile .lightbox-count { font-size: 13px; }
-.pv-mobile .card-title { font-size: 1.05rem; }
+.pv-mobile .card-title { font-size: calc(1.05rem * var(--escala-texto, 1)); }
 .pv-mobile .contact-main { display: flex; flex-direction: column; align-items: flex-start; }
 .pv-mobile .social-row { gap: 14px; flex-wrap: wrap; }
 .pv-mobile .nda-unlock input { font-size: 16px; min-height: 44px; width: 100%; }
