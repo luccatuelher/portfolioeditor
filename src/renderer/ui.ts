@@ -49,6 +49,7 @@ export const UI_PADRAO = {
   notaNaoEncontrada: bi('Esta nota não está aqui', 'This note isn’t here'),
   enderecoMudou: bi('O endereço pode ter mudado, ou o conteúdo saiu do site.', 'The address may have changed, or the content was taken down.'),
   irParaInicio: bi('Ir para o início', 'Go to the home page'),
+  midiaIndisponivel: bi('Mídia indisponível.', 'Media unavailable.'),
   secaoComDefeito: bi('Uma seção desta página não pôde ser exibida. O resto continua aqui.', 'A section of this page could not be shown. The rest is still here.'),
 } satisfies Record<string, I18n>;
 

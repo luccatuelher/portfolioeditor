@@ -58,11 +58,15 @@ export function cropImgStyle(c: { x: number; y: number; w: number; h: number }):
   return { width: `${100 / c.w}%`, height: `${100 / c.h}%`, left: `${(-c.x / c.w) * 100}%`, top: `${(-c.y / c.h) * 100}%` };
 }
 
-function EmbedFrame({ provider, refValue, options }: { provider: string; refValue: string; options?: Record<string, string> }): React.ReactElement {
+function EmbedFrame({ provider, refValue, options, nome }: { provider: string; refValue: string; options?: Record<string, string>; nome?: string }): React.ReactElement {
   const { editing, posterEmbeds } = useRender();
+  const t = useUi();
   const src = embedSource({ type: provider, id: refValue, ...(options ?? {}) });
-  // No editor, a mensagem diz o que fazer; no site, o visitante não precisa saber.
-  if (!src) return <p className="media-message">{editing ? motivoDoEmbedVazio({ type: provider, id: refValue }) : 'Mídia indisponível.'}</p>;
+  // O nome do vídeo (Inspector) é o título dele — leitor de tela, capa no editor,
+  // aba do carrossel na prévia do projeto. Sem nome, o provedor.
+  const titulo = nome || (provider === 'speakerdeck' ? 'Speaker Deck' : provider === 'vimeo' ? 'Vimeo' : 'YouTube');
+  // No editor, a mensagem diz o que fazer; no site, o visitante não precisa saber (no idioma dele).
+  if (!src) return <p className="media-message">{editing ? motivoDoEmbedVazio({ type: provider, id: refValue }) : t('midiaIndisponivel')}</p>;
   if (posterEmbeds) {
     // No editor: capa estática em vez do player (arrastável, sem o erro 153 do YouTube em file://).
     const yt = src.match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]{11})/)?.[1];
@@ -70,7 +74,7 @@ function EmbedFrame({ provider, refValue, options }: { provider: string; refValu
       <div className="embed-area embed-poster">
         {yt ? <img src={`https://i.ytimg.com/vi/${yt}/hqdefault.jpg`} alt="" loading="lazy" draggable={false} /> : null}
         <span className="embed-poster-play" aria-hidden="true">▶</span>
-        <span className="embed-poster-label">{provider === 'speakerdeck' ? 'Speaker Deck' : provider === 'vimeo' ? 'Vimeo' : 'YouTube'}</span>
+        <span className="embed-poster-label">{titulo}</span>
       </div>
     );
   }
@@ -78,7 +82,7 @@ function EmbedFrame({ provider, refValue, options }: { provider: string; refValu
     <div className="embed-area">
       <iframe
         loading="lazy"
-        title={provider}
+        title={titulo}
         src={src}
         allowFullScreen
         allow="fullscreen; picture-in-picture"
@@ -839,7 +843,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
       );
     }
     case 'embed':
-      return wrap(<EmbedFrame provider={block.content.provider} refValue={block.content.ref} options={block.content.options} />);
+      return wrap(<EmbedFrame provider={block.content.provider} refValue={block.content.ref} options={block.content.options} nome={pick(block.content.label, lang)} />);
     case 'storyboard': {
       const frames = block.content.frames;
       const light = frames.map((f) => ({ src: resolveAsset(f), alt: pick(f.alt, lang), crop: f.crop, caption: pick(f.caption, lang) }));

@@ -40,6 +40,8 @@
 
 .panel { padding: 6px 0 20px; }
 .panel-h { font-family: var(--font-mono); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ed-texto-2); padding: 12px 14px 6px; }
+/* Título de painel que rotula um campo (endereço do site, analytics): mesmo visual. */
+label.panel-h { display: block; }
 .tree-row { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 14px; background: none; border: none; text-align: left; font-size: 0.8rem; color: #33312c; cursor: pointer; font-family: var(--font-body); }
 .tree-row:hover { background: #eae6dd; }
 /* Selecionado: o fundo rosado e a cor da marca dizem "é este"; o texto, um tom

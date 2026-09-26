@@ -812,14 +812,14 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
               }
             />
           </Row>
-          <Row label="Nome (aba do carrossel)">
+          <Row label="Nome do vídeo">
             <I18nInput
               campo="content.label"
               value={block.content.label ?? emptyI18n()}
               onChange={(v) => upd(refBlock, (b) => void (b.type === 'embed' && (b.content.label = v.pt.trim() || v.en.trim() ? v : undefined)), gk('elabel'))}
             />
           </Row>
-          <div className="insp-note">Na prévia do projeto, os vídeos e apresentações viram um carrossel — este nome é o rótulo da aba. Sem nome, aparece o provedor.</div>
+          <div className="insp-note">É o título do vídeo: o que o leitor de tela anuncia e, na prévia do projeto, o rótulo da aba do carrossel. Sem nome, aparece o provedor.</div>
         </>
       );
     case 'collection':

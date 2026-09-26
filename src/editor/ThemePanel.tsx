@@ -195,6 +195,7 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
   useFontPreviews();
   // Aberto de saída só se já houver algo preenchido (constante: não fecha enquanto se apaga o campo).
   const [avancadoAberto] = useState(() => !!(doc.state.site.url || doc.state.site.analytics));
+  const idAvancado = useId();
 
   return (
     <div className="panel">
@@ -321,8 +322,9 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
       {/* Opcionais: o site funciona sem nada disso. Ficam recolhidos para não pesar no painel. */}
       <details className="theme-advanced" open={avancadoAberto}>
       <summary>Avançado (opcional)</summary>
-      <div className="panel-h">Endereço do site</div>
+      <label className="panel-h" htmlFor={`${idAvancado}-url`}>Endereço do site</label>
       <input
+        id={`${idAvancado}-url`}
         className="insp-input site-url-input"
         type="url"
         spellCheck={false}
@@ -332,8 +334,9 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
       />
       <p className="panel-hint">Não é obrigatório. Serve para a imagem de prévia aparecer quando alguém compartilha o link (WhatsApp, LinkedIn). No GitHub Pages, é o endereço que ele te dá, tipo https://seu-usuario.github.io/portfolio.</p>
 
-      <div className="panel-h">Analytics</div>
+      <label className="panel-h" htmlFor={`${idAvancado}-analytics`}>Analytics</label>
       <textarea
+        id={`${idAvancado}-analytics`}
         className="insp-input analytics-input"
         rows={4}
         spellCheck={false}

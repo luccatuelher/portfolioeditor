@@ -142,6 +142,8 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
       <article className="detail" data-page-id={page.id}>
         <header className="detail-header">
           {tag ? <div className="detail-tag">{tag}</div> : null}
+          {/* Nota: a data (antes só aparecia no card da lista; quem lia a nota não sabia de quando era). */}
+          {'date' in item && pick(item.date, lang) ? <p className="detail-tag detail-data">{pick(item.date, lang)}</p> : null}
           <h1 className="detail-title">{pick(item.title, lang)}</h1>
           {'description' in item ? <p className="detail-desc">{pick(item.description, lang)}</p> : null}
           {metaRows.length ? (
