@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 /** Bandeiras em SVG (o Windows não renderiza emoji de bandeira). */
 export function FlagBR(): React.ReactElement {
   return (
@@ -11,11 +13,14 @@ export function FlagBR(): React.ReactElement {
 }
 
 export function FlagUS(): React.ReactElement {
+  // Um id por bandeira: ela aparece mais de uma vez na página (cabeçalho e menu
+  // fixo), e um id fixo se repetia — o recorte de uma apontava para a outra.
+  const clip = `flag-us-${useId().replace(/[^a-zA-Z0-9]/g, '')}`;
   const stripes = [0, 2, 4, 6, 8, 10, 12].map((i) => <rect key={i} y={(i * 14) / 13} width="20" height={14 / 13} fill="#B22234" />);
   return (
     <svg className="flag" viewBox="0 0 20 14" width="18" height="13" aria-hidden="true">
-      <clipPath id="flag-us-clip"><rect width="20" height="14" rx="1.5" /></clipPath>
-      <g clipPath="url(#flag-us-clip)">
+      <clipPath id={clip}><rect width="20" height="14" rx="1.5" /></clipPath>
+      <g clipPath={`url(#${clip})`}>
         <rect width="20" height="14" fill="#fff" />
         {stripes}
         <rect width="8.6" height={(14 / 13) * 7} fill="#3C3B6E" />

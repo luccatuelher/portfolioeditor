@@ -1,5 +1,5 @@
 import type { PublishPayload } from './buildPayload';
-import { prerenderHome } from './prerender';
+import { ESCOLHER_IDIOMA, prerenderHome, sufixarIds } from './prerender';
 import { themeFontUrls } from '../renderer/fonts';
 
 const jsonSafe = (o: unknown): string => JSON.stringify(o).replace(/</g, '\\u003c');
@@ -12,7 +12,11 @@ const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;'
  */
 export function assembleSiteHtml(shell: string, payload: PublishPayload): string {
   // Home pré-renderizada: nunca uma página branca, mesmo sem JavaScript.
-  const home = prerenderHome(payload.publicData, new Set(Object.keys(payload.assetMap)));
+  const noMapa = new Set(Object.keys(payload.assetMap));
+  const homePt = prerenderHome(payload.publicData, noMapa, 'pt');
+  const homeEn = prerenderHome(payload.publicData, noMapa, 'en');
+  // Os dois idiomas; ESCOLHER_IDIOMA (no <head>) mostra um só, antes da pintura.
+  const home = homePt && homeEn ? `<div data-prerender="pt">${homePt}</div><div data-prerender="en">${sufixarIds(homeEn, '-en')}</div>` : homePt;
   // Ordem do arquivo (o navegador roda cada <script> assim que o lê): dados →
   // imagens da Home, uma a uma → runtime (começa já, sem esperar o resto) →
   // as demais imagens, uma a uma → NDA cifrado (que pode ser grande).
@@ -88,7 +92,7 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
 
   // Substituições SEMPRE por função: com string, "$&", "$'" etc. dentro dos dados
   // do usuário seriam interpretados pelo replace e corromperiam o JS do site.
-  let html = shell.replace('<!--PORTFOLIO_META-->', () => meta).replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(name)}</title>`);
+  let html = shell.replace('<!--PORTFOLIO_META-->', () => (home ? ESCOLHER_IDIOMA : '') + meta).replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(name)}</title>`);
   html = html.includes('<!--PORTFOLIO_DATA-->') ? html.replace('<!--PORTFOLIO_DATA-->', () => dataScript) : html.replace(/<script/, () => `${dataScript}<script`);
   if (home) html = html.replace('<div id="root"></div>', () => `<div id="root">${home}</div>`);
   return runtimeNoLugar(html);

@@ -12,7 +12,29 @@ describe('assembleSiteHtml', () => {
     const payload = await buildPublishPayload(migrate(loadFixture('template-v3.json')));
     const html = assembleSiteHtml(shell, payload);
     expect(html).not.toContain('<div id="root"></div>');
-    expect(html).toMatch(/<div id="root"><div class="site"/);
+    expect(html).toMatch(/<div id="root"><div data-prerender="pt"><div class="site"/);
+  });
+
+  it('Home pré-renderizada nos dois idiomas, sem id repetido, e a escolha acontece antes da pintura', async () => {
+    const payload = await buildPublishPayload(migrate(loadFixture('template-v3.json')));
+    const html = assembleSiteHtml(shell, payload);
+    const inicio = html.indexOf('<div id="root">');
+    const root = html.slice(inicio, html.indexOf('<script>window.__PORTFOLIO_DATA__'));
+    const pt = root.slice(root.indexOf('<div data-prerender="pt">'), root.indexOf('<div data-prerender="en">'));
+    const en = root.slice(root.indexOf('<div data-prerender="en">'));
+    // Cada versão no seu idioma (menu "Projetos" × "Projects").
+    expect(pt).toContain('lang="pt-BR"');
+    expect(en).toContain('lang="en"');
+    // Nenhum id repete no documento; as referências da versão EN apontam para os ids dela.
+    const ids = [...html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+    expect(ids.length).toBe(new Set(ids).size);
+    expect(en).toContain('href="#conteudo-en"');
+    expect(en).toContain('id="conteudo-en"');
+    // O script que escolhe vem no <head>, antes de qualquer conteúdo.
+    const escolhe = html.indexOf("setAttribute('data-idioma'");
+    expect(escolhe).toBeGreaterThan(0);
+    expect(escolhe).toBeLessThan(html.indexOf('</head>'));
+    expect(escolhe).toBeLessThan(inicio);
   });
 
   it('o runtime vem depois do conteúdo: a Home pinta sem esperar o JavaScript baixar', async () => {
