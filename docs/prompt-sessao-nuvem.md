@@ -19,6 +19,13 @@ português (seção 5, passo 9). Pare só se ele pedir.
 
 ## 2. Comece por aqui — estado em 29/09/2026
 
+> **Atualização de 30/09/2026:** o branch `rodada-85-reordenar-teclado`
+> (commit `1ced809`) **nunca foi enviado ao GitHub** e o WIP se perdeu com a
+> sessão anterior. Só o diagnóstico abaixo sobreviveu: **refaça a rodada 85 do
+> zero** seguindo as hipóteses. O Lucca autorizou **commitar direto na
+> `master`** (`portfolioeditor`) e na `main` (`portfolio`), sempre; sem PR.
+> Faça `git push` ao fim de cada rodada para não perder trabalho de novo.
+
 - `master` está em **`4abdda2`** (rodada 84), tudo verde: 377 testes
   unitários, 187 e2e.
 - **Rodada 85 em andamento** no branch **`rodada-85-reordenar-teclado`**
