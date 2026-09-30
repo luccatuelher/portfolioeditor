@@ -143,9 +143,14 @@ export function Site({ data, resolveAsset, initialRoute = '', initialLang, editi
   }, [editing, data]);
 
   // Abriu por um endereço antigo ou pelo id (#about): mostra o canônico (#sobre).
+  // O endereço pode ter mudado entre o 1º render e este efeito (o runtime começa
+  // enquanto o arquivo ainda chega): vale o de AGORA — nunca devolver o endereço
+  // para a rota lida no início, que perdia o pedido de quem clicou no meio.
   useEffect(() => {
-    if (editing || typeof history === 'undefined') return;
-    if (rotaDoHash(location.hash) !== route && location.hash) history.replaceState(history.state, '', route ? `#${route}` : location.pathname + location.search);
+    if (editing || typeof history === 'undefined' || !location.hash) return;
+    const atual = hashRoute();
+    if (atual !== route) setRouteState(atual);
+    if (rotaDoHash(location.hash) !== atual) history.replaceState(history.state, '', atual ? `#${atual}` : location.pathname + location.search);
   }, []);
 
   const openLightbox = (items: LightItem[], index: number): void => {

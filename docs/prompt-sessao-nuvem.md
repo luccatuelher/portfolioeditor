@@ -31,10 +31,6 @@ português (seção 5, passo 9). Pare só se ele pedir.
   está em `/opt/pw-browsers/chromium`. Use um `playwright.local.config.ts`
   (fora do git, em `.git/info/exclude`) que importa `playwright.config` e põe
   `launchOptions.executablePath: '/opt/pw-browsers/chromium'`.
-- **`e2e/f62-site-responde-cedo` falha na nuvem** (também na `master` limpa):
-  "o runtime não abriu o projeto antes do fim do arquivo". Ainda não se sabe
-  se é o ambiente (servidor que pausa o arquivo) ou uma regressão das
-  mudanças recentes do Lucca; investigar na próxima rodada.
 - O `e2e/f7b` precisa do `dist-editor`: rode `npm run build:editor` antes.
 
 ## 3. O projeto
@@ -219,15 +215,14 @@ Inspector, Tema e fichas muda o canvas — exceções listadas com o porquê),
 
 ## 10. Ideias para as próximas rodadas (ainda não feitas)
 
-1. Investigar o `f62` que falha na nuvem (seção 2).
-2. Miniaturas também no conteúdo **NDA** (as grades destrancadas usam a
+1. Miniaturas também no conteúdo **NDA** (as grades destrancadas usam a
    foto inteira).
-3. O canvas do editor usa as fotos inteiras (até 2400 px) em todos os
+2. O canvas do editor usa as fotos inteiras (até 2400 px) em todos os
    cards — peso de memória em portfólio grande.
-4. `f67`: as exceções `SO_NOS_CARDS` (largura, destaque, resumo na ficha)
+3. `f67`: as exceções `SO_NOS_CARDS` (largura, destaque, resumo na ficha)
    poderiam ser conferidas na página da lista, em vez de liberadas.
-5. Folha de impressão para a página do projeto (recrutador salvando PDF).
-6. Vitest ficou em ~30 s (transformação domina): avaliar cache de módulos.
+4. Folha de impressão para a página do projeto (recrutador salvando PDF).
+5. Vitest ficou em ~30 s (transformação domina): avaliar cache de módulos.
 
 ## 11. Histórico recente (rodadas 64–84)
 
@@ -255,3 +250,4 @@ Inspector, Tema e fichas muda o canvas — exceções listadas com o porquê),
 | 83 | `f84d629` | Guarda: todo campo do Inspector faz efeito; NDA no menu |
 | 84 | `4abdda2` | Guarda estendida ao Tema e às fichas; data da nota; nome do vídeo |
 | 85 | `4ad2717` | Listas do editor reordenam pelo teclado (↑/↓, Espaço, Esc) |
+| 86 | *(esta rodada)* | Site abre a rota do endereço de agora, mesmo se ele mudar durante o boot (o `f62` deixa de falhar 1 em 3) |
