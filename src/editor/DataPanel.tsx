@@ -1,4 +1,5 @@
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { DndContext, type DragEndEvent } from '@dnd-kit/core';
+import { ACESSIBILIDADE_DA_LISTA, COLISAO_DA_LISTA, MEDICAO_DA_LISTA, useSensoresDaLista } from './listaOrdenavel';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { pick } from '../renderer/text';
@@ -35,7 +36,7 @@ function SortableRow({ doc, collection, id, label, visibility, onSelect, extra }
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   return (
     <tr ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
-      <td><span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar">⠿</span></td>
+      <td><span className="tree-grip" {...attributes} {...listeners} aria-label={`Reordenar: ${label || id}`} title="Arraste ou use as setas para reordenar">⠿</span></td>
       <td><button type="button" className="data-name" onClick={() => onSelect({ kind: 'item', collection, itemId: id })}>{label || id}</button></td>
       {extra ? <td>{extra}</td> : null}
       <td><VisSelect value={visibility} nome={label || id} onChange={(v) => doc.setItemVisibility(collection, id, v)} /></td>
@@ -166,7 +167,7 @@ function TraducoesPainel({ itens, onIr }: { itens: TextoSemTraducao[]; onIr: (t:
 /** Painel de dados das coleções: editar, reordenar (arrastar), visibilidade, destaque. */
 export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver, onIrPara, semTraducao, onTraduzir, sync }: { doc: DocApi; onSelect: (s: Selection) => void; peso?: PesoDoSite; assets?: Record<string, string>; semDescricao?: ImagemSemDescricao[]; resolver?: (r: ImageRef) => string; onIrPara?: (p: ImagemSemDescricao) => void; semTraducao?: TextoSemTraducao[]; onTraduzir?: (t: TextoSemTraducao) => void; sync?: SyncProps }): React.ReactElement {
   const c = doc.state.collections;
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSensoresDaLista();
   const sel = (collection: CollectionName, id: string): void => onSelect({ kind: 'item', collection, itemId: id });
   const onDragEnd = (collection: CollectionName, ids: string[]) => (e: DragEndEvent): void => {
     const { active, over } = e;
@@ -180,7 +181,7 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
       {semDescricao && resolver && onIrPara ? <DescricoesPainel itens={semDescricao} resolver={resolver} onIr={onIrPara} /> : null}
       {semTraducao && onTraduzir ? <TraducoesPainel itens={semTraducao} onIr={onTraduzir} /> : null}
       <div className="panel-h">Projetos</div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('projects', c.projects.map((p) => p.id))}>
+      <DndContext sensors={sensors} accessibility={ACESSIBILIDADE_DA_LISTA} measuring={MEDICAO_DA_LISTA} collisionDetection={COLISAO_DA_LISTA} onDragEnd={onDragEnd('projects', c.projects.map((p) => p.id))}>
         <table className="data-table">
           <colgroup><col className="dc-grip" /><col /><col className="dc-feat" /><col className="dc-vis" /></colgroup>
           <thead><tr><th><span className="sr-only">Arrastar</span></th><th>Título</th><th title="Destaque na Home">★</th><th>Visib.</th></tr></thead>
@@ -205,7 +206,7 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
       <button type="button" className="add-block-btn additem" onClick={() => sel('projects', doc.addItem('projects'))}>＋ Projeto</button>
 
       <div className="panel-h">Notas</div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('blog', c.blog.map((b) => b.id))}>
+      <DndContext sensors={sensors} accessibility={ACESSIBILIDADE_DA_LISTA} measuring={MEDICAO_DA_LISTA} collisionDetection={COLISAO_DA_LISTA} onDragEnd={onDragEnd('blog', c.blog.map((b) => b.id))}>
       <table className="data-table">
         <colgroup><col /><col className="dc-vis" /></colgroup>
         <tbody>
@@ -220,7 +221,7 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
       <button type="button" className="add-block-btn additem" onClick={() => sel('blog', doc.addItem('blog'))}>＋ Nota</button>
 
       <div className="panel-h">Galeria</div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('gallery', c.gallery.map((g) => g.id))}>
+      <DndContext sensors={sensors} accessibility={ACESSIBILIDADE_DA_LISTA} measuring={MEDICAO_DA_LISTA} collisionDetection={COLISAO_DA_LISTA} onDragEnd={onDragEnd('gallery', c.gallery.map((g) => g.id))}>
         <SortableContext items={c.gallery.map((g) => g.id)} strategy={verticalListSortingStrategy}>
           <table className="data-table">
             <colgroup><col className="dc-grip" /><col /><col className="dc-vis" /></colgroup>
@@ -233,7 +234,7 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
       <button type="button" className="add-block-btn additem" onClick={() => sel('gallery', doc.addItem('gallery'))}>＋ Imagem na galeria</button>
 
       <div className="panel-h">Sketches</div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd('sketches', c.sketches.map((s) => s.id))}>
+      <DndContext sensors={sensors} accessibility={ACESSIBILIDADE_DA_LISTA} measuring={MEDICAO_DA_LISTA} collisionDetection={COLISAO_DA_LISTA} onDragEnd={onDragEnd('sketches', c.sketches.map((s) => s.id))}>
         <SortableContext items={c.sketches.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           <table className="data-table">
             <colgroup><col className="dc-grip" /><col /><col className="dc-vis" /></colgroup>

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { DndContext, type DragEndEvent } from '@dnd-kit/core';
+import { ACESSIBILIDADE_DA_LISTA, COLISAO_DA_LISTA, MEDICAO_DA_LISTA, useSensoresDaLista } from './listaOrdenavel';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Lang } from '../renderer/context';
@@ -18,7 +19,7 @@ function BlockRow({ doc, container, sectionId, block, selected, onSelect }: { do
   const ref = { container, sectionId, blockId: block.id };
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} className={`tree-row blk ${selected ? 'sel' : ''} ${block.visibility !== 'public' ? 'dim' : ''}`}>
-      <span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar">⠿</span>
+      <span className="tree-grip" {...attributes} {...listeners} aria-label={`Reordenar: ${BLOCK_LABELS[block.type] ?? block.type}`} title="Arraste ou use as setas para reordenar">⠿</span>
       <button type="button" className="tree-main" aria-current={selected ? 'true' : undefined} onClick={() => onSelect({ kind: 'block', ref })}>
         <span className="tree-icon" aria-hidden="true">◈</span>{BLOCK_LABELS[block.type] ?? block.type}
       </button>
@@ -49,7 +50,7 @@ function SortableSection({ doc, container, section, index, selection, onSelect }
   const remover = useRemover(doc);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
   const renome = useTreeRename(section.name ?? '', (v) => doc.updateSection({ container, sectionId: section.id }, (s) => void (s.name = v || undefined), `rename:${section.id}`));
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSensoresDaLista();
   const selBlockId = selection?.kind === 'block' ? selection.ref.blockId : undefined;
   const selSectionId = selection?.kind === 'section' ? selection.ref.sectionId : undefined;
 
@@ -64,7 +65,7 @@ function SortableSection({ doc, container, section, index, selection, onSelect }
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 }} className="tree-section">
       <div className={`tree-row sec ${selSectionId === section.id ? 'sel' : ''}`}>
-        <span className="tree-grip" {...attributes} {...listeners} title="Arraste a seção">⠿</span>
+        <span className="tree-grip" {...attributes} {...listeners} aria-label={`Reordenar: ${section.name || `Seção ${index + 1}`}`} title="Arraste ou use as setas para reordenar a seção">⠿</span>
         {renome.editando ? (
           renome.campo
         ) : (
@@ -78,7 +79,7 @@ function SortableSection({ doc, container, section, index, selection, onSelect }
           <button type="button" title="Excluir seção" onClick={() => remover({ kind: 'section', ref: { container, sectionId: section.id } })}>✕</button>
         </span>
       </div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onBlockDragEnd}>
+      <DndContext sensors={sensors} accessibility={ACESSIBILIDADE_DA_LISTA} measuring={MEDICAO_DA_LISTA} collisionDetection={COLISAO_DA_LISTA} onDragEnd={onBlockDragEnd}>
         <SortableContext items={section.blocks.map((b) => b.id)} strategy={verticalListSortingStrategy}>
           {section.blocks.map((b) => (
             <BlockRow key={b.id} doc={doc} container={container} sectionId={section.id} block={b} selected={selBlockId === b.id} onSelect={onSelect} />
@@ -99,7 +100,7 @@ export function LayersPanel({ doc, page, item, lang, selection, onSelect }: { do
     ? { on: 'item', collection: 'description' in item ? 'projects' : 'blog', itemId: item.id }
     : { on: 'page', pageId: page.id };
   const sections = item ? item.sections : page.sections;
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSensoresDaLista();
 
   const onSectionDragEnd = (e: DragEndEvent): void => {
     const { active, over } = e;
@@ -118,7 +119,7 @@ export function LayersPanel({ doc, page, item, lang, selection, onSelect }: { do
           <span className="tree-icon" aria-hidden="true">▭</span>Cabeçalho (todas as páginas)
         </button>
       </div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onSectionDragEnd}>
+      <DndContext sensors={sensors} accessibility={ACESSIBILIDADE_DA_LISTA} measuring={MEDICAO_DA_LISTA} collisionDetection={COLISAO_DA_LISTA} onDragEnd={onSectionDragEnd}>
         <SortableContext items={sections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
           {sections.map((s, i) => (
             <SortableSection key={s.id} doc={doc} container={container} section={s} index={i} selection={selection} onSelect={onSelect} />

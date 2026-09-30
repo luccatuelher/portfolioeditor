@@ -1,4 +1,5 @@
-import { DndContext, PointerSensor, closestCenter, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
+import { DndContext, type DragEndEvent } from '@dnd-kit/core';
+import { ACESSIBILIDADE_DA_LISTA, COLISAO_DA_LISTA, MEDICAO_DA_LISTA, useSensoresDaLista } from './listaOrdenavel';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
@@ -38,7 +39,7 @@ function ItemRow({ doc, collection, item, lang, active, onOpen }: { doc: DocApi;
   const renome = useTreeRename(nome, (v) => doc.updateItem(collection, item.id, (it) => void (it.title[lang] = v), `rename:${item.id}`));
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }} className={`tree-row blk nested ${active ? 'sel' : ''}`}>
-      <span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar">⠿</span>
+      <span className="tree-grip" {...attributes} {...listeners} aria-label={`Reordenar: ${nome || item.id}`} title="Arraste ou use as setas para reordenar">⠿</span>
       {renome.editando ? (
         renome.campo
       ) : (
@@ -62,7 +63,7 @@ function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
       <div className={`tree-row pagerow ${active ? 'sel' : ''}`}>
-        <span className="tree-grip" {...attributes} {...listeners} title="Arraste para reordenar as páginas">⠿</span>
+        <span className="tree-grip" {...attributes} {...listeners} aria-label={`Reordenar: ${nome || page.id}`} title="Arraste ou use as setas para reordenar a página">⠿</span>
         {renome.editando ? (
           renome.campo
         ) : (
@@ -85,7 +86,7 @@ function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc
 }
 
 export function PagesPanel({ doc, container, lang, onOpen, onSelect }: { doc: DocApi; container: Container; lang: Lang; onOpen: (c: Container) => void; onSelect: (s: Selection) => void }): React.ReactElement {
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+  const sensors = useSensoresDaLista();
   const [recemCriada, setRecemCriada] = useState<string | null>(null);
   const pages = doc.state.pages.filter((p) => p.kind === 'static');
 
@@ -113,7 +114,7 @@ export function PagesPanel({ doc, container, lang, onOpen, onSelect }: { doc: Do
     };
     return (
       <div className="tree-nested">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onEnd}>
+        <DndContext sensors={sensors} accessibility={ACESSIBILIDADE_DA_LISTA} measuring={MEDICAO_DA_LISTA} collisionDetection={COLISAO_DA_LISTA} onDragEnd={onEnd}>
           <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             {items.map((it) => (
               <ItemRow doc={doc} key={it.id} collection={coll} item={it} lang={lang} active={container.on === 'item' && container.itemId === it.id} onOpen={() => openItemC(coll, it.id)} />
@@ -155,7 +156,7 @@ export function PagesPanel({ doc, container, lang, onOpen, onSelect }: { doc: Do
   return (
     <div className="panel">
       <div className="panel-h">Páginas</div>
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onPagesEnd}>
+      <DndContext sensors={sensors} accessibility={ACESSIBILIDADE_DA_LISTA} measuring={MEDICAO_DA_LISTA} collisionDetection={COLISAO_DA_LISTA} onDragEnd={onPagesEnd}>
         <SortableContext items={pages.map((p) => p.id)} strategy={verticalListSortingStrategy}>
           {pages.map((p) => (
             <PageRow key={p.id} doc={doc} page={p} lang={lang} novaAgora={recemCriada === p.id} active={activePageId === p.id && container.on === 'page'} onOpen={() => { onOpen({ on: 'page', pageId: p.id }); onSelect({ kind: 'page', pageId: p.id }); }}>
