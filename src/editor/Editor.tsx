@@ -42,6 +42,7 @@ import { AddBlockPopup, ElementsPalette } from './ElementsPalette';
 import { SECTION_PRESETS } from './sectionPresets';
 import { VersionsModal } from './VersionsModal';
 import { NdaPasswordModal } from './NdaPasswordModal';
+import { gravarSenhaNda, lerSenhaNda } from './senhaNda';
 import { guardarAntesDeTrocar, saveVersion } from './versions';
 import { CropModal } from './CropModal';
 import type { ImageCrop, ImageRef } from '../schema/v4';
@@ -54,7 +55,7 @@ import { RemoverContext } from './remover';
 import { chaveDaSelecao, type PedidoFoco } from './focoCampo';
 import type { CampoId } from '../core/camposTexto';
 import { imagensSemDescricao, textosSemTraducao, type ImagemSemDescricao, type TextoSemTraducao } from './pendencias';
-import { lerConfig, useGithubSync, type SyncConfig } from './githubSync';
+import { alvoDe, gravarShaConhecido, lerConfig, lerShaConhecido, useGithubSync, verificarRemoto, type SyncConfig } from './githubSync';
 import { avisoDeArmazenamento, lerUltimoBackup, marcarBackup, protegerRascunho } from './armazenamento';
 
 /** Nome do item no aviso de exclusão. */
@@ -76,6 +77,8 @@ export interface EditorProps {
   gravarAoAbrir?: boolean;
   /** Aviso exibido no topo (ex.: rascunho recuperado com ajustes). */
   notice?: string;
+  /** Quando o rascunho aberto foi gravado neste navegador (ms). Compara com o backup do GitHub. */
+  rascunhoSalvoEm?: number;
 }
 
 /** Baixa um arquivo gerado no navegador (site, imagem de compartilhamento, backup). */
@@ -206,7 +209,7 @@ function resolveView(doc: PortfolioV4, c: Container): { page: Page; item?: Proje
 /** Fechou o aviso de proteção do rascunho: não volta nesta sessão (o editor remonta ao importar). */
 let protecaoDispensada = false;
 
-export function Editor({ initial, assets, onImport, onAddAsset, persist = true, gravarAoAbrir = false, notice }: EditorProps): React.ReactElement {
+export function Editor({ initial, assets, onImport, onAddAsset, persist = true, gravarAoAbrir = false, notice, rascunhoSalvoEm }: EditorProps): React.ReactElement {
   const [showNotice, setShowNotice] = useState(!!notice);
   // Avisos da última publicação ("Baixar site"), mostrados na barra de aviso.
   const [publishNotice, setPublishNotice] = useState<Publicado | null>(null);
@@ -216,11 +219,57 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const resolveAsset = useMemo(() => mapResolver(assets), [assets]);
   const { status: saveStatus, erro: erroGravacao } = useLocalDraft(doc.state, assets, persist, gravarAoAbrir);
   const [syncConfig, setSyncConfig] = useState<SyncConfig | null>(() => (persist ? lerConfig() : null));
-  const sync = useGithubSync(doc.state, assets, syncConfig);
+  // Enquanto confere se o GitHub tem uma versão mais nova, o envio automático espera.
+  const [conferindoGitHub, setConferindoGitHub] = useState(() => !!(persist && onImport && lerConfig()));
+  const sync = useGithubSync(doc.state, assets, syncConfig, conferindoGitHub);
   const outraAba = useOutraAba('portfolio-editor', persist);
   // Avisos e perguntas no visual do editor (nada de alert/confirm/prompt do navegador).
   const avisos = useAvisosDoEditor(doc.state);
   const { avisar: mostrarAviso, fecharAviso } = avisos.api;
+
+  // Ao abrir: o backup do GitHub mudou por fora (outro navegador, ou uma revisão
+  // enviada direto para lá) e é diferente do que está aberto? Pergunta antes de o
+  // envio automático gravar por cima dele.
+  useEffect(() => {
+    const c = syncConfig;
+    if (!conferindoGitHub || !c || !onImport) return;
+    let vivo = true;
+    const alvo = alvoDe(c);
+    void (async () => {
+      try {
+        const { oferta, sha } = await verificarRemoto(c, doc.state, rascunhoSalvoEm, lerShaConhecido(alvo));
+        if (sha) gravarShaConhecido(alvo, sha);
+        if (!vivo || !oferta) return;
+        const quando = oferta.savedAt ? new Date(oferta.savedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+        const carregar = await avisos.api.confirmar({
+          titulo: 'Tem uma versão mais nova no GitHub',
+          texto: `O backup em ${c.repo}${quando ? ` (salvo em ${quando})` : ''} é diferente do que está aberto aqui.\n\nCarregar essa versão? O que está aberto agora vira uma versão automática (Versões). Se mantiver o daqui, ele substitui o do GitHub no próximo envio.`,
+          confirmar: 'Carregar do GitHub',
+          cancelar: 'Manter o daqui',
+        });
+        if (!vivo || !carregar) return;
+        let backup: Backup;
+        try {
+          backup = parseBackup(oferta.texto);
+        } catch (err) {
+          avisos.api.avisar(`Não consegui abrir o backup do GitHub: ${explicarErroDeImportacao(err)}`, { tipo: 'erro' });
+          return;
+        }
+        if (!(await guardarAntesDeTrocar('Antes de carregar do GitHub', doc.state, avisos.api.confirmar))) return;
+        gravarShaConhecido(alvo, oferta.sha);
+        onImport(backup);
+      } catch (err) {
+        console.warn('[github] não consegui conferir o backup do GitHub', err);
+      } finally {
+        if (vivo) setConferindoGitHub(false);
+      }
+    })();
+    return () => {
+      vivo = false;
+    };
+    // Só ao abrir (o editor remonta a cada importação).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const uploadImage = useCallback(
     async (file: File): Promise<string> => {
@@ -1354,8 +1403,11 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
   const baixarSite = (): void => {
     const n = ndaCount(publicSnapshot(doc.state).nda);
     setItensNda(n);
-    if (n) setPedirSenha(true);
-    else void publishSite();
+    if (!n) return void publishSite();
+    // Senha escolhida uma vez: cifra direto (troca e esquece no painel Dados).
+    const guardada = lerSenhaNda();
+    if (guardada) void publishSite(guardada);
+    else setPedirSenha(true);
   };
 
   // Uma falha ao gerar (cifrar o NDA, montar o arquivo) não pode ser silêncio:
@@ -1404,7 +1456,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
   return (
     <header className="editor-topbar">
       <div className="tb-left">
-        <strong>Portfolio v4</strong>
+        <strong>Portfolio</strong>
         {trilha ? (
           <span className="tb-page">
             <button type="button" className="tb-voltar" onClick={trilha.voltar} title="Voltar para a lista">← {trilha.pai}</button>
@@ -1447,7 +1499,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
           <NdaPasswordModal
             quantidade={itensNda}
             onCancel={() => setPedirSenha(false)}
-            onConfirm={(senha) => { setPedirSenha(false); void publishSite(senha); }}
+            onConfirm={(senha) => { setPedirSenha(false); if (senha) gravarSenhaNda(senha); void publishSite(senha); }}
           />
         ) : null}
         <input ref={fileRef} type="file" accept="application/json,.json" hidden onChange={onFile} />

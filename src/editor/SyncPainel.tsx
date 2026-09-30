@@ -11,6 +11,7 @@ export interface SyncProps {
 function textoStatus(s: SyncStatus): string {
   switch (s.tipo) {
     case 'desligado': return 'Desligado.';
+    case 'verificando': return 'Conferindo se o GitHub tem uma versão mais nova…';
     case 'aguardando': return 'Ligado — envia 1 min depois da última edição.';
     case 'enviando': return 'Enviando…';
     case 'ok': return `Enviado às ${s.em}.`;

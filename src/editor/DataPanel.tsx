@@ -8,6 +8,7 @@ import type { CollectionName, Selection } from './paths';
 import { formatarPeso, LIMITE_GITHUB_BYTES, type PesoDoSite } from '../publish/peso';
 import type { DocApi } from './useDocument';
 import { SyncPainel, type SyncProps } from './SyncPainel';
+import { SenhaNdaPainel } from './SenhaNdaPainel';
 
 const VIS_OPTS: { value: Visibility; label: string }[] = [
   { value: 'public', label: 'Público' },
@@ -175,7 +176,6 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
 
   return (
     <div className="panel data-panel">
-      {sync ? <SyncPainel {...sync} /> : null}
       {peso ? <PesoDoSitePainel peso={peso} assets={assets ?? {}} /> : null}
       {semDescricao && resolver && onIrPara ? <DescricoesPainel itens={semDescricao} resolver={resolver} onIr={onIrPara} /> : null}
       {semTraducao && onTraduzir ? <TraducoesPainel itens={semTraducao} onIr={onTraduzir} /> : null}
@@ -244,6 +244,9 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
         </SortableContext>
       </DndContext>
       <button type="button" className="add-block-btn additem" onClick={() => sel('sketches', doc.addItem('sketches'))}>＋ Sketch</button>
+      {/* Ajustes de uma vez só: ficam no fim, depois dos dados do dia a dia. */}
+      {sync ? <SyncPainel {...sync} /> : null}
+      {sync ? <SenhaNdaPainel /> : null}
     </div>
   );
 }

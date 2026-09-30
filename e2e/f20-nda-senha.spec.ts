@@ -69,4 +69,33 @@ test.describe('Senha da área NDA', () => {
     expect((await baixou).suggestedFilename()).toBe('index.html');
     await expect(page.locator('.nda-modal')).toHaveCount(0);
   });
+
+  test('a senha é escolhida uma vez: o próximo "Baixar site" cifra direto, e o painel Dados troca ou esquece', async ({ page }) => {
+    await comItemNda(page);
+    await page.locator('.tb-btn.primary', { hasText: 'Baixar site' }).click();
+    await page.locator('.nda-modal-row button', { hasText: 'Sugerir' }).click();
+    let baixou = page.waitForEvent('download', { timeout: 15000 });
+    await page.locator('.nda-modal-acoes .primary').click();
+    await baixou;
+    await expect(page.locator('.senha-nda')).toContainText('Guardada neste navegador');
+
+    // Segunda vez: sai direto, sem perguntar.
+    baixou = page.waitForEvent('download', { timeout: 15000 });
+    await page.locator('.tb-btn.primary', { hasText: 'Baixar site' }).click();
+    expect((await baixou).suggestedFilename()).toBe('index.html');
+    await expect(page.locator('.nda-modal')).toHaveCount(0);
+
+    // Trocar pelo painel Dados.
+    await page.locator('.senha-nda button', { hasText: 'Trocar senha' }).click();
+    await expect(page.locator('.nda-modal h2')).toHaveText('Nova senha da área NDA');
+    await page.locator('.nda-modal-row button', { hasText: 'Sugerir' }).click();
+    const nova = await page.locator('.nda-modal input').inputValue();
+    await page.locator('.nda-modal-acoes .primary', { hasText: 'Salvar senha' }).click();
+    expect(await page.evaluate(() => localStorage.getItem('portfolio-v4:nda-senha'))).toBe(nova);
+
+    // Esquecer: volta a perguntar.
+    await page.locator('.senha-nda button', { hasText: 'Esquecer' }).click();
+    await page.locator('.tb-btn.primary', { hasText: 'Baixar site' }).click();
+    await expect(page.locator('.nda-modal')).toBeVisible();
+  });
 });

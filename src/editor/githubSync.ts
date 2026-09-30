@@ -17,12 +17,15 @@ export interface SyncConfig {
 
 export type SyncStatus =
   | { tipo: 'desligado' }
+  | { tipo: 'verificando' }
   | { tipo: 'aguardando' }
   | { tipo: 'enviando' }
   | { tipo: 'ok'; em: string }
   | { tipo: 'erro'; msg: string };
 
 const CHAVE = 'portfolio-v4:github-sync';
+/** sha do arquivo que ESTE navegador enviou ou carregou por último (por repositório/caminho). */
+const CHAVE_SHA = 'portfolio-v4:github-sync-sha';
 export const CAMINHO_PADRAO = 'portfolio-backup.json';
 /** Espera depois da última edição antes de enviar (não sobe a cada tecla). */
 export const ESPERA_MS = 60_000;
@@ -45,6 +48,25 @@ export function gravarConfig(c: SyncConfig | null): void {
     else localStorage.removeItem(CHAVE);
   } catch {
     /* sem armazenamento: a sincronização só vale nesta aba */
+  }
+}
+
+export const alvoDe = (c: SyncConfig): string => `${c.repo}/${c.path}`;
+
+export function lerShaConhecido(alvo: string): string | null {
+  try {
+    const r = JSON.parse(localStorage.getItem(CHAVE_SHA) ?? 'null') as { alvo?: string; sha?: string } | null;
+    return r && r.alvo === alvo && typeof r.sha === 'string' ? r.sha : null;
+  } catch {
+    return null;
+  }
+}
+
+export function gravarShaConhecido(alvo: string, sha: string): void {
+  try {
+    localStorage.setItem(CHAVE_SHA, JSON.stringify({ alvo, sha }));
+  } catch {
+    /* sem armazenamento: só perde a conferência na próxima abertura */
   }
 }
 
@@ -82,6 +104,61 @@ async function shaAtual(c: SyncConfig, f: typeof fetch): Promise<string | null> 
   return j.sha ?? null;
 }
 
+/** Conteúdo atual do arquivo, cru (a API em JSON corta arquivos acima de 1 MB). */
+async function baixarArquivo(c: SyncConfig, f: typeof fetch): Promise<string> {
+  const r = await f(`https://api.github.com/repos/${c.repo}/contents/${encodeURI(c.path)}`, {
+    headers: { Authorization: `Bearer ${c.token}`, Accept: 'application/vnd.github.raw+json' },
+    cache: 'no-store',
+  });
+  if (!r.ok) throw new Error(explicarHttp(r.status, await r.text().catch(() => '')));
+  return r.text();
+}
+
+/** Versão do GitHub que vale oferecer para carregar no lugar do que está aberto. */
+export interface VersaoRemota {
+  sha: string;
+  texto: string;
+  /** Quando o backup foi gerado (ISO), se o arquivo disser. */
+  savedAt: string | null;
+}
+
+/**
+ * Ao abrir o editor: o backup do GitHub mudou por fora (outro navegador, ou
+ * alguém que editou o arquivo) e é diferente do que está aberto? Então vale
+ * perguntar antes de o envio automático gravar por cima dele.
+ *
+ * - mesmo sha que este navegador enviou/carregou por último → nada mudou;
+ * - conteúdo igual ao aberto → nada a oferecer (só registra o sha);
+ * - sha conhecido e diferente → mudou por fora: oferece;
+ * - sem sha conhecido (primeira vez neste navegador) → oferece só se o
+ *   backup do GitHub for mais novo que o rascunho daqui.
+ */
+export async function verificarRemoto(
+  c: SyncConfig,
+  aberto: PortfolioV4,
+  rascunhoSalvoEm: number | undefined,
+  conhecido: string | null,
+  f: typeof fetch = fetch,
+): Promise<{ oferta: VersaoRemota | null; sha: string | null }> {
+  const sha = await shaAtual(c, f);
+  if (!sha || sha === conhecido) return { oferta: null, sha };
+  const texto = await baixarArquivo(c, f);
+  let doc: unknown = null;
+  let savedAt: string | null = null;
+  try {
+    const j = JSON.parse(texto) as { doc?: unknown; savedAt?: unknown };
+    doc = j.doc ?? null;
+    savedAt = typeof j.savedAt === 'string' && j.savedAt ? j.savedAt : null;
+  } catch {
+    return { oferta: null, sha: null };
+  }
+  if (JSON.stringify(doc) === JSON.stringify(aberto)) return { oferta: null, sha };
+  if (conhecido) return { oferta: { sha, texto, savedAt }, sha: null };
+  const remotoEm = savedAt ? Date.parse(savedAt) : NaN;
+  const maisNovo = Number.isFinite(remotoEm) && (rascunhoSalvoEm === undefined || remotoEm > rascunhoSalvoEm);
+  return { oferta: maisNovo ? { sha, texto, savedAt } : null, sha: null };
+}
+
 /** Envia o conteúdo; devolve o novo sha. */
 export async function enviarArquivo(c: SyncConfig, conteudo: string, shaConhecido: string | null, f: typeof fetch = fetch): Promise<string> {
   const put = (sha: string | null): Promise<Response> =>
@@ -100,10 +177,11 @@ export async function enviarArquivo(c: SyncConfig, conteudo: string, shaConhecid
 
 /**
  * Envia o backup ESPERA_MS depois da última mudança (e ao ligar). Só sobe se o
- * conteúdo mudou desde o último envio.
+ * conteúdo mudou desde o último envio. Com `pausado` (conferindo se o GitHub
+ * tem versão mais nova), não envia nada.
  */
-export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, config: SyncConfig | null): { status: SyncStatus; enviarAgora: () => void } {
-  const [status, setStatus] = useState<SyncStatus>(config ? { tipo: 'aguardando' } : { tipo: 'desligado' });
+export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, config: SyncConfig | null, pausado = false): { status: SyncStatus; enviarAgora: () => void } {
+  const [status, setStatus] = useState<SyncStatus>(!config ? { tipo: 'desligado' } : pausado ? { tipo: 'verificando' } : { tipo: 'aguardando' });
   const ultimo = useRef<{ texto: string; sha: string | null; repo: string } | null>(null);
   const atual = useRef({ doc, assets, config });
   atual.current = { doc, assets, config };
@@ -116,12 +194,13 @@ export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, 
     if (!c) return;
     const b = buildBackup(d, a);
     const texto = JSON.stringify({ ...b, savedAt: '' });
-    const alvo = `${c.repo}/${c.path}`;
+    const alvo = alvoDe(c);
     if (ultimo.current && ultimo.current.repo === alvo && ultimo.current.texto === texto) return;
     setStatus({ tipo: 'enviando' });
     try {
-      const sha = await enviarArquivo(c, JSON.stringify(b, null, 2), ultimo.current?.repo === alvo ? ultimo.current.sha : null);
+      const sha = await enviarArquivo(c, JSON.stringify(b, null, 2), ultimo.current?.repo === alvo ? ultimo.current.sha : lerShaConhecido(alvo));
       ultimo.current = { texto, sha, repo: alvo };
+      gravarShaConhecido(alvo, sha);
       setStatus({ tipo: 'ok', em: new Date().toLocaleTimeString() });
     } catch (e) {
       setStatus({ tipo: 'erro', msg: e instanceof Error ? e.message : String(e) });
@@ -133,6 +212,11 @@ export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, 
       setStatus({ tipo: 'desligado' });
       return;
     }
+    if (pausado) {
+      setStatus({ tipo: 'verificando' });
+      return;
+    }
+    setStatus((s) => (s.tipo === 'verificando' || s.tipo === 'desligado' ? { tipo: 'aguardando' } : s));
     if (timer.current) clearTimeout(timer.current);
     const espera = imediato.current ? 0 : ESPERA_MS;
     imediato.current = false;
@@ -141,7 +225,7 @@ export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, 
       if (timer.current) clearTimeout(timer.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [doc, assets, config, gatilho]);
+  }, [doc, assets, config, gatilho, pausado]);
 
   return { status, enviarAgora: () => {
     imediato.current = true;

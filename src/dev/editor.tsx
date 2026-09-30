@@ -18,7 +18,7 @@ const q = new URLSearchParams(location.search);
 const raw = q.get('fixture') === 'synthetic' ? syntheticRaw : templateRaw;
 const fresh = q.has('fresh'); // ?fresh=1 ignora o rascunho salvo e recomeça do exemplo
 
-type State = { doc: PortfolioV4; assets: Record<string, string>; version: number; notice?: string; persist?: boolean; gravarAoAbrir?: boolean };
+type State = { doc: PortfolioV4; assets: Record<string, string>; version: number; notice?: string; persist?: boolean; gravarAoAbrir?: boolean; /** Quando o rascunho aberto foi gravado neste navegador (ms). */ savedAt?: number };
 
 /**
  * Imagens da abertura: só as que o documento, as versões ou a cópia de resgate
@@ -52,7 +52,7 @@ function Root(): React.ReactElement {
             // Ponto de volta da sessão ("como estava ao abrir"): o desfazer não
             // sobrevive a recarregar. Falhar aqui não impede de abrir.
             void guardarAoAbrir(doc).catch((err: unknown) => console.warn('[versões] não guardei a versão ao abrir', err));
-            return { doc, assets: await imagensDaAbertura(doc, saved.assets ?? {}), version: 0 };
+            return { doc, assets: await imagensDaAbertura(doc, saved.assets ?? {}), version: 0, savedAt: saved.savedAt };
           }
           // Formato mudou: guarda a cópia intacta e conserta só o incompatível (nunca descarta em silêncio).
           const copiou = await saveRescueCopy(saved.doc).then(() => true, () => false);
@@ -120,7 +120,7 @@ function Root(): React.ReactElement {
         </div>
       )}
     >
-      <Editor key={state.version} initial={state.doc} assets={state.assets} onImport={onImport} onAddAsset={onAddAsset} notice={state.notice} persist={state.persist !== false} gravarAoAbrir={state.gravarAoAbrir} />
+      <Editor key={state.version} initial={state.doc} assets={state.assets} onImport={onImport} onAddAsset={onAddAsset} notice={state.notice} persist={state.persist !== false} gravarAoAbrir={state.gravarAoAbrir} rascunhoSalvoEm={state.savedAt} />
     </ErrorBoundary>
   );
 }

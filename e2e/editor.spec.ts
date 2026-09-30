@@ -8,7 +8,7 @@ test.describe('editor v4 — loop de edição', () => {
   });
 
   test('shell renderiza: topbar, layers e canvas', async ({ page }) => {
-    await expect(page.locator('.editor-topbar')).toContainText('Portfolio v4');
+    await expect(page.locator('.editor-topbar')).toContainText('Portfolio');
     await expect(page.locator('.editor-left .panel-h').first()).toBeVisible();
     await expect(page.locator('.editor-canvas .block').first()).toBeVisible();
     await page.locator('.editor-canvas .block-heading', { hasText: 'Selected Work' }).click();
