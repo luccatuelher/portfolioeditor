@@ -250,4 +250,4 @@ Inspector, Tema e fichas muda o canvas — exceções listadas com o porquê),
 | 83 | `f84d629` | Guarda: todo campo do Inspector faz efeito; NDA no menu |
 | 84 | `4abdda2` | Guarda estendida ao Tema e às fichas; data da nota; nome do vídeo |
 | 85 | `4ad2717` | Listas do editor reordenam pelo teclado (↑/↓, Espaço, Esc) |
-| 86 | *(esta rodada)* | Site abre a rota do endereço de agora, mesmo se ele mudar durante o boot (o `f62` deixa de falhar 1 em 3) |
+| 86 | `a649112` | Site abre a rota do endereço de agora, mesmo se ele mudar durante o boot (o `f62` deixa de falhar 1 em 3) |
