@@ -1,0 +1,270 @@
+# Prompt — loop de melhoria contínua do portfólio (sessão na nuvem)
+
+> **Como usar:** abra uma sessão do Claude Code na nuvem apontando para este
+> repositório e cole como prompt: *"Leia `docs/prompt-sessao-nuvem.md` e siga
+> tudo o que está lá."* — ou cole o documento inteiro, da seção 1 em diante.
+> Ele reúne o que antes estava espalhado na memória local da sessão (que não
+> vai para a nuvem).
+
+---
+
+## 1. Sua tarefa
+
+Avalie o código do portfólio (editor + site publicado) como um todo e faça
+**uma melhoria contínua por rodada**: escolher a próxima melhoria de maior
+valor, implementar, testar (typecheck, vitest, e2e relevante), rodar
+`npm run build:editor`, commitar e seguir para a próxima rodada **sem parar
+nem consultar o Lucca**. Depois de cada rodada, um relatório curto em
+português (seção 5, passo 9). Pare só se ele pedir.
+
+## 2. Comece por aqui — estado em 29/09/2026
+
+- `master` está em **`4abdda2`** (rodada 84), tudo verde: 377 testes
+  unitários, 187 e2e.
+- **Rodada 85 em andamento** no branch **`rodada-85-reordenar-teclado`**
+  (commit `1ced809`, "WIP"). Termine-a primeiro e só então traga para o
+  `master`.
+  - **Objetivo:** reordenar pelo teclado as 8 listas arrastáveis (projetos,
+    notas, galeria e sketches no painel Dados; blocos e seções nas Layers;
+    páginas e itens no painel Páginas). Antes só o mouse movia; a alça (⠿)
+    recebia o foco e se anunciava "reordenável" sem fazer nada.
+  - **Já feito:** `src/editor/listaOrdenavel.ts` (sensores únicos: mouse com
+    folga de 4 px + `KeyboardSensor` com `sortableKeyboardCoordinates`;
+    anúncios em português por posição) aplicado aos 8 `DndContext`; alças
+    com nome ("Reordenar: A Travessia").
+  - **Funciona:** Espaço pega o item, Esc cancela, anúncios em PT aparecem
+    na região viva (`[id^="DndLiveRegion"]`).
+  - **Não funciona:** a seta para baixo não move. Depois de Espaço + ↓, o
+    anúncio continua "Posição 1.", o `transform` das linhas fica
+    `translate3d(0px, 0px, 0px)` e soltar dá "Solto na posição 1". Falha
+    igual no Dados (linhas de `<table>`), nas Layers e nas Páginas — não é
+    coisa só de tabela.
+  - **Hipóteses a testar:** (a) retângulos dos droppables não medidos para o
+    teclado — tentar `measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}`;
+    (b) o painel esquerdo rola (`.editor-left` com overflow): `collisionRect`
+    e os retângulos em sistemas de coordenadas diferentes; (c) o
+    `setNodeRef` está na linha e os `listeners` numa `<span>` dentro dela —
+    conferir se `setActivatorNodeRef` é necessário na versão instalada do
+    dnd-kit; (d) algum `onKeyDown` do editor consumindo ↓ quando o foco está
+    no painel (o global só trata Alt+↑/↓, mas vale checar os painéis).
+  - **Guarda:** `e2e/f68-reordenar-teclado.spec.ts` (hoje falha; tem de
+    passar). Falta também um teste estático: todo `DndContext` de
+    `src/editor` usa `useSensoresDaLista()` e `ACESSIBILIDADE_DA_LISTA`.
+
+## 3. O projeto
+
+- **O quê:** editor visual do portfólio **bilíngue (PT/EN)** de storyboard do
+  Lucca Tuelher, e o site que ele publica. O site sai como **um
+  `index.html` autocontido** (imagens em data URL), feito para o **GitHub
+  Pages**, mais arquivos ao lado quando preciso (`compartilhar.jpg`,
+  `cv.pdf`). O Lucca usa o editor **standalone** `dist-editor/editor.html`
+  (aberto do disco); o rascunho vive no IndexedDB do navegador.
+- **Pilha:** React 19, Vite, TypeScript, zod (só no editor), immer,
+  dnd-kit, Tiptap. Testes: Vitest (+ jsdom quando preciso) e Playwright
+  (Chromium). axe-core só em desenvolvimento.
+- **Mapa:**
+  - `src/schema/v4.ts` — o formato dos dados (zod); `defaults.ts`.
+  - `src/migrate/` — site antigo (v3) → v4; `repair.ts`, `upgrade.ts`.
+  - `src/state/store.ts` + `src/editor/useDocument.ts` — documento com
+    desfazer/refazer por patches e transações.
+  - `src/editor/` — editor (Editor.tsx, Inspector.tsx, painéis, diálogos).
+  - `src/renderer/` — o site (usado no canvas do editor **e** no site
+    publicado): `blocks.tsx`, `Page.tsx`, `Site.tsx`, `Header.tsx`,
+    `styles.css`, `ui.ts` (textos da interface), `theme.ts`.
+  - `src/publish/` — publicação: `publicSnapshot` → `buildPayload` →
+    `assemble` (+ `prerender`, `nda`, `preflight`, `peso`, `imagemSocial`).
+  - `src/dev/site-entry.tsx` — o runtime do site publicado.
+  - `src/core/` — módulos puros (links, visibilidade, camposTexto,
+    contraste, miniaturas, dimensões de imagem…).
+  - `fixtures/` — `template-v3.json` (exemplo principal) e
+    `legacy-synthetic-v3.json` (tem NDA e rascunhos).
+
+## 4. Comandos
+
+```bash
+npm ci
+npx playwright install --with-deps chromium
+npm run typecheck
+npm test                 # vitest, ~30 s
+npm run e2e              # playwright, ~1,5 min; servidor Vite na porta 5199
+npm run gen:shell        # regera src/publish/site-shell.html (runtime do site)
+npm run gen:preview      # regera src/editor/preview.generated.css
+npm run build:editor     # dist-editor/editor.html (roda gen:shell + gen:preview antes)
+PUBLISH_FIXTURE=template-v3.json node scripts/publish.mjs   # site de exemplo em dist/site.html
+```
+
+O Playwright sobe o servidor com `npm run dev -- --port 5199` e reaproveita
+um que já esteja rodando. Se ele falhar ao subir (no Windows falhava), suba
+antes em segundo plano: `node node_modules/vite/bin/vite.js --port 5199 --strictPort`.
+
+## 5. Cada rodada, passo a passo
+
+1. **Escolher** a melhoria de maior valor para quem usa: o Lucca no editor
+   ou quem visita o site (recrutador, cliente, celular, rede lenta, leitor
+   de tela, visitante em inglês). Fontes boas: sondagens (auditoria axe,
+   contraste, "todo controle faz efeito", medições de tempo e peso), o que
+   uma guarda nova revela, e a seção 10. Nada especulativo: com evidência.
+2. **Diagnosticar com evidência** — reproduzir, medir (antes/depois com
+   números), olhar no navegador.
+3. **Corrigir a causa**, com **um mecanismo só** (seção 7) — não remendo
+   caso a caso.
+4. **Guarda:** teste que falha sem a correção. **Confirme** revertendo a
+   correção por um instante e vendo o teste falhar.
+5. **Regenerar** o que é gerado: `npm run gen:shell` se o runtime do site
+   mudou (renderer, `site-entry`, `publish`/`core` usados por ele) —
+   `test/site-shell` falha se esquecer; `npm run gen:preview` se o CSS do
+   site mudou.
+6. **Testar tudo:** `npm run typecheck`, `npm test`, `npm run e2e`. Descarte
+   as mudanças em `e2e/__screenshots__/` (`git checkout -- e2e/__screenshots__`).
+7. `npm run build:editor`.
+8. **Commit em português.** Título = o resultado para quem usa. Corpo: o
+   problema (com números), o que mudou, as guardas. Última linha:
+   `Co-Authored-By: Claude <noreply@anthropic.com>` (ou a linha de
+   atribuição que a sessão indicar). Sem identidade no git:
+   `git -c user.name="Lucca Tuelher" -c user.email="luccatuelher@yahoo.com" commit …`.
+9. **Relatório ao Lucca** em português simples: o que estava errado, o que
+   mudou, números medidos, testes (quantos passam), e que a próxima rodada
+   começa. Sem jargão desnecessário.
+10. Próxima rodada.
+
+## 6. Preferências do Lucca (regras)
+
+- **Correção estrutural, não remendo:** perguntar "que classe de bug é essa
+  e onde mais aparece?"; um mecanismo + um teste de guarda.
+- **Comportamento universal:** mudou como um elemento se comporta? Vale para
+  todos os equivalentes, em todas as páginas (blocos, itens de coleção,
+  quadros de storyboard, cabeçalho).
+- **Escolher em vez de digitar:** listas com sugestões; nada de campo falso.
+- **Nenhum controle sem efeito** (guarda `f67`).
+- Selos "★ Destaque", "Rascunho" e "NDA" dos cards são **só do editor**.
+- Site no **GitHub Pages**, sem domínio próprio; endereço do site e
+  analytics são opcionais.
+- **Sempre** `npm run build:editor` ao terminar.
+- Relatórios em português, com números medidos; nada de pedir permissão
+  entre rodadas.
+
+## 7. Mecanismos únicos — use estes, não reinvente
+
+- **Links internos** pelo id (`src/core/links.ts`: `hrefPublico`,
+  `rotaCanonica`, `linksDoDocumento`, `problemaDoLink`).
+- **Transação** no histórico: ação de várias etapas = 1 desfazer
+  (`doc.transacao`); `semHistorico` para registro técnico.
+- **Textos bilíngues** numa lista só (`src/core/camposTexto.ts`, `CampoId`):
+  canvas, Traduções e conferência usam ela. Campo bilíngue novo entra em
+  `camposDoBloco` (ou em `FORA_DE_PROPOSITO` do teste, com o porquê).
+- **Foco num campo**: `irParaCampo(alvo, campo)` (`src/editor/focoCampo.ts`).
+- **Textos da interface do site** só por `useUi()/textoUi` (`src/renderer/ui.ts`).
+- **Avisos e perguntas**: `useAvisos()` (`src/editor/avisos.tsx`) — nada de
+  alert/confirm/prompt.
+- **Vai para o site?** `src/core/visibilidade.ts`: `vaiProSite`, `aberto`,
+  `paginaVaiProSite`, `blocosQueVaoProSite`. Nada de `visibility === …` solto.
+  A conferência recebe o documento inteiro quando o NDA é publicado.
+- **Imagens no IndexedDB** uma por registro; poda só na abertura.
+- **Rascunho protegido**: `src/editor/armazenamento.ts` (pede armazenamento
+  persistente; faixa + backup).
+- **Tamanho das imagens** pelo cabeçalho: `src/core/dimensoesImagem.ts`
+  (`completarDimensoes` na migração, no editor e na publicação).
+- **Ordem do `index.html`**: Home pré-renderizada em PT e EN (script
+  `ESCOLHER_IDIOMA` no `<head>`, mesma regra de `initialVisitorLang`) →
+  dados → fotos da Home uma por `<script>__IMG__()` → runtime `module async`
+  → demais imagens → NDA cifrado. O runtime lê `window.__ASSETS__` ao vivo.
+- **Miniaturas** para grades (`src/core/miniaturas.ts`, `<id>-mini`, só ao
+  publicar pelo editor); **um resolvedor** `resolverDoMapa`.
+- **Pacote NDA** binário: `selarPacoteNda`/`abrirPacoteNda`.
+- **Imagem de compartilhamento**: `compartilhar.jpg` ao lado
+  (`src/publish/imagemSocial.ts`); a imagem de SEO não vai embutida.
+- **Cor de texto legível**: `legivel()` gera `--ink-pale-texto` e
+  `--accent-texto`; no editor, texto secundário = `--ed-texto-2`.
+- **Escala tipográfica**: todo `font-size` do site é
+  `calc(… * var(--escala-texto, 1))` (títulos também `* var(--escala-titulos, 1)`).
+- **Card que abre algo** sem ser link: `TituloQueAbre` (o título é o
+  `<button>`) — nada de `role="button"` com botões dentro.
+- **Endereço que não existe**: `resolveRoute` → `naoEncontrado`; página
+  `NaoEncontrado` (com a senha do NDA ali, se for o caso).
+- **Download** de arquivo gerado: `baixarArquivo()` (Editor.tsx).
+- **Auditoria axe nos e2e**: `auditarAcessibilidade(page, onde)` de
+  `e2e/helpers/axe.ts`.
+
+## 8. Guardas que já existem — não enfraqueça; estenda
+
+Unitários (`test/`): `campos-texto-cobertura` (preenche todo bilíngue
+opcional pelo schema), `visibilidade`, `ui-dicionario`, `contrast` (CSS do
+site sem cor de texto crua), `editor-contraste` (4,5:1 nos painéis),
+`tema-com-efeito` (toda variável do Tema usada; font-size escalado),
+`site-shell` (runtime embutido em dia), `preview-css` (gerado em dia; nada
+antes do `@import`), `renderer` (CSS sem `!important`), `assemble`,
+`miniaturas`, `imagem-social`, `nda-pacote`, `preflight-nda`, `peso`.
+
+E2E (`e2e/`): `f58-site-inteiro` (toda rota × idioma: sem erro, um `h1`,
+contraste medido, axe, espaço das imagens), `f59-editor-inteiro` (toda
+página/elemento/aba + axe), `f61`/`f62`/`f65` (o que aparece antes do
+runtime; servidor que pausa o arquivo), `f64` (miniaturas ponta a ponta),
+`f66` (compartilhar.jpg), `f67-controles-com-efeito` (todo campo do
+Inspector, Tema e fichas muda o canvas — exceções listadas com o porquê),
+`f34`/`f56` (janelas: modal de verdade + axe).
+
+## 9. Armadilhas conhecidas
+
+- **Runtime desatualizado:** mudou o site e não rodou `gen:shell` → o editor
+  publica o runtime antigo (e `test/site-shell` falha). Rode antes do e2e.
+- Build do Vite **dentro** do Vitest precisa de `NODE_ENV=production`
+  (o `test` muda o React embutido).
+- `playwright.config` usa `storageState: e2e/fixtures/navegador-com-backup.json`
+  (backup "recente") para a faixa de proteção não entrar nos testes; quem
+  precisa do navegador limpo usa `test.use({ storageState: { cookies: [], origins: [] } })`.
+- E2E **sem internet**: a config bloqueia todo host fora do localhost
+  (`--host-resolver-rules`).
+- **Esc no editor seleciona o elemento pai** — não use Esc entre campos num
+  teste; tire o foco (`blur`).
+- Antes do runtime existem **duas Homes pré-renderizadas** (uma escondida):
+  seletores nessa fase precisam de `:visible`.
+- CSS do site: sem `!important`; no `editor.css`, **nenhuma regra antes do
+  `@import`** da prévia (senão a prévia de tablet/celular some, sem erro).
+- `npm run build:editor` sobrescreve `dist/site.html` com o site **sem
+  dados**; para ver o exemplo, republique (comando na seção 4).
+- Download no navegador: teste pelo Playwright (`waitForEvent('download')`);
+  o arquivo baixado vem sem extensão — salve como `.html` para abrir.
+- Vitest silencia `console.log`: para sondar, grave num arquivo temporário.
+- `.tb-btn` é estilo da barra **escura**; dentro de `.modal` o secundário
+  tem regra própria clara.
+- (Só no Windows) `git stash`/`checkout` devolve arquivos com CRLF, e o
+  heredoc do Bash come barras invertidas — código com regex, escreva com a
+  ferramenta de edição de arquivo.
+
+## 10. Ideias para as próximas rodadas (ainda não feitas)
+
+1. **Terminar a rodada 85** (seção 2).
+2. Miniaturas também no conteúdo **NDA** (as grades destrancadas usam a
+   foto inteira).
+3. O canvas do editor usa as fotos inteiras (até 2400 px) em todos os
+   cards — peso de memória em portfólio grande.
+4. `f67`: as exceções `SO_NOS_CARDS` (largura, destaque, resumo na ficha)
+   poderiam ser conferidas na página da lista, em vez de liberadas.
+5. Folha de impressão para a página do projeto (recrutador salvando PDF).
+6. Vitest ficou em ~30 s (transformação domina): avaliar cache de módulos.
+
+## 11. Histórico recente (rodadas 64–84)
+
+| Rodada | Commit | O que mudou |
+|---|---|---|
+| 64 | `5dc8474` | Fotos com tamanho real (width/height): o site não pula |
+| 65 | `6ea0362` | Fotos da Home primeiro (38,6 s → 0,4 s num site de 8 MB em 4G lenta) |
+| 66 | `07e5878` | Runtime `async`: link direto para projeto 40 s → 1,8 s |
+| 67 | `64c1206` | Pacote NDA binário: imagens NDA ~25% menores |
+| 68 | `2262f91` | Rascunho protegido da limpeza do navegador |
+| 69 | `fe1bcca` | Legenda nos quadros do storyboard e no bloco Imagem |
+| 70 | `e88658e` | Conferência antes de publicar vê o NDA; e2e sem internet |
+| 71 | `b84185a` | Texto do site sempre legível (cinza e destaque ajustados no texto) |
+| 72 | `9b22d27` | Auditoria axe em toda rota do site; menos movimento |
+| 73 | `e200de8` | Editor acessível: contraste, nomes dos campos, regiões |
+| 74 | `4bdf5fd` | Cards sem botão dentro de botão (`TituloQueAbre`) |
+| 75 | `7936837` | Endereço quebrado diz que não encontrou; NDA pede a senha ali |
+| 76 | `662c1ab` | Miniaturas para cards e grades |
+| 77 | `eabace8` | Home já chega no idioma de quem visita |
+| 78 | `b71f64a` | Botões secundários das janelas visíveis de novo |
+| 79 | `97188f4` | Nenhum texto claro demais nos painéis do editor |
+| 80 | `0e6ca43` | Guarda do runtime embutido em dia |
+| 81 | `45061fc` | Imagem ao compartilhar o link funciona (`compartilhar.jpg`) |
+| 82 | `925ed6f` | Tema: tamanho do texto, contraste entre tamanhos e Destaque 2 com efeito |
+| 83 | `f84d629` | Guarda: todo campo do Inspector faz efeito; NDA no menu |
+| 84 | `4abdda2` | Guarda estendida ao Tema e às fichas; data da nota; nome do vídeo |
