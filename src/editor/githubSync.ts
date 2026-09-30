@@ -29,6 +29,16 @@ const CHAVE_SHA = 'portfolio-v4:github-sync-sha';
 export const CAMINHO_PADRAO = 'portfolio-backup.json';
 /** Espera depois da última edição antes de enviar (não sobe a cada tecla). */
 export const ESPERA_MS = 60_000;
+/** Com o editor aberto, confere o GitHub a cada tanto (e ao voltar para a aba). */
+export const CONFERIR_A_CADA_MS = 3 * 60_000;
+
+/** O arquivo do GitHub mudou por fora desde o último envio/carga deste navegador: carregar em vez de gravar por cima. */
+export class MudouNoGitHub extends Error {
+  constructor() {
+    super('O backup do GitHub mudou por fora.');
+    this.name = 'MudouNoGitHub';
+  }
+}
 
 export function lerConfig(): SyncConfig | null {
   try {
@@ -53,21 +63,36 @@ export function gravarConfig(c: SyncConfig | null): void {
 
 export const alvoDe = (c: SyncConfig): string => `${c.repo}/${c.path}`;
 
-export function lerShaConhecido(alvo: string): string | null {
+function lerRegistro(alvo: string): { sha: string; hash: string | null } | null {
   try {
-    const r = JSON.parse(localStorage.getItem(CHAVE_SHA) ?? 'null') as { alvo?: string; sha?: string } | null;
-    return r && r.alvo === alvo && typeof r.sha === 'string' ? r.sha : null;
+    const r = JSON.parse(localStorage.getItem(CHAVE_SHA) ?? 'null') as { alvo?: string; sha?: string; hash?: string } | null;
+    return r && r.alvo === alvo && typeof r.sha === 'string' ? { sha: r.sha, hash: typeof r.hash === 'string' ? r.hash : null } : null;
   } catch {
     return null;
   }
 }
 
-export function gravarShaConhecido(alvo: string, sha: string): void {
+export function lerShaConhecido(alvo: string): string | null {
+  return lerRegistro(alvo)?.sha ?? null;
+}
+
+/** `hash` = do conteúdo que ESTE navegador enviou (sem ele, o próximo envio sobe de novo). */
+export function gravarShaConhecido(alvo: string, sha: string, hash: string | null = null): void {
   try {
-    localStorage.setItem(CHAVE_SHA, JSON.stringify({ alvo, sha }));
+    localStorage.setItem(CHAVE_SHA, JSON.stringify({ alvo, sha, ...(hash ? { hash } : {}) }));
   } catch {
     /* sem armazenamento: só perde a conferência na próxima abertura */
   }
+}
+
+/** Impressão digital curta de um texto (FNV-1a), para saber se o conteúdo já foi enviado. */
+export function hashTexto(texto: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < texto.length; i++) {
+    h ^= texto.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return `${texto.length.toString(36)}-${(h >>> 0).toString(36)}`;
 }
 
 export function repoValido(repo: string): boolean {
@@ -90,7 +115,7 @@ function explicarHttp(status: number, corpo: string): string {
 }
 
 /** sha atual do arquivo (null se ainda não existe). */
-async function shaAtual(c: SyncConfig, f: typeof fetch): Promise<string | null> {
+export async function shaAtual(c: SyncConfig, f: typeof fetch): Promise<string | null> {
   const r = await f(`https://api.github.com/repos/${c.repo}/contents/${encodeURI(c.path)}`, {
     headers: { Authorization: `Bearer ${c.token}`, Accept: 'application/vnd.github+json' },
     cache: 'no-store',
@@ -159,7 +184,12 @@ export async function verificarRemoto(
   return { oferta: maisNovo ? { sha, texto, savedAt } : null, sha: null };
 }
 
-/** Envia o conteúdo; devolve o novo sha. */
+/**
+ * Envia o conteúdo; devolve o novo sha. Com `shaConhecido`, só grava por cima
+ * DAQUELA versão: se o GitHub mudou por fora nesse meio-tempo, lança
+ * MudouNoGitHub (quem chama carrega a versão de lá). Sem sha conhecido
+ * (primeiro envio deste navegador), grava por cima do que houver.
+ */
 export async function enviarArquivo(c: SyncConfig, conteudo: string, shaConhecido: string | null, f: typeof fetch = fetch): Promise<string> {
   const put = (sha: string | null): Promise<Response> =>
     f(`https://api.github.com/repos/${c.repo}/contents/${encodeURI(c.path)}`, {
@@ -167,9 +197,8 @@ export async function enviarArquivo(c: SyncConfig, conteudo: string, shaConhecid
       headers: { Authorization: `Bearer ${c.token}`, Accept: 'application/vnd.github+json', 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: `Backup automático ${new Date().toISOString()}`, content: base64Utf8(conteudo), ...(sha ? { sha } : {}) }),
     });
-  let r = await put(shaConhecido ?? (await shaAtual(c, f)));
-  // sha velho (outro navegador enviou antes): busca o atual e tenta uma vez.
-  if (r.status === 409 || r.status === 422) r = await put(await shaAtual(c, f));
+  const r = await put(shaConhecido ?? (await shaAtual(c, f)));
+  if (r.status === 409 || r.status === 422) throw new MudouNoGitHub();
   if (!r.ok) throw new Error(explicarHttp(r.status, await r.text().catch(() => '')));
   const j = (await r.json()) as { content?: { sha?: string } };
   return j.content?.sha ?? '';
@@ -180,11 +209,11 @@ export async function enviarArquivo(c: SyncConfig, conteudo: string, shaConhecid
  * conteúdo mudou desde o último envio. Com `pausado` (conferindo se o GitHub
  * tem versão mais nova), não envia nada.
  */
-export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, config: SyncConfig | null, pausado = false): { status: SyncStatus; enviarAgora: () => void } {
+export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, config: SyncConfig | null, pausado = false, aoMudarNoGitHub?: () => void): { status: SyncStatus; enviarAgora: () => void } {
   const [status, setStatus] = useState<SyncStatus>(!config ? { tipo: 'desligado' } : pausado ? { tipo: 'verificando' } : { tipo: 'aguardando' });
   const ultimo = useRef<{ texto: string; sha: string | null; repo: string } | null>(null);
-  const atual = useRef({ doc, assets, config });
-  atual.current = { doc, assets, config };
+  const atual = useRef({ doc, assets, config, aoMudarNoGitHub });
+  atual.current = { doc, assets, config, aoMudarNoGitHub };
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [gatilho, setGatilho] = useState(0);
   const imediato = useRef(true);
@@ -196,13 +225,28 @@ export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, 
     const texto = JSON.stringify({ ...b, savedAt: '' });
     const alvo = alvoDe(c);
     if (ultimo.current && ultimo.current.repo === alvo && ultimo.current.texto === texto) return;
+    const registro = lerRegistro(alvo);
+    const hash = hashTexto(texto);
+    // Já enviado deste navegador (ex.: reabriu sem mexer): não cria outro commit igual.
+    if (!ultimo.current && registro?.hash === hash) {
+      ultimo.current = { texto, sha: registro.sha, repo: alvo };
+      return;
+    }
     setStatus({ tipo: 'enviando' });
     try {
-      const sha = await enviarArquivo(c, JSON.stringify(b, null, 2), ultimo.current?.repo === alvo ? ultimo.current.sha : lerShaConhecido(alvo));
+      const conhecido = ultimo.current?.repo === alvo ? ultimo.current.sha : (registro?.sha ?? null);
+      // Mudou por fora desde o último envio/carga? Carrega de lá em vez de gravar por cima.
+      if (conhecido && (await shaAtual(c, fetch)) !== conhecido) throw new MudouNoGitHub();
+      const sha = await enviarArquivo(c, JSON.stringify(b, null, 2), conhecido);
       ultimo.current = { texto, sha, repo: alvo };
-      gravarShaConhecido(alvo, sha);
+      gravarShaConhecido(alvo, sha, hash);
       setStatus({ tipo: 'ok', em: new Date().toLocaleTimeString() });
     } catch (e) {
+      if (e instanceof MudouNoGitHub && atual.current.aoMudarNoGitHub) {
+        setStatus({ tipo: 'verificando' });
+        atual.current.aoMudarNoGitHub();
+        return;
+      }
       setStatus({ tipo: 'erro', msg: e instanceof Error ? e.message : String(e) });
     }
   };

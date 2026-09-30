@@ -16,7 +16,8 @@
     "build:editor": "vite build --config vite.editor.config.ts",
     "gen:shell": "node scripts/gen-shell.mjs",
     "prebuild:editor": "npm run gen:shell && npm run gen:preview",
-    "gen:preview": "node scripts/gen-preview-css.mjs"
+    "gen:preview": "node scripts/gen-preview-css.mjs",
+    "publicar:site": "node scripts/publicar-site.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

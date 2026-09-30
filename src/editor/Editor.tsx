@@ -55,7 +55,7 @@ import { RemoverContext } from './remover';
 import { chaveDaSelecao, type PedidoFoco } from './focoCampo';
 import type { CampoId } from '../core/camposTexto';
 import { imagensSemDescricao, textosSemTraducao, type ImagemSemDescricao, type TextoSemTraducao } from './pendencias';
-import { alvoDe, gravarShaConhecido, lerConfig, lerShaConhecido, useGithubSync, verificarRemoto, type SyncConfig } from './githubSync';
+import { alvoDe, CONFERIR_A_CADA_MS, gravarShaConhecido, hashTexto, lerConfig, lerShaConhecido, useGithubSync, verificarRemoto, type SyncConfig } from './githubSync';
 import { avisoDeArmazenamento, lerUltimoBackup, marcarBackup, protegerRascunho } from './armazenamento';
 
 /** Nome do item no aviso de exclusão. */
@@ -65,8 +65,8 @@ export interface EditorProps {
   initial: PortfolioV4;
   /** assetId → data URL (imagens). Mutável via importação de backup. */
   assets: Record<string, string>;
-  /** Chamado ao importar um backup (a raiz remonta o editor). */
-  onImport?: (backup: Backup) => void;
+  /** Chamado ao importar um backup (a raiz remonta o editor); `aviso` aparece no topo do editor novo. */
+  onImport?: (backup: Backup, aviso?: string) => void;
   /** Adiciona uma imagem ao mapa de assets (data URL) sem remontar o editor. */
   onAddAsset?: (id: string, dataUrl: string) => void;
   persist?: boolean;
@@ -221,55 +221,80 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [syncConfig, setSyncConfig] = useState<SyncConfig | null>(() => (persist ? lerConfig() : null));
   // Enquanto confere se o GitHub tem uma versão mais nova, o envio automático espera.
   const [conferindoGitHub, setConferindoGitHub] = useState(() => !!(persist && onImport && lerConfig()));
-  const sync = useGithubSync(doc.state, assets, syncConfig, conferindoGitHub);
+  const puxarRef = useRef<() => void>(() => {});
+  const sync = useGithubSync(doc.state, assets, syncConfig, conferindoGitHub, () => puxarRef.current());
   const outraAba = useOutraAba('portfolio-editor', persist);
   // Avisos e perguntas no visual do editor (nada de alert/confirm/prompt do navegador).
   const avisos = useAvisosDoEditor(doc.state);
   const { avisar: mostrarAviso, fecharAviso } = avisos.api;
 
-  // Ao abrir: o backup do GitHub mudou por fora (outro navegador, ou uma revisão
-  // enviada direto para lá) e é diferente do que está aberto? Pergunta antes de o
-  // envio automático gravar por cima dele.
-  useEffect(() => {
+  // O GitHub é a fonte da versão mais nova: se o backup de lá mudou por fora
+  // (outro navegador, ou uma revisão enviada direto para lá) e é diferente do
+  // que está aberto, carrega sozinho — o que estava aberto vira versão
+  // automática (Versões). Confere ao abrir, ao voltar para a aba, a cada
+  // CONFERIR_A_CADA_MS e quando um envio encontra o arquivo mudado.
+  const docAtual = useRef(doc.state);
+  docAtual.current = doc.state;
+  const vivo = useRef(true);
+  const puxando = useRef(false);
+  const puxarDoGitHub = async (): Promise<void> => {
     const c = syncConfig;
-    if (!conferindoGitHub || !c || !onImport) return;
-    let vivo = true;
+    if (!c || !onImport || puxando.current) return;
+    puxando.current = true;
+    setConferindoGitHub(true);
     const alvo = alvoDe(c);
-    void (async () => {
+    try {
+      const { oferta, sha } = await verificarRemoto(c, docAtual.current, rascunhoSalvoEm, lerShaConhecido(alvo));
+      if (sha && sha !== lerShaConhecido(alvo)) gravarShaConhecido(alvo, sha);
+      if (!vivo.current || !oferta) return;
+      let backup: Backup;
       try {
-        const { oferta, sha } = await verificarRemoto(c, doc.state, rascunhoSalvoEm, lerShaConhecido(alvo));
-        if (sha) gravarShaConhecido(alvo, sha);
-        if (!vivo || !oferta) return;
-        const quando = oferta.savedAt ? new Date(oferta.savedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
-        const carregar = await avisos.api.confirmar({
-          titulo: 'Tem uma versão mais nova no GitHub',
-          texto: `O backup em ${c.repo}${quando ? ` (salvo em ${quando})` : ''} é diferente do que está aberto aqui.\n\nCarregar essa versão? O que está aberto agora vira uma versão automática (Versões). Se mantiver o daqui, ele substitui o do GitHub no próximo envio.`,
-          confirmar: 'Carregar do GitHub',
-          cancelar: 'Manter o daqui',
-        });
-        if (!vivo || !carregar) return;
-        let backup: Backup;
-        try {
-          backup = parseBackup(oferta.texto);
-        } catch (err) {
-          avisos.api.avisar(`Não consegui abrir o backup do GitHub: ${explicarErroDeImportacao(err)}`, { tipo: 'erro' });
-          return;
-        }
-        if (!(await guardarAntesDeTrocar('Antes de carregar do GitHub', doc.state, avisos.api.confirmar))) return;
-        gravarShaConhecido(alvo, oferta.sha);
-        onImport(backup);
+        backup = parseBackup(oferta.texto);
       } catch (err) {
-        console.warn('[github] não consegui conferir o backup do GitHub', err);
-      } finally {
-        if (vivo) setConferindoGitHub(false);
+        mostrarAviso(`O backup do GitHub não abriu: ${explicarErroDeImportacao(err)}`, { tipo: 'erro' });
+        return;
       }
-    })();
+      if (!(await guardarAntesDeTrocar('Antes de carregar do GitHub', docAtual.current, avisos.api.confirmar))) return;
+      // Impressão digital do que veio: o editor que abre com ela não reenvia o mesmo conteúdo.
+      gravarShaConhecido(alvo, oferta.sha, hashTexto(JSON.stringify({ ...buildBackup(backup.doc, backup.assets), savedAt: '' })));
+      const quando = oferta.savedAt ? new Date(oferta.savedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+      onImport(backup, `Carreguei a versão mais nova do GitHub${quando ? ` (salva em ${quando})` : ''}. O que estava aberto ficou em Versões.`);
+    } catch (err) {
+      console.warn('[github] não consegui conferir o backup do GitHub', err);
+    } finally {
+      puxando.current = false;
+      if (vivo.current) setConferindoGitHub(false);
+    }
+  };
+  puxarRef.current = () => void puxarDoGitHub();
+
+  useEffect(() => {
+    vivo.current = true;
+    if (conferindoGitHub) void puxarDoGitHub();
     return () => {
-      vivo = false;
+      vivo.current = false;
     };
     // Só ao abrir (o editor remonta a cada importação).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!syncConfig || !onImport) return;
+    let ultima = Date.now();
+    const conferir = (): void => {
+      if (document.visibilityState !== 'visible' || Date.now() - ultima < 30_000) return;
+      ultima = Date.now();
+      puxarRef.current();
+    };
+    window.addEventListener('focus', conferir);
+    document.addEventListener('visibilitychange', conferir);
+    const t = setInterval(conferir, CONFERIR_A_CADA_MS);
+    return () => {
+      window.removeEventListener('focus', conferir);
+      document.removeEventListener('visibilitychange', conferir);
+      clearInterval(t);
+    };
+  }, [syncConfig, onImport]);
 
   const uploadImage = useCallback(
     async (file: File): Promise<string> => {

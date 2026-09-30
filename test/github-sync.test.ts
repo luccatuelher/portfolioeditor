@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { base64Utf8, enviarArquivo, repoValido, verificarRemoto } from '../src/editor/githubSync';
+import { base64Utf8, enviarArquivo, hashTexto, MudouNoGitHub, repoValido, verificarRemoto } from '../src/editor/githubSync';
 import type { PortfolioV4 } from '../src/schema/v4';
 
 const cfg = { repo: 'eu/portfolio-backup', token: 't', path: 'portfolio-backup.json' };
@@ -22,13 +22,15 @@ describe('githubSync', () => {
     expect(JSON.parse(f.mock.calls[1]![1].body).sha).toBeUndefined();
   });
 
-  it('com sha velho, busca o atual e tenta de novo', async () => {
-    const f = vi.fn()
-      .mockResolvedValueOnce(resp(409))
-      .mockResolvedValueOnce(resp(200, { sha: 'atual' }))
-      .mockResolvedValueOnce(resp(200, { content: { sha: 'depois' } }));
-    expect(await enviarArquivo(cfg, '{}', 'velho', f)).toBe('depois');
-    expect(JSON.parse(f.mock.calls[2]![1].body).sha).toBe('atual');
+  it('com sha velho (o GitHub mudou por fora), não grava por cima: avisa para carregar de lá', async () => {
+    const f = vi.fn().mockResolvedValueOnce(resp(409));
+    await expect(enviarArquivo(cfg, '{}', 'velho', f)).rejects.toBeInstanceOf(MudouNoGitHub);
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  it('impressão digital do conteúdo: igual para o mesmo texto, diferente para outro', () => {
+    expect(hashTexto('{"a":1}')).toBe(hashTexto('{"a":1}'));
+    expect(hashTexto('{"a":1}')).not.toBe(hashTexto('{"a":2}'));
   });
 
   it('explica token sem permissão', async () => {

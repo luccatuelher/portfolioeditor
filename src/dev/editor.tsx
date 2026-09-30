@@ -92,12 +92,12 @@ function Root(): React.ReactElement {
    * custo de somar é espaço no navegador; o de trocar seria trabalho perdido.
    * No site publicado entram só as imagens realmente usadas.
    */
-  const onImport = (b: Backup): void => {
+  const onImport = (b: Backup, aviso?: string): void => {
     setState((s) => {
       const assets = { ...(s?.assets ?? {}), ...b.assets };
       // Quem grava é o autosave do editor que vai abrir (gravarAoAbrir): uma
       // falha aparece no aviso dele. Antes a gravação era aqui, e a falha, engolida.
-      return { doc: b.doc, assets, version: (s?.version ?? 0) + 1, persist: true, gravarAoAbrir: true };
+      return { doc: b.doc, assets, version: (s?.version ?? 0) + 1, persist: true, gravarAoAbrir: true, notice: aviso };
     });
   };
   // Adiciona imagem sem remontar (mantém seleção/undo).
