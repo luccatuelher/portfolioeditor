@@ -7,6 +7,7 @@ import type { ImagemSemDescricao, TextoSemTraducao } from './pendencias';
 import type { CollectionName, Selection } from './paths';
 import { formatarPeso, LIMITE_GITHUB_BYTES, type PesoDoSite } from '../publish/peso';
 import type { DocApi } from './useDocument';
+import { SyncPainel, type SyncProps } from './SyncPainel';
 
 const VIS_OPTS: { value: Visibility; label: string }[] = [
   { value: 'public', label: 'Público' },
@@ -162,7 +163,7 @@ function TraducoesPainel({ itens, onIr }: { itens: TextoSemTraducao[]; onIr: (t:
 }
 
 /** Painel de dados das coleções: editar, reordenar (arrastar), visibilidade, destaque. */
-export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver, onIrPara, semTraducao, onTraduzir }: { doc: DocApi; onSelect: (s: Selection) => void; peso?: PesoDoSite; assets?: Record<string, string>; semDescricao?: ImagemSemDescricao[]; resolver?: (r: ImageRef) => string; onIrPara?: (p: ImagemSemDescricao) => void; semTraducao?: TextoSemTraducao[]; onTraduzir?: (t: TextoSemTraducao) => void }): React.ReactElement {
+export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver, onIrPara, semTraducao, onTraduzir, sync }: { doc: DocApi; onSelect: (s: Selection) => void; peso?: PesoDoSite; assets?: Record<string, string>; semDescricao?: ImagemSemDescricao[]; resolver?: (r: ImageRef) => string; onIrPara?: (p: ImagemSemDescricao) => void; semTraducao?: TextoSemTraducao[]; onTraduzir?: (t: TextoSemTraducao) => void; sync?: SyncProps }): React.ReactElement {
   const c = doc.state.collections;
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
   const sel = (collection: CollectionName, id: string): void => onSelect({ kind: 'item', collection, itemId: id });
@@ -174,6 +175,7 @@ export function DataPanel({ doc, onSelect, peso, assets, semDescricao, resolver,
 
   return (
     <div className="panel data-panel">
+      {sync ? <SyncPainel {...sync} /> : null}
       {peso ? <PesoDoSitePainel peso={peso} assets={assets ?? {}} /> : null}
       {semDescricao && resolver && onIrPara ? <DescricoesPainel itens={semDescricao} resolver={resolver} onIr={onIrPara} /> : null}
       {semTraducao && onTraduzir ? <TraducoesPainel itens={semTraducao} onIr={onTraduzir} /> : null}

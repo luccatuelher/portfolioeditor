@@ -54,6 +54,7 @@ import { RemoverContext } from './remover';
 import { chaveDaSelecao, type PedidoFoco } from './focoCampo';
 import type { CampoId } from '../core/camposTexto';
 import { imagensSemDescricao, textosSemTraducao, type ImagemSemDescricao, type TextoSemTraducao } from './pendencias';
+import { lerConfig, useGithubSync, type SyncConfig } from './githubSync';
 import { avisoDeArmazenamento, lerUltimoBackup, marcarBackup, protegerRascunho } from './armazenamento';
 
 /** Nome do item no aviso de exclusão. */
@@ -214,6 +215,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const doc = useDocument(inicial);
   const resolveAsset = useMemo(() => mapResolver(assets), [assets]);
   const { status: saveStatus, erro: erroGravacao } = useLocalDraft(doc.state, assets, persist, gravarAoAbrir);
+  const [syncConfig, setSyncConfig] = useState<SyncConfig | null>(() => (persist ? lerConfig() : null));
+  const sync = useGithubSync(doc.state, assets, syncConfig);
   const outraAba = useOutraAba('portfolio-editor', persist);
   // Avisos e perguntas no visual do editor (nada de alert/confirm/prompt do navegador).
   const avisos = useAvisosDoEditor(doc.state);
@@ -1182,7 +1185,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
           ) : leftTab === 'theme' ? (
             <ThemePanel doc={doc} onUploadImage={uploadImage} onUploadFavicon={uploadFavicon} resolveAsset={resolveAsset} />
           ) : leftTab === 'data' ? (
-            <DataPanel doc={doc} onSelect={abrirItem} peso={peso} assets={assets} semDescricao={semDescricao} resolver={resolveAsset} onIrPara={irParaDescricao} semTraducao={semTraducao} onTraduzir={irParaTraducao} />
+            <DataPanel doc={doc} onSelect={abrirItem} peso={peso} assets={assets} semDescricao={semDescricao} resolver={resolveAsset} onIrPara={irParaDescricao} semTraducao={semTraducao} onTraduzir={irParaTraducao} sync={persist ? { config: syncConfig, status: sync.status, onConfig: setSyncConfig, enviarAgora: sync.enviarAgora } : undefined} />
           ) : (
             <LayersPanel doc={doc} page={page} item={item} lang={lang} selection={selection} onSelect={setSelection} />
           )}

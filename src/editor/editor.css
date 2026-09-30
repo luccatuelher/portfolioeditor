@@ -719,3 +719,10 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 /* Aviso que pede ação (gravação falhando, editor em duas abas): não some sozinho */
 .editor-alerta { background: #fbe3dc; border-bottom-color: #d99a86; color: #6b2412; }
 .editor-notice .editor-alerta-acao { margin-left: auto; flex: none; padding: 5px 12px; border: 1px solid currentColor; border-radius: 4px; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; }
+
+.sync-github { margin-bottom: 16px; }
+.sync-github .field { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; font-size: 12px; }
+.sync-status { font-size: 12px; margin: 4px 0; }
+.sync-erro { color: #b3261e; }
+.sync-nota { font-size: 11px; opacity: 0.7; margin: 4px 0; }
+.sync-acoes { display: flex; gap: 6px; flex-wrap: wrap; }
