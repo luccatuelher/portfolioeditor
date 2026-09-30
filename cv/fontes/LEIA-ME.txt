@@ -1,0 +1,2 @@
+Fontes do CV (DM Serif Display, DM Sans, DM Mono — as mesmas do site), subconjunto latino, baixadas do Google Fonts.
+Licença: SIL Open Font License 1.1 (https://openfontlicense.org). Ficam aqui para o PDF sair igual em qualquer máquina.

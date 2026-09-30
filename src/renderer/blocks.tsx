@@ -486,7 +486,8 @@ function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.React
       <EditBadges visibility={item.visibility} />
       <span className="blog-date">{pick(item.date, lang)}</span>
       <div className="blog-thumb-wrap">
-        <Img image={item.thumb} className="blog-thumb" decorativa miniatura />
+        {/* No editor, a nota sem capa guarda o lugar dela: os cards da linha ficam alinhados e dá para ver onde a capa entra. */}
+        {editing && !item.thumb.assetId && !item.thumb.url ? <div className="blog-thumb blog-thumb-vazia" aria-hidden="true">Sem capa</div> : <Img image={item.thumb} className="blog-thumb" decorativa miniatura />}
         <EditActions target={{ target: 'item', coll: 'blog', id: item.id }} acts={['edit', 'image', 'crop', 'delete']} nome={`nota “${pick(item.title, lang)}”`} />
       </div>
       <TituloQueAbre className="blog-title" abre={!!onNavigate}>{pick(item.title, lang)}</TituloQueAbre>

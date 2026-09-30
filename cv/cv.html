@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CV — Lucca Tuelher</title>
+<!--
+  CV do Lucca (vira ../portfolio/cv.pdf com `npm run gerar:cv`). Mesma identidade do
+  site: DM Serif Display / DM Sans / DM Mono, papel #F2EFE8, acento #C1440E.
+  Fonte do conteúdo: "CV - Lucca Tuelher.pdf" (ago/2025) + projetos do portfólio.
+  Ao receber o histórico atualizado (LinkedIn), editar só o conteúdo abaixo.
+-->
+<style>
+  @font-face { font-family: 'DM Serif Display'; src: url('fontes/DMSerifDisplay-400.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'DM Sans'; src: url('fontes/DMSans.woff2') format('woff2'); font-weight: 300 700; }
+  @font-face { font-family: 'DM Mono'; src: url('fontes/DMMono-400.woff2') format('woff2'); font-weight: 400; }
+  @font-face { font-family: 'DM Mono'; src: url('fontes/DMMono-500.woff2') format('woff2'); font-weight: 500; }
+  @page { size: A4; margin: 0; }
+  :root { --paper: #FBFAF7; --ink: #1C1B18; --ink-soft: #4A4740; --ink-pale: #7A766D; --rule: #D6D2C9; --accent: #C1440E; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--paper); color: var(--ink); }
+  body { font-family: 'DM Sans', system-ui, sans-serif; font-weight: 300; font-size: 9.4pt; line-height: 1.45; }
+  .folha { width: 210mm; height: 297mm; padding: 16mm 15mm 14mm; display: grid; grid-template-rows: auto 1fr; gap: 9mm; }
+  header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8mm; border-bottom: 1.5px solid var(--ink); padding-bottom: 5mm; }
+  h1 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 30pt; line-height: 1; margin: 0; letter-spacing: -0.01em; }
+  .funcao { font-family: 'DM Mono', monospace; font-size: 7.6pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-top: 2.5mm; }
+  .contato { font-family: 'DM Mono', monospace; font-size: 7.4pt; line-height: 1.7; text-align: right; color: var(--ink-soft); }
+  .contato a { color: inherit; text-decoration: none; }
+  .corpo { display: grid; grid-template-columns: 1fr 58mm; gap: 10mm; min-height: 0; }
+  h2 { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 7.4pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0 0 3mm; }
+  section + section { margin-top: 6.5mm; }
+  .resumo { color: var(--ink-soft); font-size: 9.6pt; line-height: 1.55; margin: 0; }
+  .cargo { break-inside: avoid; }
+  .cargo + .cargo { margin-top: 4.2mm; }
+  .cargo-topo { display: flex; justify-content: space-between; gap: 4mm; align-items: baseline; }
+  .cargo h3 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 12pt; margin: 0; }
+  .cargo h3 span { font-family: 'DM Sans', sans-serif; font-weight: 400; font-size: 9pt; color: var(--ink-soft); }
+  .datas { font-family: 'DM Mono', monospace; font-size: 7.2pt; color: var(--ink-pale); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .cargo p { margin: 1.2mm 0 0; color: var(--ink-soft); }
+  aside { border-left: 1px solid var(--rule); padding-left: 6mm; }
+  aside p, aside ul { margin: 0; color: var(--ink-soft); }
+  aside ul { padding: 0; list-style: none; display: grid; gap: 1.6mm; }
+  aside li b, aside p b { font-weight: 500; color: var(--ink); }
+  .projeto b { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 10.5pt; color: var(--ink); }
+  .projeto span { font-family: 'DM Mono', monospace; font-size: 7pt; color: var(--ink-pale); margin-left: 1.5mm; }
+</style>
+</head>
+<body>
+<div class="folha">
+  <header>
+    <div>
+      <h1>Lucca Tuelher</h1>
+      <div class="funcao">Storyboard Artist &amp; Animatic Editor</div>
+    </div>
+    <div class="contato">
+      <a href="mailto:luccatuelher@yahoo.com">luccatuelher@yahoo.com</a><br>
+      +55 (48) 98801-6920<br>
+      <a href="https://www.linkedin.com/in/lucca-tuelher-757a08253/">linkedin.com/in/lucca-tuelher-757a08253</a><br>
+      <a href="https://luccatuelher.github.io/portfolio">luccatuelher.github.io/portfolio</a><br>
+      Florianópolis, Brazil
+    </div>
+  </header>
+
+  <div class="corpo">
+    <main>
+      <section>
+        <h2>Profile</h2>
+        <p class="resumo">Storyboard artist who turns scripts into visual storytelling across film, television and advertising. Most of my work is on children’s series and musicals, in team-oriented productions ranging from series to short films and games. I keep storyboard software and processes efficient under tight deadlines and budgets, and I work closely with creative teams to shape narratives and visual languages.</p>
+      </section>
+
+      <section>
+        <h2>Experience</h2>
+        <div class="cargo">
+          <div class="cargo-topo"><h3>Oinc Filmes <span>· Storyboard Artist</span></h3><span class="datas">01/2025 – 05/2025</span></div>
+          <p>Animatics for the international adaptation of the hit Brazilian series “3 Palavrinhas”. Adapted 10 scripts into storyboards for ages 0–4, aiming for engaging, easy-to-read animation.</p>
+        </div>
+        <div class="cargo">
+          <div class="cargo-topo"><h3>52 Animation Studio <span>· Storyboard &amp; Animatic Artist</span></h3><span class="datas">2025</span></div>
+          <p>Original animatic for a series made for the Kuwaiti market, following a local family on their adventures, with a charismatic, dynamic storyboard that portrays the country’s culture and customs. Animatics for “Rocky &amp; Nutes”.</p>
+        </div>
+        <div class="cargo">
+          <div class="cargo-topo"><h3>Vaca Amarela Filmes <span>· Storyboard Artist</span></h3><span class="datas">12/2024 – 04/2025</span></div>
+          <p>Storyboards and animatics for a vector-animated children’s series focused on Brazilian culture, adapting to the project’s established visual language together with directors and producers.</p>
+        </div>
+        <div class="cargo">
+          <div class="cargo-topo"><h3>Oinc Filmes <span>· Storyboard Artist</span></h3><span class="datas">06/2024 – 09/2024</span></div>
+          <p>Storyboards for a highly viewed children’s animated series built on music and humor. On a tight budget and schedule, created a coherent, fun and efficient visual language that simplified the pipeline down the line, and refined the narrative with the director for ages 0–4.</p>
+        </div>
+        <div class="cargo">
+          <div class="cargo-topo"><h3>Sunshine Cybernetics <span>· 2D/3D Generalist</span></h3><span class="datas">01/2020 – 12/2020</span></div>
+          <p>Concept art, character design and gameplay for new characters in an original IP, adapting existing characters to the art direction. 3D characters and animation, VFX and 2D/3D assets for two games, in step with the game director, programmers and designers.</p>
+        </div>
+      </section>
+    </main>
+
+    <aside>
+      <section>
+        <h2>Education</h2>
+        <p><b>Bachelor of Fine Arts in Animation</b><br>Universidade Federal de Santa Catarina (UFSC), Florianópolis</p>
+      </section>
+      <section>
+        <h2>Skills</h2>
+        <ul>
+          <li>Storyboards and animatics, from thumbnails to final polish</li>
+          <li>Visual language for children’s series</li>
+          <li>Collaborative narrative refinement</li>
+          <li>Storyboards integrated with 3D</li>
+          <li>Storyboards for advertising</li>
+        </ul>
+      </section>
+      <section>
+        <h2>Tools</h2>
+        <ul>
+          <li><b>Toon Boom</b> Storyboard Pro</li>
+          <li><b>Adobe</b> Premiere Pro and suite</li>
+          <li><b>Clip Studio</b> Paint</li>
+          <li><b>Blender</b></li>
+        </ul>
+      </section>
+      <section>
+        <h2>Personal projects</h2>
+        <ul>
+          <li class="projeto"><b>Deadlock Tales</b><span>2025</span><br>Animatic series set in Valve’s “Deadlock” universe</li>
+          <li class="projeto"><b>Rina &amp; Coelhão</b><span>2026</span></li>
+          <li class="projeto"><b>Dungeon Catty</b><span>2026</span></li>
+          <li class="projeto"><b>Rotfather</b><span>2026</span></li>
+        </ul>
+      </section>
+    </aside>
+  </div>
+</div>
+</body>
+</html>

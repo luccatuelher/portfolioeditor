@@ -20,5 +20,6 @@ Na nuvem, anexe os dois com `add_repo` e clone ao lado deste (`../portfolio`, `.
    `CHROMIUM_PATH=/opt/pw-browsers/chromium npm run publicar:site` (gera `../portfolio/index.html` + `compartilhar.jpg` pelo mesmo caminho do "Baixar site") →
    commit/push na `main` do `portfolio` → gravar o mesmo backup em `../portfolio-backup/portfolio-backup.json` com `savedAt` novo e dar push (o editor do Lucca carrega sozinho).
 4. Antes do push no backup, `git pull` de novo: se o Lucca editou nesse meio-tempo, reaplicar a mudança por cima da versão dele.
+5. **CV** (o botão "Baixar CV" do site aponta para `cv.pdf`): editar `cv/cv.html` → `CHROMIUM_PATH=/opt/pw-browsers/chromium npm run gerar:cv` (gera `../portfolio/cv.pdf`, A4, uma página; falha se passar da página) → commit/push na `main` do `portfolio`. Fonte do conteúdo: o CV de ago/2025 do Drive + os projetos do portfólio; o LinkedIn não abre da nuvem (rede bloqueada) — o histórico novo precisa vir do Lucca (PDF do perfil no Drive).
 
 **NDA:** a senha fica só no navegador do Lucca. Sem `PUBLISH_NDA_PASSWORD`, o `publicar:site` reaproveita o pacote cifrado do site no ar (a senha dos visitantes não muda); mudanças no conteúdo NDA só vão ao ar quando ele publicar pelo editor.
