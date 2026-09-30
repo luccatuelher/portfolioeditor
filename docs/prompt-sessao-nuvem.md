@@ -17,46 +17,25 @@ valor, implementar, testar (typecheck, vitest, e2e relevante), rodar
 nem consultar o Lucca**. Depois de cada rodada, um relatório curto em
 português (seção 5, passo 9). Pare só se ele pedir.
 
-## 2. Comece por aqui — estado em 29/09/2026
+## 2. Comece por aqui — estado em 30/09/2026
 
-> **Atualização de 30/09/2026:** o branch `rodada-85-reordenar-teclado`
-> (commit `1ced809`) **nunca foi enviado ao GitHub** e o WIP se perdeu com a
-> sessão anterior. Só o diagnóstico abaixo sobreviveu: **refaça a rodada 85 do
-> zero** seguindo as hipóteses. O Lucca autorizou **commitar direto na
-> `master`** (`portfolioeditor`) e na `main` (`portfolio`), sempre; sem PR.
-> Faça `git push` ao fim de cada rodada para não perder trabalho de novo.
-
-- `master` está em **`4abdda2`** (rodada 84), tudo verde: 377 testes
-  unitários, 187 e2e.
-- **Rodada 85 em andamento** no branch **`rodada-85-reordenar-teclado`**
-  (commit `1ced809`, "WIP"). Termine-a primeiro e só então traga para o
-  `master`.
-  - **Objetivo:** reordenar pelo teclado as 8 listas arrastáveis (projetos,
-    notas, galeria e sketches no painel Dados; blocos e seções nas Layers;
-    páginas e itens no painel Páginas). Antes só o mouse movia; a alça (⠿)
-    recebia o foco e se anunciava "reordenável" sem fazer nada.
-  - **Já feito:** `src/editor/listaOrdenavel.ts` (sensores únicos: mouse com
-    folga de 4 px + `KeyboardSensor` com `sortableKeyboardCoordinates`;
-    anúncios em português por posição) aplicado aos 8 `DndContext`; alças
-    com nome ("Reordenar: A Travessia").
-  - **Funciona:** Espaço pega o item, Esc cancela, anúncios em PT aparecem
-    na região viva (`[id^="DndLiveRegion"]`).
-  - **Não funciona:** a seta para baixo não move. Depois de Espaço + ↓, o
-    anúncio continua "Posição 1.", o `transform` das linhas fica
-    `translate3d(0px, 0px, 0px)` e soltar dá "Solto na posição 1". Falha
-    igual no Dados (linhas de `<table>`), nas Layers e nas Páginas — não é
-    coisa só de tabela.
-  - **Hipóteses a testar:** (a) retângulos dos droppables não medidos para o
-    teclado — tentar `measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}`;
-    (b) o painel esquerdo rola (`.editor-left` com overflow): `collisionRect`
-    e os retângulos em sistemas de coordenadas diferentes; (c) o
-    `setNodeRef` está na linha e os `listeners` numa `<span>` dentro dela —
-    conferir se `setActivatorNodeRef` é necessário na versão instalada do
-    dnd-kit; (d) algum `onKeyDown` do editor consumindo ↓ quando o foco está
-    no painel (o global só trata Alt+↑/↓, mas vale checar os painéis).
-  - **Guarda:** `e2e/f68-reordenar-teclado.spec.ts` (hoje falha; tem de
-    passar). Falta também um teste estático: todo `DndContext` de
-    `src/editor` usa `useSensoresDaLista()` e `ACESSIBILIDADE_DA_LISTA`.
+- A rodada 85 está **feita e na `master`** (`4ad2717`): as 8 listas
+  arrastáveis reordenam pelo teclado (`src/editor/listaOrdenavel.ts`).
+  Guardas: `e2e/f68-reordenar-teclado.spec.ts` e `test/lista-ordenavel.test.ts`.
+  397 testes unitários passam.
+- O Lucca autorizou **commitar direto na `master`** (`portfolioeditor`) e na
+  `main` (`portfolio`), sempre; sem PR (ver `CLAUDE.md`). Faça `git push` ao
+  fim de cada rodada. Ele também mexe na `master` entre as sessões: sempre
+  `git pull --rebase origin master` antes de começar e antes de dar push.
+- **Ambiente da nuvem:** `npx playwright install` não funciona; o Chromium
+  está em `/opt/pw-browsers/chromium`. Use um `playwright.local.config.ts`
+  (fora do git, em `.git/info/exclude`) que importa `playwright.config` e põe
+  `launchOptions.executablePath: '/opt/pw-browsers/chromium'`.
+- **`e2e/f62-site-responde-cedo` falha na nuvem** (também na `master` limpa):
+  "o runtime não abriu o projeto antes do fim do arquivo". Ainda não se sabe
+  se é o ambiente (servidor que pausa o arquivo) ou uma regressão das
+  mudanças recentes do Lucca; investigar na próxima rodada.
+- O `e2e/f7b` precisa do `dist-editor`: rode `npm run build:editor` antes.
 
 ## 3. O projeto
 
@@ -240,7 +219,7 @@ Inspector, Tema e fichas muda o canvas — exceções listadas com o porquê),
 
 ## 10. Ideias para as próximas rodadas (ainda não feitas)
 
-1. **Terminar a rodada 85** (seção 2).
+1. Investigar o `f62` que falha na nuvem (seção 2).
 2. Miniaturas também no conteúdo **NDA** (as grades destrancadas usam a
    foto inteira).
 3. O canvas do editor usa as fotos inteiras (até 2400 px) em todos os
@@ -275,3 +254,4 @@ Inspector, Tema e fichas muda o canvas — exceções listadas com o porquê),
 | 82 | `925ed6f` | Tema: tamanho do texto, contraste entre tamanhos e Destaque 2 com efeito |
 | 83 | `f84d629` | Guarda: todo campo do Inspector faz efeito; NDA no menu |
 | 84 | `4abdda2` | Guarda estendida ao Tema e às fichas; data da nota; nome do vídeo |
+| 85 | `4ad2717` | Listas do editor reordenam pelo teclado (↑/↓, Espaço, Esc) |
