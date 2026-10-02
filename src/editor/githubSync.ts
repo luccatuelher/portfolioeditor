@@ -107,7 +107,7 @@ export function base64Utf8(texto: string): string {
   return btoa(bin);
 }
 
-function explicarHttp(status: number, corpo: string): string {
+export function explicarHttp(status: number, corpo: string): string {
   if (status === 401) return 'Token inválido ou expirado.';
   if (status === 403) return 'O token não tem permissão de escrita nesse repositório (Contents: Read and write).';
   if (status === 404) return 'Repositório não encontrado — confira o nome e se o token tem acesso a ele.';

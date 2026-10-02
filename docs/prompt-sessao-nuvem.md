@@ -163,6 +163,7 @@ antes em segundo plano: `node node_modules/vite/bin/vite.js --port 5199 --strict
   `<button>`) — nada de `role="button"` com botões dentro.
 - **Endereço que não existe**: `resolveRoute` → `naoEncontrado`; página
   `NaoEncontrado` (com a senha do NDA ali, se for o caso).
+- **Enviar ao portfólio** (`src/editor/githubSite.ts` + `EnviarSiteModal`): o botão ao lado de "Baixar site" grava `index.html` e `compartilhar.jpg` na `main` do repositório do site pela API do GitHub (token só no navegador, `portfolio-v4:github-site`; sem ele, tenta o token do backup). Pula arquivo idêntico (sha de blob do git), `index.html` por último. O caminho de gerar o site é o mesmo do "Baixar site" (`gerarSite(senha, 'baixar' | 'enviar')`).
 - **Download** de arquivo gerado: `baixarArquivo()` (Editor.tsx).
 - **Auditoria axe nos e2e**: `auditarAcessibilidade(page, onde)` de
   `e2e/helpers/axe.ts`.

@@ -43,6 +43,8 @@ import { SECTION_PRESETS } from './sectionPresets';
 import { VersionsModal } from './VersionsModal';
 import { NdaPasswordModal } from './NdaPasswordModal';
 import { gravarSenhaNda, lerSenhaNda } from './senhaNda';
+import { EnviarSiteModal } from './EnviarSiteModal';
+import { BRANCH_PADRAO, REPO_DO_SITE_PADRAO, configSiteEfetiva, enviarSite, gravarConfigSite, quaisFaltam, type ArquivoSite } from './githubSite';
 import { guardarAntesDeTrocar, saveVersion } from './versions';
 import { CropModal } from './CropModal';
 import type { ImageCrop, ImageRef } from '../schema/v4';
@@ -1425,7 +1427,21 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
   // mão da regra dele, que podia divergir. Calcula no clique: o snapshot copia
   // o documento inteiro, não é para rodar a cada tecla.
   const [itensNda, setItensNda] = useState(0);
+  // O mesmo caminho (preflight, senha do NDA, ponto de retorno) serve aos dois
+  // botões; só o último passo muda: baixar os arquivos ou gravá-los no GitHub.
+  const destino = useRef<'baixar' | 'enviar'>('baixar');
+  const [pedirToken, setPedirToken] = useState<{ erro?: string } | null>(null);
+  const [enviandoSite, setEnviandoSite] = useState(false);
   const baixarSite = (): void => {
+    destino.current = 'baixar';
+    prepararSite();
+  };
+  const enviarAoPortfolio = (): void => {
+    destino.current = 'enviar';
+    if (!configSiteEfetiva()) return void setPedirToken({});
+    prepararSite();
+  };
+  const prepararSite = (): void => {
     const n = ndaCount(publicSnapshot(doc.state).nda);
     setItensNda(n);
     if (!n) return void publishSite();
@@ -1438,10 +1454,10 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
   // Uma falha ao gerar (cifrar o NDA, montar o arquivo) não pode ser silêncio:
   // o botão parecia simplesmente não fazer nada.
   const publishSite = (password?: string): Promise<void> =>
-    gerarSite(password).catch((err: unknown) => {
+    gerarSite(password, destino.current).catch((err: unknown) => {
       dialogos.avisar(`Não consegui gerar o site: ${err instanceof Error ? err.message : String(err)}. Seu rascunho não foi afetado.`, { tipo: 'erro' });
     });
-  const gerarSite = async (password?: string): Promise<void> => {
+  const gerarSite = async (password: string | undefined, para: 'baixar' | 'enviar'): Promise<void> => {
     const doc0 = doc.state;
     const migratedAssets: MigratedAsset[] = Object.entries(assets).map(([id, dataUrl]) => ({ id, dataUrl, mime: '' }));
     // Miniaturas das imagens em grade: geradas aqui, no navegador (o canvas faz o trabalho).
@@ -1453,7 +1469,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     if (pf.errors.length && !(await dialogos.confirmar({
       titulo: pf.errors.length === 1 ? 'Um problema impede o site de ficar certo' : `${pf.errors.length} problemas impedem o site de ficar certo`,
       texto: pf.errors.join('\n'),
-      confirmar: 'Baixar mesmo assim',
+      confirmar: para === 'enviar' ? 'Enviar mesmo assim' : 'Baixar mesmo assim',
       cancelar: 'Voltar e corrigir',
       perigo: true,
     }))) return;
@@ -1469,6 +1485,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
 
     const html = assembleSiteHtml(siteShell, payload);
     const blob = new Blob([html], { type: 'text/html' });
+    if (para === 'enviar') return enviarAoSite(html, jpg, arquivosAoLado(vaiProSite), pf.warnings);
     // Os arquivos relativos já aparecem na lista própria do aviso: não repetem nos avisos.
     const arquivos = [...arquivosAoLado(vaiProSite), ...(jpg ? [ARQUIVO_SOCIAL] : [])];
     const avisos = pf.warnings.filter((w) => !arquivos.some((a) => w.includes(`"${a}"`)));
@@ -1476,6 +1493,45 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     // index.html: é o arquivo que o GitHub Pages (e qualquer hospedagem) abre sozinho no endereço do site.
     baixarArquivo(blob, 'index.html');
     if (jpg) baixarArquivo(jpg, ARQUIVO_SOCIAL);
+  };
+
+  /** Último passo do "Enviar ao portfólio": grava o site gerado no repositório do GitHub Pages. */
+  const enviarAoSite = async (html: string, jpg: Blob | null, aoLado: string[], avisosPf: string[]): Promise<void> => {
+    const c = configSiteEfetiva();
+    if (!c) return void setPedirToken({});
+    const bytes = new TextEncoder().encode(html);
+    const mb = (bytes.length / (1024 * 1024)).toFixed(1).replace('.', ',');
+    const ok = await dialogos.confirmar({
+      titulo: 'Enviar o site para o portfólio?',
+      texto: `Grava o index.html (${mb} MB)${jpg ? ' e a imagem de compartilhar' : ''} na branch ${c.branch} de ${c.repo}. O site no ar é substituído e atualiza em cerca de 1 minuto.`,
+      confirmar: 'Enviar',
+    });
+    if (!ok) return;
+    setEnviandoSite(true);
+    try {
+      const arquivos: ArquivoSite[] = [{ path: 'index.html', bytes }];
+      if (jpg) arquivos.push({ path: ARQUIVO_SOCIAL, bytes: new Uint8Array(await jpg.arrayBuffer()) });
+      const r = await enviarSite(c, arquivos, `Site publicado pelo editor em ${new Date().toISOString()}`);
+      // O que o site espera ao lado (cv.pdf…) tem de estar no repositório: só os que faltam merecem aviso.
+      const faltam = await quaisFaltam(c, aoLado.filter((a) => a !== ARQUIVO_SOCIAL)).catch(() => [] as string[]);
+      const presentes = [...aoLado.filter((a) => !faltam.includes(a)), ...(jpg ? [ARQUIVO_SOCIAL] : [])];
+      const restantes = avisosPf.filter((w) => !presentes.some((a) => w.includes(`"${a}"`)));
+      dialogos.avisar(
+        r.enviados.length
+          ? `Site enviado para ${c.repo} (${r.enviados.join(', ')}). Atualiza no ar em cerca de 1 minuto.`
+          : 'O site no ar já está igual a este: nada a enviar.',
+        { duracaoMs: 9000 },
+      );
+      const atencao = [...restantes, ...faltam.map((a) => `O site usa "${a}", que não está em ${c.repo}: suba esse arquivo lá.`)];
+      if (atencao.length) dialogos.avisar(`Vale conferir: ${atencao.join(' ')}`, { duracaoMs: 15000 });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      // Token recusado ou sem acesso ao repositório: pede o token certo em vez de só falhar.
+      if (/Token inválido|permissão de escrita|Repositório não encontrado/.test(msg)) setPedirToken({ erro: msg });
+      else dialogos.avisar(`Não consegui enviar o site: ${msg}`, { tipo: 'erro' });
+    } finally {
+      setEnviandoSite(false);
+    }
   };
 
   return (
@@ -1520,6 +1576,15 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
         <button type="button" className="tb-btn" onClick={() => fileRef.current?.click()} title="Importar backup">Importar</button>
         <button type="button" className={`tb-peso${peso.total > LIMITE_GITHUB_BYTES ? ' acima' : peso.total > LIMITE_GITHUB_BYTES * 0.8 ? ' perto' : ''}`} onClick={onPeso} title="Peso estimado do index.html (limite do upload pelo GitHub: 25 MB). Clique para ver o que mais pesa.">≈ {formatarPeso(peso.total)}</button>
         <button type="button" className="tb-btn primary" onClick={baixarSite} title="Gera o index.html do site, pronto para subir no GitHub Pages">Baixar site</button>
+        <button type="button" className="tb-btn primary" onClick={enviarAoPortfolio} disabled={enviandoSite} title="Gera o site e grava direto no repositório do GitHub Pages, sem baixar nem subir à mão">{enviandoSite ? 'Enviando…' : 'Enviar ao portfólio'}</button>
+        {pedirToken ? (
+          <EnviarSiteModal
+            inicial={configSiteEfetiva() ?? { repo: REPO_DO_SITE_PADRAO, token: '', branch: BRANCH_PADRAO }}
+            erro={pedirToken.erro}
+            onCancel={() => setPedirToken(null)}
+            onConfirm={(c) => { gravarConfigSite(c); setPedirToken(null); prepararSite(); }}
+          />
+        ) : null}
         {pedirSenha ? (
           <NdaPasswordModal
             quantidade={itensNda}
