@@ -9,7 +9,7 @@
 // pacote cifrado que já está no index.html da pasta do site (a senha dos visitantes
 // continua a mesma; mudanças no conteúdo NDA só entram quando o editor publicar).
 // Navegador: CHROMIUM_PATH (na nuvem, /opt/pw-browsers/chromium) ou o do Playwright.
-import { spawn } from 'node:child_process';
+import { execFileSync, spawn } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +28,10 @@ if (!senha && existsSync(indexAtual)) {
   const i = h.indexOf('<script>window.__NDA__=');
   if (i >= 0) pacoteNdaNoAr = h.slice(i + '<script>window.__NDA__='.length, h.indexOf(';</script>', i));
 }
+
+// O runtime do site publicado vem do shell embutido no editor: regerar antes, para
+// uma mudança no renderer nunca sair com o código velho (o passo é rápido).
+execFileSync(process.execPath, [resolve(root, 'scripts/gen-shell.mjs')], { cwd: root, stdio: 'inherit' });
 
 const servidor = spawn(process.execPath, [resolve(root, 'node_modules/vite/bin/vite.js'), '--port', String(PORTA), '--strictPort'], { cwd: root, stdio: 'ignore' });
 const encerrar = () => servidor.kill();
@@ -85,13 +89,19 @@ try {
   }, { backupTexto, senha, pacoteNdaNoAr });
   await navegador.close();
 
-  writeFileSync(indexAtual, r.html);
-  if (r.jpgB64) writeFileSync(resolve(pastaDoSite, r.arquivoSocial), Buffer.from(r.jpgB64, 'base64'));
-  console.log(`✓ ${indexAtual} · ${(r.html.length / 1048576).toFixed(2)} MB${r.jpgB64 ? ` + ${r.arquivoSocial}` : ''}`);
-  console.log(`  NDA: ${r.nda}`);
-  for (const e of r.erros) console.log(`  ✗ ${e}`);
-  for (const a of r.avisos) console.log(`  ! ${a}`);
-  if (r.erros.length) process.exitCode = 1;
+  // Com erro no preflight nada é gravado: o site no ar fica como estava.
+  if (r.erros.length) {
+    console.log('✗ Preflight com erro — nada foi gravado.');
+    for (const e of r.erros) console.log(`  ✗ ${e}`);
+    for (const a of r.avisos) console.log(`  ! ${a}`);
+    process.exitCode = 1;
+  } else {
+    writeFileSync(indexAtual, r.html);
+    if (r.jpgB64) writeFileSync(resolve(pastaDoSite, r.arquivoSocial), Buffer.from(r.jpgB64, 'base64'));
+    console.log(`✓ ${indexAtual} · ${(r.html.length / 1048576).toFixed(2)} MB${r.jpgB64 ? ` + ${r.arquivoSocial}` : ''}`);
+    console.log(`  NDA: ${r.nda}`);
+    for (const a of r.avisos) console.log(`  ! ${a}`);
+  }
 } finally {
   encerrar();
 }

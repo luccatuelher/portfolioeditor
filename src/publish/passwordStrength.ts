@@ -4,7 +4,7 @@
  * O caso aqui é incomum: o site publicado é um arquivo único que a pessoa
  * baixa. Quem quiser abrir o conteúdo confidencial tem o arquivo inteiro na
  * mão e pode tentar senhas à vontade, offline, sem ninguém para barrar. Os
- * 210.000 passos do PBKDF2 deixam cada tentativa cara, mas não salvam uma
+ * 600.000 passos do PBKDF2 deixam cada tentativa cara, mas não salvam uma
  * senha curta: quem protege de verdade é o tamanho.
  */
 

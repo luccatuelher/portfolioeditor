@@ -25,6 +25,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Conferir antes de publicar (tipos e testes)
+        run: npm run typecheck && npm test
       - run: npm run build:editor
       - name: Preparar saída do Pages (editor.html -> index.html)
         run: |

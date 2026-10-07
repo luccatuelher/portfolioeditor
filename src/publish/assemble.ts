@@ -1,6 +1,7 @@
 import type { PublishPayload } from './buildPayload';
 import { ESCOLHER_IDIOMA, prerenderHome, sufixarIds } from './prerender';
 import { themeFontUrls } from '../renderer/fonts';
+import { tituloDaHome } from '../core/titulo';
 
 const jsonSafe = (o: unknown): string => JSON.stringify(o).replace(/</g, '\\u003c');
 const esc = (s: string): string => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -30,17 +31,22 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
 
   const name = payload.publicData.site.name.pt || payload.publicData.site.name.en || 'Portfolio';
   const homePage = payload.publicData.pages.find((p) => p.id === 'home');
+  // Título da Home: nome + função (é o que aparece na aba e no resultado da busca).
+  const tituloHome = tituloDaHome(name, payload.publicData.site.role.pt || payload.publicData.site.role.en || '');
   const homeDesc = homePage?.seo?.description;
   const role = homeDesc?.pt || homeDesc?.en || payload.publicData.site.role.pt || payload.publicData.site.role.en || '';
   const homeImg = homePage?.seo?.image;
   // Endereço público do site: sem ele não há link canônico nem imagem de preview
   // (WhatsApp, LinkedIn e X só buscam imagem por http — data: eles ignoram).
   const siteUrl = (payload.publicData.site.url ?? '').trim().replace(/\/+$/, '');
+  // Com a barra final: é o endereço que o GitHub Pages realmente serve (/portfolio/).
+  const urlCanonica = siteUrl ? `${siteUrl.replace(/\/index\.html$/i, '')}/` : '';
   const absoluto = (u: string): string => (/^https?:\/\//i.test(u) ? u : siteUrl && u ? `${siteUrl}/${u.replace(/^\//, '')}` : '');
   // A imagem social só entra se der para buscá-la de fora. Uma embutida (data:)
   // não vira preview em rede nenhuma e ainda repetiria a foto inteira no <head>.
   // Enviada no editor: vai como arquivo ao lado (payload.arquivoSocial) e é
   // apontada pelo endereço do site. Por URL: usada como está.
+  const socialAlt = homeImg?.alt?.pt?.trim() || homeImg?.alt?.en?.trim() || '';
   const socialImg = !homeImg ? '' : homeImg.assetId ? (payload.arquivoSocial ? absoluto(payload.arquivoSocial) : '') : homeImg.url ? absoluto(homeImg.url) : '';
   // Snippet de analytics: é código do próprio dono do site, então entra cru —
   // só barramos o que fecharia o <head> ou escaparia do que ele colou.
@@ -62,7 +68,7 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
     name,
     jobTitle: payload.publicData.site.role.pt || payload.publicData.site.role.en || undefined,
     description: role || undefined,
-    url: siteUrl || undefined,
+    url: urlCanonica || undefined,
     image: socialImg || undefined,
     sameAs: socials.length ? [...new Set(socials)] : undefined,
   };
@@ -71,18 +77,20 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
     `<meta name="description" content="${esc(role)}">` +
     // Pinta a barra do navegador no celular com a cor de fundo do site.
     `<meta name="theme-color" content="${esc(payload.publicData.theme.colors.bg)}">` +
-    `<meta property="og:title" content="${esc(name)}">` +
+    `<meta property="og:title" content="${esc(tituloHome)}">` +
     `<meta property="og:description" content="${esc(role)}">` +
     `<meta property="og:type" content="website">` +
     `<meta property="og:site_name" content="${esc(name)}">` +
     `<meta property="og:locale" content="pt_BR"><meta property="og:locale:alternate" content="en_US">` +
-    (siteUrl ? `<meta property="og:url" content="${esc(siteUrl)}"><link rel="canonical" href="${esc(siteUrl)}">` : '') +
+    (urlCanonica ? `<meta property="og:url" content="${esc(urlCanonica)}"><link rel="canonical" href="${esc(urlCanonica)}">` : '') +
     (socialImg ? `<meta property="og:image" content="${esc(socialImg)}">` : '') +
+    (socialImg && socialAlt ? `<meta property="og:image:alt" content="${esc(socialAlt)}">` : '') +
     (socialImg && payload.arquivoSocial ? '<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">' : '') +
     // X/Twitter: sem esta linha o link vira só texto, sem cartão.
     `<meta name="twitter:card" content="${socialImg ? 'summary_large_image' : 'summary'}">` +
-    `<meta name="twitter:title" content="${esc(name)}"><meta name="twitter:description" content="${esc(role)}">` +
+    `<meta name="twitter:title" content="${esc(tituloHome)}"><meta name="twitter:description" content="${esc(role)}">` +
     (socialImg ? `<meta name="twitter:image" content="${esc(socialImg)}">` : '') +
+    (socialImg && socialAlt ? `<meta name="twitter:image:alt" content="${esc(socialAlt)}">` : '') +
     // O JSON passa pelo mesmo escape do resto: um "</script>" dentro de um nome
     // fecharia o bloco cedo demais e quebraria a página.
     `<script type="application/ld+json">${jsonSafe(jsonLd)}</script>` +
@@ -95,7 +103,7 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
 
   // Substituições SEMPRE por função: com string, "$&", "$'" etc. dentro dos dados
   // do usuário seriam interpretados pelo replace e corromperiam o JS do site.
-  let html = shell.replace('<!--PORTFOLIO_META-->', () => (home ? ESCOLHER_IDIOMA : '') + meta).replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(name)}</title>`);
+  let html = shell.replace('<!--PORTFOLIO_META-->', () => (home ? ESCOLHER_IDIOMA : '') + meta).replace(/<title>[\s\S]*?<\/title>/, () => `<title>${esc(tituloHome)}</title>`);
   html = html.includes('<!--PORTFOLIO_DATA-->') ? html.replace('<!--PORTFOLIO_DATA-->', () => dataScript) : html.replace(/<script/, () => `${dataScript}<script`);
   if (home) html = html.replace('<div id="root"></div>', () => `<div id="root">${home}</div>`);
   return runtimeNoLugar(html);

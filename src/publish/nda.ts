@@ -15,7 +15,9 @@ export interface EncryptedNda {
   hash: 'SHA-256';
 }
 
-const DEFAULT_ITERATIONS = 210_000;
+// 600.000: o mínimo atual recomendado pela OWASP para PBKDF2-HMAC-SHA256. O número
+// vai gravado no pacote, então os já publicados (210.000) continuam abrindo.
+const DEFAULT_ITERATIONS = 600_000;
 
 function toB64(bytes: Uint8Array): string {
   let s = '';

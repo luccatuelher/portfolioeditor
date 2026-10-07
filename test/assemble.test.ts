@@ -193,8 +193,8 @@ describe('assembleSiteHtml — compartilhamento do link', () => {
 
   it('com endereço do site sai link canônico e og:url', async () => {
     const html = await comSite((m) => void (m.data.site.url = 'https://luccatuelher.com'));
-    expect(html).toContain('<link rel="canonical" href="https://luccatuelher.com">');
-    expect(html).toContain('<meta property="og:url" content="https://luccatuelher.com">');
+    expect(html).toContain('<link rel="canonical" href="https://luccatuelher.com/">');
+    expect(html).toContain('<meta property="og:url" content="https://luccatuelher.com/">');
   });
 
   it('sem endereço, nada de canônico inventado', async () => {
@@ -211,7 +211,7 @@ describe('assembleSiteHtml — compartilhamento do link', () => {
     const dados = JSON.parse(bloco.replace(/\u003c/g, '<'));
     expect(dados['@type']).toBe('Person');
     expect(dados.name).toBe(migrate(loadFixture('template-v3.json')).data.site.name.pt);
-    expect(dados.url).toBe('https://luccatuelher.com');
+    expect(dados.url).toBe('https://luccatuelher.com/');
   });
 
   it('nome com "</script>" não corta o bloco de dados', async () => {

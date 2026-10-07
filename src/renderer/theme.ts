@@ -1,6 +1,11 @@
 import type { Theme } from '../schema/v4';
 import { legivel } from '../core/contrast';
 
+/** 4,5:1 sobre as duas bases em que o texto aparece: o fundo e a superfície. */
+function legivelNosDois(fg: string, bg: string, surface: string, rumo: string): string {
+  return legivel(legivel(fg, bg, 4.5, rumo), surface, 4.5, rumo);
+}
+
 /**
  * Converte os tokens do tema v4 em variáveis CSS. É a ÚNICA ponte entre dados e
  * estilo: nenhum bloco referencia cor/fonte diretamente — tudo vem daqui.
@@ -14,13 +19,14 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
     '--ink-soft': c.inkSoft,
     '--ink-pale': c.inkPale,
     // Texto em cinza claro (legendas, datas, rótulos): a mesma cor, escurecida só
-    // o necessário para 4,5:1. A original segue nas linhas e bordas.
-    '--ink-pale-texto': legivel(c.inkPale, c.bg, 4.5, c.ink),
+    // o necessário para 4,5:1 — sobre o fundo E sobre a superfície (cartões e
+    // faixas, mais escuros). A original segue nas linhas e bordas.
+    '--ink-pale-texto': legivelNosDois(c.inkPale, c.bg, c.surface, c.ink),
     '--rule': c.rule,
     '--accent': c.accent,
     // Destaque em TEXTO (etiquetas, links, erro da senha): legível sobre o fundo.
     // Botões, bordas e sublinhados seguem com a cor da marca.
-    '--accent-texto': legivel(c.accent, c.bg, 4.5, c.ink),
+    '--accent-texto': legivelNosDois(c.accent, c.bg, c.surface, c.ink),
     '--accent2': c.accent2,
     '--font-display': `'${theme.fonts.display}', Georgia, serif`,
     '--font-body': `'${theme.fonts.body}', Helvetica, sans-serif`,

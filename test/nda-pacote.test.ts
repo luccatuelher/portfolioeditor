@@ -13,7 +13,7 @@ import { loadFixture } from './helpers/fixtures';
  * vez só, no pacote inteiro), não como data URL dentro de JSON cifrado — que
  * passava pelo base64 duas vezes e deixava cada imagem NDA ~1,78× o arquivo.
  */
-const ITER = 1000; // derivação rápida nos testes (o site usa 210 000)
+const ITER = 1000; // derivação rápida nos testes (o site usa 600 000)
 const b64 = (b: Uint8Array | Buffer): string => Buffer.from(b).toString('base64');
 const bytesDe = (url: string): Buffer => {
   const [cab, corpo] = [url.slice(0, url.indexOf(',')), url.slice(url.indexOf(',') + 1)];

@@ -473,6 +473,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   transition: top 0.15s;
 }
 .skip-link:focus { top: 0; }
+/* Foco programático no conteúdo (pular link, troca de página): sem contorno, não é um controle. */
+#conteudo:focus, #conteudo h1[tabindex='-1']:focus { outline: none; }
 
 /* ---- peça com defeito (barreira de erro) ----
    Dentro do site: usa os tokens do tema, como todo o resto. */
