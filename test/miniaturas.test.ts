@@ -111,6 +111,17 @@ describe('publicação com miniaturas', () => {
     expect(html).not.toContain(`__IMG__("${capa}",`); // só capa: a inteira nem vai no arquivo
   });
 
+  it('peso com NDA: a miniatura do NDA entra, a inteira só-capa sai e some da lista de pesadas', () => {
+    const { data, assets, capa } = comFotosGrandes();
+    data.collections.projects[0]!.visibility = 'nda';
+    const mapa = Object.fromEntries(assets.map((a) => [a.id, a.dataUrl]));
+    const sem = pesoDoSite(data, mapa, 1000);
+    const com = pesoDoSite(data, mapa, 1000, { miniaturas: true });
+    expect(sem.imagens.some((i) => i.id === capa)).toBe(true);
+    expect(com.imagens.some((i) => i.id === capa), 'a capa dispensada aparece como imagem a cortar').toBe(false);
+    expect(com.total).toBeLessThan(sem.total);
+  });
+
   it('peso mostrado no editor conta as miniaturas (só com a opção do editor)', () => {
     const { data, assets, capa } = comFotosGrandes();
     const mapa = Object.fromEntries(assets.map((a) => [a.id, a.dataUrl]));
@@ -148,6 +159,36 @@ describe('miniaturas no conteúdo NDA', () => {
     const aberto = await abrirPacoteNda<NdaBundle>(p.ndaBlob!, SENHA);
     expect(aberto.assets[miniId(capa)]).toBeDefined();
     expect(aberto.assets[capa]).toBeDefined();
+  });
+
+  it('o pacote é autossuficiente: a capa dividida com um projeto público leva a miniatura própria', async () => {
+    // O `publicar:site` sem senha reaproveita o pacote antigo ao lado de dados públicos novos:
+    // o card NDA não pode depender da miniatura do público.
+    const { data, assets, capa } = comFotosGrandes();
+    data.collections.projects[0]!.visibility = 'nda';
+    data.collections.projects[1]!.thumb = { assetId: capa, alt }; // um projeto público usa a mesma capa
+    const p = await buildPublishPayload({ data, assets }, SENHA, { miniatura: geradorFalso().gerar });
+    expect(p.assetMap[miniId(capa)]).toBeDefined();
+    const aberto = await abrirPacoteNda<NdaBundle>(p.ndaBlob!, SENHA);
+    expect(aberto.assets[miniId(capa)], 'sem miniatura no pacote o card NDA fica vazio').toBeDefined();
+  });
+
+  it('capa que também é favicon do site mantém a inteira', async () => {
+    const { data, assets, capa } = comFotosGrandes();
+    data.site.favicon = { assetId: capa, alt };
+    expect(soComoCapa(data).has(capa)).toBe(false);
+    const p = await buildPublishPayload({ data, assets }, undefined, { miniatura: geradorFalso().gerar });
+    expect(p.assetMap[capa]).toBeDefined();
+  });
+
+  it('capa que também é quadro de storyboard mantém a inteira', () => {
+    const { data, capa } = comFotosGrandes();
+    const quadro = [...data.pages.flatMap((pg) => pg.sections), ...data.collections.projects.flatMap((pr) => pr.sections)]
+      .flatMap((sec) => sec.blocks)
+      .find((b): b is Extract<Block, { type: 'storyboard' }> => b.type === 'storyboard')!;
+    expect(soComoCapa(data).has(capa)).toBe(true);
+    quadro.content.frames.push({ assetId: capa, alt });
+    expect(soComoCapa(data).has(capa)).toBe(false);
   });
 
   it('sem gerador (linha de comando) o pacote segue com a inteira', async () => {

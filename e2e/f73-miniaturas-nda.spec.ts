@@ -51,8 +51,6 @@ test('capa de projeto NDA: o pacote leva a miniatura de 960 px, não a foto de 2
   await page.locator('.nda-modal-acoes .primary').click();
   const html = readFileSync(await (await baixou).path(), 'utf8');
 
-  // Antes da senha: nenhuma imagem desse projeto (nem a inteira, nem a miniatura) no código.
-  expect(html).not.toMatch(/__IMG__\("[\w-]*capa[\w-]*"/i);
   const ndaPos = html.indexOf('window.__NDA__=');
   expect(ndaPos, 'o pacote NDA não foi embutido').toBeGreaterThan(0);
 
@@ -64,6 +62,13 @@ test('capa de projeto NDA: o pacote leva a miniatura de 960 px, não a foto de 2
   await page.locator('.nda-unlock button').click();
   const thumb = page.locator('.project-card img.card-thumb').first();
   await expect(thumb).toBeVisible();
-  // O card do NDA usa a miniatura (960 px de largura); a inteira (2400) não veio no pacote.
+  // O card do NDA usa a miniatura (960 px de largura)…
   await expect.poll(() => thumb.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBe(960);
+  // …e o pacote trouxe só ela: a inteira (2400 px, só capa) não veio.
+  const ids = await page.evaluate(() => Object.keys((window as unknown as { __ASSETS__: Record<string, unknown> }).__ASSETS__));
+  const idMini = ids.find((k) => k.endsWith('-mini') && !html.slice(0, ndaPos).includes(`"${k}"`));
+  expect(idMini, 'a miniatura da capa NDA não chegou depois da senha').toBeTruthy();
+  expect(ids, 'a foto inteira da capa NDA veio no pacote').not.toContain(idMini!.replace(/-mini$/, ''));
+  // Antes da senha, nem a miniatura nem a inteira estão no código aberto.
+  expect(html.slice(0, ndaPos)).not.toContain(idMini!.replace(/-mini$/, ''));
 });

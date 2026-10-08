@@ -4,7 +4,7 @@ import { selarPacoteNda, type EncryptedNda } from './nda';
 import { mergeNda, ndaCount, publicSnapshot, type NdaBundle } from './publicSnapshot';
 import { repairDoc } from '../migrate/repair';
 import { completarDimensoes } from '../core/dimensoesImagem';
-import { descartarCapasInteiras, miniaturasDoSite, miniId, type GerarMiniatura } from '../core/miniaturas';
+import { descartarCapasInteiras, miniaturasDoSite, type GerarMiniatura } from '../core/miniaturas';
 
 export interface PublishPayload {
   /** Documento público (sem NDA/rascunho). */
@@ -81,13 +81,13 @@ export async function buildPublishPayload(
     collect(nda);
     if (opts.miniatura) {
       // Mesma regra do público, para o que o visitante vê ao destrancar: miniatura
-      // das imagens em grade que o pacote carrega (as já públicas têm a sua) e, nas
-      // que só servem de capa, sem a foto inteira — o pacote todo visitante baixa.
+      // das imagens em grade que o pacote carrega e, nas que só servem de capa, sem a
+      // foto inteira — o pacote todo visitante baixa. O pacote é autossuficiente
+      // (miniatura própria mesmo se o público já tem a mesma): o `publicar:site` sem
+      // senha reaproveita o pacote antigo ao lado de dados públicos novos.
       const vista = mergeNda(publicData, nda as NdaBundle);
-      const novas: Record<string, string> = {};
-      for (const [id, url] of Object.entries(ndaAssets)) if (!assetMap[miniId(id)]) novas[id] = url;
-      Object.assign(ndaAssets, await miniaturasDoSite(vista, novas, opts.miniatura));
-      descartarCapasInteiras(vista, [ndaAssets], (mini) => !!ndaAssets[mini] || !!assetMap[mini]);
+      Object.assign(ndaAssets, await miniaturasDoSite(vista, { ...ndaAssets }, opts.miniatura));
+      descartarCapasInteiras(vista, [ndaAssets], (mini) => !!ndaAssets[mini]);
     }
     ndaBlob = await selarPacoteNda({ items: nda as NdaBundle, assets: ndaAssets }, ndaPassword);
   }
