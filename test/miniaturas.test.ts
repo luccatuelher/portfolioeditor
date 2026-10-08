@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { imagensEmGrade, miniId, valeMiniatura, type GerarMiniatura } from '../src/core/miniaturas';
+import { imagensEmGrade, miniId, soComoCapa, valeMiniatura, type GerarMiniatura } from '../src/core/miniaturas';
 import { migrate } from '../src/migrate/migrate';
 import { buildPublishPayload } from '../src/publish/buildPayload';
+import { abrirPacoteNda } from '../src/publish/nda';
+import type { NdaBundle } from '../src/publish/publicSnapshot';
 import { assembleSiteHtml } from '../src/publish/assemble';
 import { pesoDoSite } from '../src/publish/peso';
 import { mapResolver } from '../src/renderer/dataUrlResolver';
@@ -64,7 +66,9 @@ describe('publicação com miniaturas', () => {
     const g = geradorFalso();
     const p = await buildPublishPayload({ data, assets }, undefined, { miniatura: g.gerar });
     expect(p.assetMap[miniId(capa)]).toMatch(/^data:image\/webp/);
-    expect(p.assetMap[capa]).toBeDefined(); // a inteira continua (visualizador/página do projeto)
+    // A capa só serve de card: com a miniatura pronta, a inteira não vai no arquivo.
+    expect(p.assetMap[capa]).toBeUndefined();
+    expect(p.assetSizes[capa]).toBeUndefined();
     expect(p.assetMap[miniId(bloco)]).toBeUndefined();
     expect(g.pedidos.every((l) => l === 960)).toBe(true);
     expect(Object.keys(p.assetMap).filter((k) => k.endsWith('-mini'))).toEqual([miniId(capa)]);
@@ -76,7 +80,17 @@ describe('publicação com miniaturas', () => {
     expect(semGanho.assetMap[miniId(capa)]).toBeUndefined();
     const falha = await buildPublishPayload({ data, assets }, undefined, { miniatura: async () => { throw new Error('canvas'); } });
     expect(falha.assetMap[miniId(capa)]).toBeUndefined();
-    expect(falha.assetMap[capa]).toBeDefined();
+    expect(falha.assetMap[capa]).toBeDefined(); // sem miniatura, a capa fica com a inteira
+    expect(semGanho.assetMap[capa]).toBeDefined();
+  });
+
+  it('a capa que também é imagem de galeria ou bloco mantém a inteira (o visualizador a usa)', async () => {
+    const { data, assets, capa } = comFotosGrandes();
+    data.collections.gallery[0]!.image = { assetId: capa, alt };
+    expect(soComoCapa(data).has(capa)).toBe(false);
+    const p = await buildPublishPayload({ data, assets }, undefined, { miniatura: geradorFalso().gerar });
+    expect(p.assetMap[miniId(capa)]).toBeDefined();
+    expect(p.assetMap[capa]).toBeDefined();
   });
 
   it('sem gerador (publicação pela linha de comando): nada muda', async () => {
@@ -85,7 +99,7 @@ describe('publicação com miniaturas', () => {
     expect(Object.keys(p.assetMap).some((k) => k.endsWith('-mini'))).toBe(false);
   });
 
-  it('na Home, o card chega pela miniatura antes do runtime; a foto inteira dele vem depois', async () => {
+  it('na Home, o card chega pela miniatura antes do runtime; a inteira nem vai (só capa)', async () => {
     const { data, assets, capa } = comFotosGrandes();
     const p = await buildPublishPayload({ data, assets }, undefined, { miniatura: geradorFalso().gerar });
     const html = assembleSiteHtml(readFileSync('src/publish/site-shell.html', 'utf8'), p);
@@ -94,7 +108,7 @@ describe('publicação com miniaturas', () => {
     expect(root).not.toContain(`data-asset="${capa}"`);
     const runtime = html.indexOf('<script type="module" async');
     expect(html.indexOf(`__IMG__("${miniId(capa)}",`)).toBeLessThan(runtime);
-    expect(html.indexOf(`__IMG__("${capa}",`)).toBeGreaterThan(runtime);
+    expect(html).not.toContain(`__IMG__("${capa}",`); // só capa: a inteira nem vai no arquivo
   });
 
   it('peso mostrado no editor conta as miniaturas (só com a opção do editor)', () => {
@@ -102,8 +116,47 @@ describe('publicação com miniaturas', () => {
     const mapa = Object.fromEntries(assets.map((a) => [a.id, a.dataUrl]));
     const sem = pesoDoSite(data, mapa, 1000).total;
     const com = pesoDoSite(data, mapa, 1000, { miniaturas: true }).total;
-    const esperado = Math.round(mapa[capa]!.length * (960 / 2400) ** 2);
+    // A miniatura entra e a inteira (só capa) sai.
+    const esperado = Math.round(mapa[capa]!.length * (960 / 2400) ** 2) - mapa[capa]!.length;
     expect(com - sem).toBe(esperado);
+  });
+});
+
+describe('miniaturas no conteúdo NDA', () => {
+  const SENHA = 'senha-longa-de-teste-123';
+
+  it('o pacote cifrado leva a miniatura da capa NDA e não a foto inteira (só capa); nada vaza para o público', async () => {
+    const { data, assets, capa } = comFotosGrandes();
+    data.collections.projects[0]!.visibility = 'nda';
+    const p = await buildPublishPayload({ data, assets }, SENHA, { miniatura: geradorFalso().gerar });
+    const aberto = await abrirPacoteNda<NdaBundle>(p.ndaBlob!, SENHA);
+    expect(aberto.assets[miniId(capa)]).toMatch(/^data:image\/webp/);
+    expect(aberto.assets[capa]).toBeUndefined();
+    const html = assembleSiteHtml(readFileSync('src/publish/site-shell.html', 'utf8'), p);
+    expect(Object.keys(p.assetMap)).not.toContain(capa);
+    expect(Object.keys(p.assetMap)).not.toContain(miniId(capa));
+    expect(html).not.toContain(capa);
+  });
+
+  it('a capa NDA que também é bloco Imagem do projeto mantém a inteira no pacote', async () => {
+    const { data, assets, capa } = comFotosGrandes();
+    const proj = data.collections.projects[0]!;
+    proj.visibility = 'nda';
+    const img = proj.sections.flatMap((s) => s.blocks).find((b): b is Extract<Block, { type: 'image' }> => b.type === 'image')!;
+    img.content.image = { assetId: capa, alt };
+    const p = await buildPublishPayload({ data, assets }, SENHA, { miniatura: geradorFalso().gerar });
+    const aberto = await abrirPacoteNda<NdaBundle>(p.ndaBlob!, SENHA);
+    expect(aberto.assets[miniId(capa)]).toBeDefined();
+    expect(aberto.assets[capa]).toBeDefined();
+  });
+
+  it('sem gerador (linha de comando) o pacote segue com a inteira', async () => {
+    const { data, assets, capa } = comFotosGrandes();
+    data.collections.projects[0]!.visibility = 'nda';
+    const p = await buildPublishPayload({ data, assets }, SENHA);
+    const aberto = await abrirPacoteNda<NdaBundle>(p.ndaBlob!, SENHA);
+    expect(aberto.assets[capa]).toBeDefined();
+    expect(aberto.assets[miniId(capa)]).toBeUndefined();
   });
 });
 

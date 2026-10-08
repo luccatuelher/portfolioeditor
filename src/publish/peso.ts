@@ -1,7 +1,7 @@
 import type { PortfolioV4 } from '../schema/v4';
 import { pick } from '../renderer/text';
-import { ndaCount, publicSnapshot } from './publicSnapshot';
-import { pesoEstimadoDasMiniaturas } from '../core/miniaturas';
+import { mergeNda, ndaCount, publicSnapshot } from './publicSnapshot';
+import { pesoEstimadoDasMiniaturas, soComoCapa, valeMiniatura } from '../core/miniaturas';
 import { completarDimensoes } from '../core/dimensoesImagem';
 
 /** O upload pelo navegador do GitHub não aceita arquivo acima disso. */
@@ -67,9 +67,17 @@ export function pesoDoSite(doc: PortfolioV4, assets: Record<string, string>, run
     .map((id) => ({ id, bytes: assets[id]!.length, onde: onde.get(id)! }))
     .sort((a, b) => b.bytes - a.bytes);
   // Publicando pelo editor, as imagens em grade ganham miniatura (core/miniaturas).
-  const miniaturas = opts.miniaturas ? pesoEstimadoDasMiniaturas(completarDimensoes(data, assets), (id) => assets[id]?.length ?? 0) : 0;
+  // Vale também para o NDA (o que o visitante vê ao destrancar), e a foto inteira
+  // de quem só serve de capa sai do arquivo quando ganha miniatura.
+  let miniaturas = 0;
+  let capasInteiras = 0;
+  if (opts.miniaturas) {
+    const vista = completarDimensoes(ndaCount(nda) ? mergeNda(data, nda) : data, assets);
+    miniaturas = pesoEstimadoDasMiniaturas(vista, (id) => assets[id]?.length ?? 0);
+    for (const id of soComoCapa(vista)) if (valeMiniatura(vista.assets[id])) capasInteiras += assets[id]?.length ?? 0;
+  }
   const somaImagens = imagens.reduce((s, i) => s + i.bytes, 0);
-  return { total: runtimeBytes + dados + somaImagens + miniaturas, runtime: runtimeBytes, dados, imagens };
+  return { total: runtimeBytes + dados + somaImagens + miniaturas - capasInteiras, runtime: runtimeBytes, dados, imagens };
 }
 
 /** "3,4 MB" / "820 KB". */

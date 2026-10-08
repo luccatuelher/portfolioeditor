@@ -8,10 +8,10 @@ import { dimensoesDaImagem } from '../src/core/dimensoesImagem';
 /**
  * Miniaturas de ponta a ponta, no navegador de verdade: uma foto grande vira a
  * capa de um projeto no editor; o site baixado leva uma miniatura de 960 px
- * (bem menor) que o card da Home usa — e a foto inteira continua no arquivo
- * para a página do projeto.
+ * (bem menor) que o card da Home usa. A foto inteira da capa não vai no
+ * arquivo (a página do projeto não mostra a capa): só a miniatura pesa.
  */
-test('capa grande: o card do site usa a miniatura de 960 px; a foto inteira segue no arquivo', async ({ page }) => {
+test('capa grande: o card do site usa a miniatura de 960 px; a foto inteira da capa fica de fora', async ({ page }) => {
   test.setTimeout(90_000);
   await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
   const card = page.locator('.editor-canvas .project-card').first();
@@ -52,12 +52,11 @@ test('capa grande: o card do site usa a miniatura de 960 px; a foto inteira segu
   const idMini = root.match(/data-asset="([\w-]+-mini)"/)?.[1];
   expect(idMini, 'o card da Home não usa miniatura').toBeTruthy();
   const idInteira = idMini!.replace(/-mini$/, '');
-  const dados = (id: string): string => html.match(new RegExp(`__IMG__\\("${id}","([^"]+)"\\)`))![1]!;
-  const mini = dados(idMini!);
-  const inteira = dados(idInteira);
+  const mini = html.match(new RegExp(`__IMG__\\("${idMini}","([^"]+)"\\)`))![1]!;
   expect(dimensoesDaImagem(mini)).toEqual({ w: 960, h: 540 });
-  expect(dimensoesDaImagem(inteira)?.w).toBe(2400);
-  expect(mini.length).toBeLessThan(inteira.length * 0.4);
+  // A inteira (2400 px, só capa) nem entra no arquivo; a miniatura é bem menor que ela.
+  expect(html, 'a foto inteira da capa foi embutida à toa').not.toContain(`__IMG__("${idInteira}"`);
+  expect(mini.length).toBeLessThan(b64.length * 0.4);
 
   // Aberto no navegador (como index.html: o download vem sem extensão): o card mostra a miniatura.
   const site = resolve(mkdtempSync(resolve(tmpdir(), 'miniaturas-')), 'index.html');

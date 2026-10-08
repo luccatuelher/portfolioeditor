@@ -42,6 +42,53 @@ export function imagensEmGrade(data: PortfolioV4): Set<string> {
   return out;
 }
 
+/**
+ * Imagens que o site usa SÓ como capa de card (projeto e nota). Com a
+ * miniatura pronta, a foto inteira delas não serve a ninguém — a página do
+ * projeto não mostra a capa — e só pesa no arquivo (e no pacote do NDA, que
+ * todo visitante baixa mesmo sem abrir). Galeria, sketches, quadros e blocos
+ * seguem com a inteira: o visualizador ampliado a usa. A imagem de SEO fica
+ * de fora da conta (vai como arquivo ao lado).
+ */
+export function soComoCapa(data: PortfolioV4): Set<string> {
+  const capas = new Set<string>();
+  for (const i of [...data.collections.projects, ...data.collections.blog]) if (i.thumb?.assetId) capas.add(i.thumb.assetId);
+  const sem = (i: { thumb?: ImageRef }): unknown => ({ ...i, thumb: undefined });
+  const outros = new Set<string>();
+  const visitar = (n: unknown): void => {
+    if (Array.isArray(n)) n.forEach(visitar);
+    else if (n && typeof n === 'object') {
+      for (const [k, v] of Object.entries(n as Record<string, unknown>)) {
+        if (k === 'seo') continue;
+        if (k === 'assetId' && typeof v === 'string') outros.add(v);
+        else visitar(v);
+      }
+    }
+  };
+  visitar({
+    pages: data.pages,
+    site: data.site,
+    projects: data.collections.projects.map(sem),
+    blog: data.collections.blog.map(sem),
+    gallery: data.collections.gallery,
+    sketches: data.collections.sketches,
+  });
+  for (const id of outros) capas.delete(id);
+  return capas;
+}
+
+/**
+ * Tira dos mapas a foto inteira das imagens que só servem de capa e já têm
+ * miniatura nele (nunca solta a inteira sem a miniatura: sem ela, a capa
+ * ficaria sem imagem).
+ */
+export function descartarCapasInteiras(data: PortfolioV4, mapas: Record<string, unknown>[], comMiniatura: (id: string) => boolean): void {
+  for (const id of soComoCapa(data)) {
+    if (!comMiniatura(miniId(id))) continue;
+    for (const m of mapas) delete m[id];
+  }
+}
+
 /** Gera a miniatura (data URL) de uma foto; null se não conseguir. */
 export type GerarMiniatura = (dataUrl: string, largura: number) => Promise<string | null>;
 

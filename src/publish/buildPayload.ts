@@ -1,10 +1,10 @@
 import type { MigratedAsset } from '../migrate/migrate';
 import type { PortfolioV4 } from '../schema/v4';
 import { selarPacoteNda, type EncryptedNda } from './nda';
-import { ndaCount, publicSnapshot, type NdaBundle } from './publicSnapshot';
+import { mergeNda, ndaCount, publicSnapshot, type NdaBundle } from './publicSnapshot';
 import { repairDoc } from '../migrate/repair';
 import { completarDimensoes } from '../core/dimensoesImagem';
-import { miniaturasDoSite, type GerarMiniatura } from '../core/miniaturas';
+import { descartarCapasInteiras, miniaturasDoSite, miniId, type GerarMiniatura } from '../core/miniaturas';
 
 export interface PublishPayload {
   /** Documento público (sem NDA/rascunho). */
@@ -58,6 +58,8 @@ export async function buildPublishPayload(
       assetMap[id] = url;
       assetSizes[id] = dataUrlBytes(url);
     }
+    // A capa que só aparece em card não precisa da foto inteira no arquivo.
+    descartarCapasInteiras(publicData, [assetMap, assetSizes], (mini) => !!assetMap[mini]);
   }
 
   const hasNda = ndaCount(nda) > 0;
@@ -77,6 +79,16 @@ export async function buildPublishPayload(
       }
     };
     collect(nda);
+    if (opts.miniatura) {
+      // Mesma regra do público, para o que o visitante vê ao destrancar: miniatura
+      // das imagens em grade que o pacote carrega (as já públicas têm a sua) e, nas
+      // que só servem de capa, sem a foto inteira — o pacote todo visitante baixa.
+      const vista = mergeNda(publicData, nda as NdaBundle);
+      const novas: Record<string, string> = {};
+      for (const [id, url] of Object.entries(ndaAssets)) if (!assetMap[miniId(id)]) novas[id] = url;
+      Object.assign(ndaAssets, await miniaturasDoSite(vista, novas, opts.miniatura));
+      descartarCapasInteiras(vista, [ndaAssets], (mini) => !!ndaAssets[mini] || !!assetMap[mini]);
+    }
     ndaBlob = await selarPacoteNda({ items: nda as NdaBundle, assets: ndaAssets }, ndaPassword);
   }
 
