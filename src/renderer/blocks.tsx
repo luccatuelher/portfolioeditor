@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useUi } from './ui';
 import { camposDoBloco, faltaNoIdioma } from '../core/camposTexto';
 import { hrefPublico } from '../core/links';
-import { embedProvider, embedSource, motivoDoEmbedVazio } from '../embed/embedSource';
+import { embedProvider, embedSource, linkDoEmbed, motivoDoEmbedVazio } from '../embed/embedSource';
 import { sobraDaLinha, spanVars } from './responsive';
 import { ErrorBoundary } from './ErrorBoundary';
 import type { Block, GalleryItem, HomePreview, ImageRef, ProjectItem, Section, SketchItem } from '../schema/v4';
@@ -79,7 +79,7 @@ function EmbedFrame({ provider, refValue, options, nome }: { provider: string; r
     );
   }
   return (
-    <div className="embed-area">
+    <div className="embed-area" data-titulo={titulo} data-link={linkDoEmbed(src)}>
       <iframe
         loading="lazy"
         title={titulo}

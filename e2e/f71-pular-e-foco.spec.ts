@@ -23,8 +23,14 @@ function publicar(): string {
 test('o link de pular leva ao conteúdo sem trocar de rota', async ({ page }) => {
   await page.route(/youtube|youtu\.be|vimeo|speakerdeck|ytimg|fonts\.googleapis|fonts\.gstatic/, (r) => r.abort());
   await page.goto(publicar(), { waitUntil: 'load' });
-  await page.keyboard.press('Tab');
-  await expect(page.locator('.skip-link')).toBeFocused();
+  // O runtime troca a Home pré-renderizada pela viva; um Tab dado nesse instante
+  // perde o foco com o elemento antigo. Sob carga isso derrubava o teste 1 em N:
+  // repete o Tab (do começo) até o foco ficar no link de pular.
+  await expect(async () => {
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.skip-link')).toBeFocused({ timeout: 1000 });
+  }).toPass({ timeout: 10_000 });
   await page.keyboard.press('Enter');
   await expect(page.locator('main#conteudo')).toBeFocused();
   await expect(page.locator('.nao-encontrado')).toHaveCount(0);

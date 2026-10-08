@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { embedProvider, embedSource, segundosDoTempo, motivoDoEmbedVazio } from '../src/embed/embedSource';
+import { embedProvider, embedSource, linkDoEmbed, segundosDoTempo, motivoDoEmbedVazio } from '../src/embed/embedSource';
 
 describe('embedSource — porta pura do v3', () => {
   it('YouTube por id de 11 chars', () => {
@@ -106,5 +106,15 @@ describe('por que o embed não virou player', () => {
 
   it('link de YouTube quebrado não é confundido com campo vazio', () => {
     expect(motivoDoEmbedVazio({ id: 'https://youtube.com/watch?v=' })).toContain('YouTube não reconhecido');
+  });
+});
+
+describe('linkDoEmbed — o endereço que sobra no papel', () => {
+  it('YouTube e Vimeo voltam para o endereço de assistir, sem parâmetros do player', () => {
+    expect(linkDoEmbed(embedSource({ type: 'youtube', id: 'aqz-KE-bpKQ', autoplay: true }))).toBe('https://youtu.be/aqz-KE-bpKQ');
+    expect(linkDoEmbed(embedSource({ type: 'vimeo', id: 'https://vimeo.com/123456789' }))).toBe('https://vimeo.com/123456789');
+  });
+  it('outro provedor mantém o endereço, sem a query', () => {
+    expect(linkDoEmbed('https://speakerdeck.com/player/abc123?x=1')).toBe('https://speakerdeck.com/player/abc123');
   });
 });

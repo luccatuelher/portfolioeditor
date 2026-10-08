@@ -145,3 +145,16 @@ export function motivoDoEmbedVazio(embed: EmbedInput | null | undefined): string
   if (bruto.startsWith('<')) return 'Código de incorporar sem endereço reconhecido — copie o <iframe> inteiro.';
   return 'Não reconheci isso como vídeo. Cole o link do YouTube/Vimeo ou o código de incorporar.';
 }
+
+/**
+ * Endereço de ver o vídeo no site de origem, a partir do endereço do player.
+ * Vai para o papel: na impressão o player não toca, e o link é o que resta.
+ * Sem os parâmetros de reprodução (autoplay, mudo…); desconhecido volta como está.
+ */
+export function linkDoEmbed(src: string): string {
+  const yt = src.match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]{11})/)?.[1];
+  if (yt) return `https://youtu.be/${yt}`;
+  const vimeo = src.match(/player\.vimeo\.com\/video\/(\d+)/)?.[1];
+  if (vimeo) return `https://vimeo.com/${vimeo}`;
+  return src.split('?')[0]!;
+}

@@ -35,4 +35,13 @@ describe('CSS da prévia gerado', () => {
     const gerado = readFileSync('src/editor/preview.generated.css', 'utf8');
     expect(gerado).not.toMatch(/\d+vw/);
   });
+
+  it('a impressão é um @media print puro: fica fora da prévia do editor', () => {
+    // `@media print and (max-width…)` seria lido como regra de largura e vazaria para .pv-mobile.
+    const site = readFileSync('src/renderer/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(site).toMatch(/@media print\s*\{/);
+    expect(site).not.toMatch(/@media print\s+and/);
+    const gerado = readFileSync('src/editor/preview.generated.css', 'utf8');
+    expect(gerado).not.toMatch(/@media print|embed-area::after|@page|\.skip-link/);
+  });
 });

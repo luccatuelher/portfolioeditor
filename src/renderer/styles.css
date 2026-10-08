@@ -563,3 +563,35 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .nao-encontrado-saidas { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px 28px; font-family: var(--font-mono); font-size: calc(0.72rem * var(--escala-texto, 1)); letter-spacing: 0.1em; text-transform: uppercase; }
 .nao-encontrado-saidas a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--accent); text-underline-offset: 4px; }
 .nao-encontrado-saidas a:hover { color: var(--accent-texto, var(--accent)); }
+
+/* Impressão (Salvar como PDF): quem recebe o link imprime a página — projeto,
+   Sobre, contato — e leva o conteúdo, sem menu, bandeiras, janelas nem
+   fundo escuro. As cores do tema ficam por conta do tema na tela; no papel
+   o texto é sempre escuro sobre branco. As variáveis vão em `.site > *`
+   porque o tema as grava inline em `.site` e um filho vence a herança, sem
+   !important. O escopo é só `print`: o gerador da prévia do editor ignora
+   blocos que não são de largura. */
+@media print {
+  @page { margin: 14mm; }
+  .skip-link, .sticky-nav, .site .hdr-el.hdr-nav, .site .hdr-el.hdr-lang, .lang-icons, .lightbox, .project-filter, .detail-pager,
+  .home-preview-actions, .pv-carrossel-abas, .pv-carrossel-seta, .pv-carrossel-pontos, .embed-area iframe { display: none; }
+  .site, .site.has-backdrop { background: rgb(255, 255, 255); background-image: none; min-height: 0; }
+  .site > * {
+    --bg: rgb(255, 255, 255); --surface: rgb(255, 255, 255); --ink: rgb(0, 0, 0); --ink-soft: rgb(34, 34, 34);
+    --ink-pale-texto: rgb(68, 68, 68); --accent-texto: rgb(0, 0, 0); --rule: rgb(170, 170, 170);
+    color: var(--ink);
+  }
+  /* O navegador não imprime fundos: texto sobre fundo cheio sairia branco no branco. */
+  .site .block.has-bg, .btn-solid, .btn-cv, .home-preview-go, .filter-btn.active, .pv-carrossel-aba.on, .nda-unlock button, .site .embed-area {
+    background: none; color: var(--ink); border: 1px solid var(--rule);
+  }
+  img, figure, .block-image, .art-item, .storyboard-cell, .project-card, .blog-item, .embed-area { break-inside: avoid; }
+  h1, h2, h3, h4, .block-heading-text, .detail-title, .detail-header { break-after: avoid; break-inside: avoid; }
+  /* Caixa transformada não se divide entre páginas; a contenção também atrapalha a grade. */
+  .site .block { transform: none; }
+  .section-grid { container-type: normal; }
+  /* O vídeo não toca no papel: no lugar, o nome e o endereço dele. */
+  .embed-area::after { content: attr(data-titulo) " — " attr(data-link); display: block; padding: 10px 12px; font-family: var(--font-mono); font-size: calc(0.75rem * var(--escala-texto, 1)); overflow-wrap: anywhere; }
+  .block-text-body a[href^="http"]::after, .btn[href^="http"]::after, .social-link[href^="http"]::after { content: " (" attr(href) ")"; font-size: calc(0.7rem * var(--escala-texto, 1)); text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; }
+  .social-row { flex-direction: column; }
+}
