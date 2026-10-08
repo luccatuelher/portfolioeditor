@@ -114,6 +114,10 @@ describe('linkDoEmbed — o endereço que sobra no papel', () => {
     expect(linkDoEmbed(embedSource({ type: 'youtube', id: 'aqz-KE-bpKQ', autoplay: true }))).toBe('https://youtu.be/aqz-KE-bpKQ');
     expect(linkDoEmbed(embedSource({ type: 'vimeo', id: 'https://vimeo.com/123456789' }))).toBe('https://vimeo.com/123456789');
   });
+  it('Vimeo não listado mantém o h= (sem ele a página some)', () => {
+    expect(linkDoEmbed(embedSource({ id: 'https://vimeo.com/123456789/abcdef1234' }))).toBe('https://vimeo.com/123456789/abcdef1234');
+    expect(linkDoEmbed(embedSource({ id: 'https://player.vimeo.com/video/123456789?h=abcdef1234' }))).toBe('https://vimeo.com/123456789/abcdef1234');
+  });
   it('outro provedor mantém o endereço, sem a query', () => {
     expect(linkDoEmbed('https://speakerdeck.com/player/abc123?x=1')).toBe('https://speakerdeck.com/player/abc123');
   });

@@ -27,7 +27,9 @@ test('o link de pular leva ao conteúdo sem trocar de rota', async ({ page }) =>
   // perde o foco com o elemento antigo. Sob carga isso derrubava o teste 1 em N:
   // repete o Tab (do começo) até o foco ficar no link de pular.
   await expect(async () => {
-    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    // O ponto de partida do Tab só se move quando algo novo recebe foco: focar o
+    // <body> o devolve ao topo da página.
+    await page.evaluate(() => { const b = document.body; b.tabIndex = -1; b.focus(); b.removeAttribute('tabindex'); });
     await page.keyboard.press('Tab');
     await expect(page.locator('.skip-link')).toBeFocused({ timeout: 1000 });
   }).toPass({ timeout: 10_000 });

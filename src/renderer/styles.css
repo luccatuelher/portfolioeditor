@@ -591,7 +591,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   .site .block { transform: none; }
   .section-grid { container-type: normal; }
   /* O vídeo não toca no papel: no lugar, o nome e o endereço dele. */
-  .embed-area::after { content: attr(data-titulo) " — " attr(data-link); display: block; padding: 10px 12px; font-family: var(--font-mono); font-size: calc(0.75rem * var(--escala-texto, 1)); overflow-wrap: anywhere; }
+  .embed-area:not(.embed-poster)::after { content: attr(data-titulo) " — " attr(data-link); display: block; padding: 10px 12px; font-family: var(--font-mono); font-size: calc(0.75rem * var(--escala-texto, 1)); overflow-wrap: anywhere; }
   .block-text-body a[href^="http"]::after, .btn[href^="http"]::after, .social-link[href^="http"]::after { content: " (" attr(href) ")"; font-size: calc(0.7rem * var(--escala-texto, 1)); text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; }
   .social-row { flex-direction: column; }
 }

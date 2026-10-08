@@ -155,6 +155,10 @@ export function linkDoEmbed(src: string): string {
   const yt = src.match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]{11})/)?.[1];
   if (yt) return `https://youtu.be/${yt}`;
   const vimeo = src.match(/player\.vimeo\.com\/video\/(\d+)/)?.[1];
-  if (vimeo) return `https://vimeo.com/${vimeo}`;
+  if (vimeo) {
+    // Vídeo não listado: sem o h= a página diz que o vídeo não existe.
+    const h = src.match(/[?&]h=([a-zA-Z0-9]+)/)?.[1];
+    return h ? `https://vimeo.com/${vimeo}/${h}` : `https://vimeo.com/${vimeo}`;
+  }
   return src.split('?')[0]!;
 }

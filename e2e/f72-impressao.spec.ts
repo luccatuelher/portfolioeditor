@@ -24,11 +24,33 @@ test('imprimir: sem menu nem janelas, texto escuro no branco, vídeo vira endere
   await page.route(/youtube|youtu\.be|vimeo|speakerdeck|ytimg|fonts\.googleapis|fonts\.gstatic/, (r) => r.abort());
   await page.goto(url, { waitUntil: 'load' });
 
-  const rotas = await page.evaluate(() => {
-    type D = { collections: { projects: { id: string }[] } };
+  const { rotas, estaticas } = await page.evaluate(() => {
+    type D = { pages: { id: string; slug: string; kind: string }[]; collections: { projects: { id: string }[] } };
     const d = (window as unknown as { __PORTFOLIO_DATA__: D }).__PORTFOLIO_DATA__;
-    return d.collections.projects.map((p) => `project/${p.id}`);
+    return {
+      rotas: d.collections.projects.map((p) => `project/${p.id}`),
+      estaticas: d.pages.filter((p) => p.kind === 'static' && p.id !== 'home').map((p) => p.slug || p.id),
+    };
   });
+  // Janela de imagem aberta de verdade (na galeria): na impressão ela some.
+  let abriu = false;
+  for (const r of estaticas) {
+    await page.evaluate((x) => { location.hash = `#${x}`; }, r);
+    await expect(page.locator(`main#conteudo[data-route="${r}"]`)).toBeVisible();
+    if (await page.locator('.art-img-btn, .sketch-img-btn').count()) {
+      await page.locator('.art-img-btn, .sketch-img-btn').first().click();
+      abriu = true;
+      break;
+    }
+  }
+  expect(abriu, 'nenhuma página da fixture tem galeria').toBe(true);
+  await expect(page.locator('.lightbox'), 'a janela de imagem não abriu').toBeVisible();
+  await page.emulateMedia({ media: 'print' });
+  expect(await page.locator('.lightbox').evaluate((e) => getComputedStyle(e).display), 'a janela de imagem sai no papel').toBe('none');
+  await page.emulateMedia({ media: 'screen' });
+  await page.keyboard.press('Escape');
+  await expect(page.locator('.lightbox')).toHaveCount(0);
+
   // Acha um projeto que tem vídeo.
   let rotaComVideo = '';
   for (const r of rotas) {
@@ -44,14 +66,13 @@ test('imprimir: sem menu nem janelas, texto escuro no branco, vídeo vira endere
     s.style.setProperty('--ink', 'rgb(240, 240, 240)');
     s.style.setProperty('--bg', 'rgb(20, 20, 20)');
   });
-  // Janela de imagem aberta na tela: some no papel.
-  const foto = page.locator('main img').first();
-  if (await foto.count()) await foto.click({ trial: true }).catch(() => undefined);
 
   await page.emulateMedia({ media: 'print' });
   const display = (sel: string) => page.locator(sel).evaluateAll((els) => els.map((e) => getComputedStyle(e).display));
-  for (const sel of ['.sticky-nav', '.skip-link', '.hdr-nav', '.hdr-lang', '.detail-pager', '.embed-area iframe', '.lightbox']) {
-    for (const d of await display(sel)) expect(d, `${sel} aparece na impressão`).toBe('none');
+  for (const sel of ['.sticky-nav', '.skip-link', '.hdr-nav', '.hdr-lang', '.detail-pager', '.embed-area iframe']) {
+    const estilos = await display(sel);
+    expect(estilos.length, `${sel} nem existe na página: o teste não prova nada`).toBeGreaterThan(0);
+    for (const d of estilos) expect(d, `${sel} aparece na impressão`).toBe('none');
   }
   expect(await page.locator('.site').evaluate((e) => getComputedStyle(e).backgroundColor)).toBe('rgb(255, 255, 255)');
   const cor = await page.locator('main').evaluate((e) => getComputedStyle(e).color);
