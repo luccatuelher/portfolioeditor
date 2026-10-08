@@ -214,16 +214,27 @@ Inspector, Tema e fichas muda o canvas — exceções listadas com o porquê),
   heredoc do Bash come barras invertidas — código com regex, escreva com a
   ferramenta de edição de arquivo.
 
-## 10. Ideias para as próximas rodadas (ainda não feitas)
+## 10. Ideias para as próximas rodadas
 
-1. Miniaturas também no conteúdo **NDA** (as grades destrancadas usam a
-   foto inteira).
-2. O canvas do editor usa as fotos inteiras (até 2400 px) em todos os
-   cards — peso de memória em portfólio grande.
-3. `f67`: as exceções `SO_NOS_CARDS` (largura, destaque, resumo na ficha)
-   poderiam ser conferidas na página da lista, em vez de liberadas.
-4. Folha de impressão para a página do projeto (recrutador salvando PDF).
-5. Vitest ficou em ~30 s (transformação domina): avaliar cache de módulos.
+Feitas nas rodadas 87–89: folha de impressão (item 4 antigo), miniaturas no
+NDA (item 1), arrastar cards na Home (guarda), mover bloco entre seções.
+
+Avaliadas e **descartadas com evidência** (não refazer sem fato novo):
+- *Canvas do editor com fotos inteiras*: no backup real são 20 imagens, só 6
+  acima de 1200 px, ~55 MB decodificadas no pior caso — sem problema.
+- *`srcset` por largura*: o site é um arquivo só com as imagens embutidas;
+  mais tamanhos só deixariam o arquivo maior (todo visitante baixa tudo).
+- *Masonry da galeria*: a galeria é a grade de 12 colunas com largura por
+  item; no conteúdo real são 2 itens iguais — nada a equilibrar.
+- *Vitest ~30 s*: hoje roda em ~10 s neste ambiente.
+- *`f67` `SO_NOS_CARDS` conferidos na lista*: os 3 campos funcionam; a
+  navegação extra deixaria o e2e lento e instável por ganho pequeno.
+
+Ainda em aberto (só com pedido do Lucca):
+- Prévia por rota ao compartilhar (OG por projeto): exigiria páginas-ponte
+  por rota e links compartilháveis diferentes do `#rota` de hoje.
+- Arrastar blocos entre seções no painel **Layers** (Alt+↑/↓ e Inspector já
+  cruzam seções).
 
 ## 11. Histórico recente (rodadas 64–84)
 
@@ -252,3 +263,6 @@ Inspector, Tema e fichas muda o canvas — exceções listadas com o porquê),
 | 84 | `4abdda2` | Guarda estendida ao Tema e às fichas; data da nota; nome do vídeo |
 | 85 | `4ad2717` | Listas do editor reordenam pelo teclado (↑/↓, Espaço, Esc) |
 | 86 | `a649112` | Site abre a rota do endereço de agora, mesmo se ele mudar durante o boot (o `f62` deixa de falhar 1 em 3) |
+| 87 | `1b02e3a` / `0f9af28` | Print stylesheet: "Save as PDF" of any page prints without menu, flags, lightbox or dark background; videos print as name + address |
+| 88 | `90b28dc` | NDA thumbnails; images used only as a card cover ship without the full photo (public file and NDA package); NDA package stays self-contained |
+| 89 | `02b2253` / `25a3386` | Alt+↑/↓ and Subir/Descer move a block across sections; selection follows (also on undo); Home card drag guarded by e2e |
