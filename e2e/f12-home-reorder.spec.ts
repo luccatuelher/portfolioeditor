@@ -35,4 +35,36 @@ test.describe('Preview na Home + reordenação', () => {
     await page.goto('/preview.html', { waitUntil: 'load' });
     await expect(page.locator('.site-header nav .nav-nda')).toContainText('🔒');
   });
+
+  test('arrastar um card na Home reordena a coleção; um Ctrl+Z desfaz', async ({ page }) => {
+    await page.route(/youtube|vimeo|speakerdeck/, (r) => r.abort());
+    await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
+    const cards = page.locator('.editor-canvas .project-card[data-item-id]');
+    const ordem = (): Promise<string[]> => cards.evaluateAll((els) => els.map((e) => e.getAttribute('data-item-id')!));
+    const antes = await ordem();
+    expect(antes.length).toBeGreaterThanOrEqual(2);
+
+    // Mesmo gesto do navegador: dragstart no card, dragover e drop no alvo.
+    const dt = await page.evaluateHandle(() => new DataTransfer());
+    await cards.nth(0).dispatchEvent('dragstart', { dataTransfer: dt });
+    await cards.nth(1).dispatchEvent('dragover', { dataTransfer: dt });
+    await cards.nth(1).dispatchEvent('drop', { dataTransfer: dt });
+    await page.locator('.editor-canvas').dispatchEvent('dragend', { dataTransfer: dt });
+
+    await expect.poll(ordem).not.toEqual(antes);
+    const depois = await ordem();
+    expect(depois.slice().sort()).toEqual(antes.slice().sort()); // só mudou a ordem
+    expect(depois[0]).not.toBe(antes[0]);
+
+    // O painel Dados mostra a mesma ordem da Home (os que aparecem lá).
+    await page.locator('.left-tabs button', { hasText: 'Dados' }).click();
+    const nomesNoCanvas = await cards.evaluateAll((els) => els.map((e) => e.querySelector('.card-title, h3')?.textContent?.trim() ?? ''));
+    const nomesNoPainel = await page.locator('.data-table').first().locator('.data-name').allInnerTexts();
+    const noPainel = nomesNoPainel.map((n) => n.trim()).filter((n) => nomesNoCanvas.includes(n));
+    expect(noPainel).toEqual(nomesNoCanvas.filter((n) => noPainel.includes(n)));
+
+    // Um desfazer volta tudo.
+    await page.locator('.editor-topbar button[aria-label^="Desfazer"]').click();
+    await expect.poll(ordem).toEqual(antes);
+  });
 });

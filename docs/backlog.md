@@ -23,7 +23,7 @@ Feito e testado: dnd-kit (reordenar blocos), Tiptap (rich no inspector), paleta 
 
 Refinos pendentes:
 - **srcset responsivo**: o pipeline gera 1 tamanho + thumb por asset; variantes por largura (srcset) exigem gerar múltiplos tamanhos no import. `loading=lazy`/`decoding=async`/`width`/`height` já entram.
-- **Reordenar blocos entre seções** (hoje: dentro da seção via dnd + setas). Arrastar seções inteiras.
+- **Reordenar blocos entre seções**: feito no canvas (arrastar) e por Alt+↑/↓ / Subir/Descer; falta só arrastar no painel Layers. Arrastar seções inteiras já existe.
 - **OG por rota**: o `site.html` é SPA single-file → OG a nível de site. Per-rota exige pré-render por rota.
 - **Edição inline no canvas** (contentEditable/Tiptap direto no bloco); hoje rich é no inspector, duplo-clique abre a seleção.
 - **Edição do chrome do site** (nome/role/nav, `site.ui`, `textOverrides`) e de `contact.socials`/imagem e frames de storyboard pelo inspector.

@@ -96,6 +96,10 @@ export function rotuloDaMudanca(doc: PortfolioV4, patches: Patch[]): string {
   };
   const tirou = patches.some((p) => naLista(p) && p.op === 'remove');
   const pos = patches.find((p) => naLista(p) && p.op === 'add');
+  // Um sai de uma seção e um entra em outra: o bloco mudou de seção (arrastar, Alt+↑/↓).
+  const saidas = patches.filter((p) => naLista(p) && p.op === 'remove').length;
+  const entradas = patches.filter((p) => naLista(p) && p.op === 'add').length;
+  if (saidas === 1 && entradas === 1) return 'ordem dos elementos';
   if (tirou && !pos) return 'exclusão de elemento';
   if (pos && !tirou) return descrever(doc, pos) ?? 'novo elemento';
   const nomes = [...new Set(patches.map((p) => descrever(doc, p)).filter((n): n is string => !!n))];

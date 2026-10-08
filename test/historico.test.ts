@@ -31,6 +31,18 @@ describe('rótulo da mudança no histórico', () => {
     expect(ultimo(base(), (d) => void home(d).sections[0]!.blocks.splice(0, 1))).toBe('exclusão de elemento');
   });
 
+  it('um elemento que muda de seção é "ordem dos elementos", não "várias mudanças"', () => {
+    const doc = base();
+    const home0 = home(doc);
+    const i = home0.sections.findIndex((s, k) => s.blocks.length > 0 && k < home0.sections.length - 1);
+    expect(i).toBeGreaterThanOrEqual(0);
+    expect(ultimo(doc, (d) => {
+      const secs = home(d).sections;
+      const [b] = secs[i]!.blocks.splice(secs[i]!.blocks.length - 1, 1);
+      secs[i + 1]!.blocks.unshift(b!);
+    })).toBe('ordem dos elementos');
+  });
+
   it('tema, site e itens de coleção', () => {
     expect(ultimo(base(), (d) => void (d.theme.colors.accent = '#123456'))).toBe('cores do tema');
     expect(ultimo(base(), (d) => void (d.site.name.pt = 'Outro nome'))).toBe('nome do site');

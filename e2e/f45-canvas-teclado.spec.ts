@@ -43,3 +43,60 @@ test('Enter no "Editar" de um elemento seleciona; Alt+↓ / Alt+↑ movem', asyn
   await page.keyboard.press('Alt+ArrowUp');
   await expect.poll(ordem).toEqual(antes);
 });
+
+test('Alt+↓ / Alt+↑ no fim/começo de uma seção passam o elemento para a vizinha; o Inspector o acompanha, também no desfazer', async ({ page }) => {
+  await abrir(page);
+  const secoes = page.locator('.editor-canvas .section');
+  const ids = (n: number): Promise<string[]> => secoes.nth(n).locator(':scope .block[data-block-id]').evaluateAll((els) => els.map((e) => e.getAttribute('data-block-id')!));
+  const total = await secoes.count();
+  // A 1ª seção que tem blocos e é seguida de outra seção.
+  let k = -1;
+  for (let i = 0; i < total - 1; i++) if ((await ids(i)).length > 0) { k = i; break; }
+  expect(k, 'a Home precisa de duas seções, a 1ª com blocos').toBeGreaterThanOrEqual(0);
+  const daSecao = await ids(k);
+  const daSeguinte = await ids(k + 1);
+  const ultimo = daSecao[daSecao.length - 1]!;
+
+  await page.locator(`.editor-canvas [data-block-id="${ultimo}"]`).click({ position: { x: 4, y: 4 } });
+  await expect(page.locator(`.editor-canvas [data-block-id="${ultimo}"]`)).toHaveClass(/is-selected/);
+  const semBloco = page.locator('.inspector', { hasText: 'Bloco não encontrado' });
+  const tirarFoco = (): Promise<void> => page.locator('.editor-canvas').evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+
+  await tirarFoco();
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect.poll(() => ids(k + 1)).toEqual([ultimo, ...daSeguinte]);
+  expect(await ids(k)).toEqual(daSecao.slice(0, -1));
+  await expect(page.locator(`.editor-canvas [data-block-id="${ultimo}"]`)).toHaveClass(/is-selected/);
+  await expect(semBloco).toHaveCount(0);
+
+  // Alt+↑ no começo da seção: volta ao fim da anterior.
+  await tirarFoco();
+  await page.keyboard.press('Alt+ArrowUp');
+  await expect.poll(() => ids(k)).toEqual(daSecao);
+  await expect(semBloco).toHaveCount(0);
+
+  // Desfazer de uma mudança de seção: o bloco volta e o Inspector não perde o bloco.
+  await tirarFoco();
+  await page.keyboard.press('Alt+ArrowDown');
+  await expect.poll(() => ids(k + 1)).toEqual([ultimo, ...daSeguinte]);
+  await expect(page.locator('.editor-topbar button[aria-label^="Desfazer"]')).toHaveAttribute('aria-label', /ordem dos elementos/);
+  await page.locator('.editor-topbar button[aria-label^="Desfazer"]').click();
+  await expect.poll(() => ids(k)).toEqual(daSecao);
+  await expect(semBloco).toHaveCount(0);
+  await expect(page.locator(`.editor-canvas [data-block-id="${ultimo}"]`)).toHaveClass(/is-selected/);
+});
+
+test('Inspector: Subir não vale no 1º elemento do contêiner, Descer não vale no último', async ({ page }) => {
+  await abrir(page);
+  const blocos = page.locator('.editor-canvas .block[data-block-id]');
+  await blocos.first().click({ position: { x: 4, y: 4 } });
+  await page.locator('.insp-tab', { hasText: 'Layout' }).click();
+  await expect(page.getByRole('button', { name: '↑ Subir' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '↓ Descer' })).toBeEnabled();
+  await blocos.last().scrollIntoViewIfNeeded();
+  await blocos.last().hover();
+  await blocos.last().locator(':scope > .pe-actions .pe-act-edit').click({ force: true });
+  await page.locator('.insp-tab', { hasText: 'Layout' }).click();
+  await expect(page.getByRole('button', { name: '↓ Descer' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '↑ Subir' })).toBeEnabled();
+});

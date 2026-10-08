@@ -114,7 +114,7 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 /* ------------------------------------------------------------- coleções */
 .collection-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--coll-gap, var(--gutter, 24px)); align-items: start; }
 .collection-grid > * { grid-column: span var(--span, 1); min-width: 0; }
-/* galeria: exibição dedicada em masonry (colunas) */
+/* galeria e sketches usam esta mesma grade de 12 colunas (largura por item); não há masonry. */
 
 .project-card { cursor: pointer; }
 /* Título que abre (TituloQueAbre): é o botão para teclado e leitor de tela,

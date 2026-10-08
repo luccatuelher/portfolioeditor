@@ -162,6 +162,36 @@ export function detachBlock<T extends GridCell>(blocks: T[], id: string): T | un
 }
 
 /**
+ * Move um bloco uma posição para cima (-1) ou para baixo (+1) dentro de um
+ * contêiner. Dentro da seção é uma troca de lugar; na borda da seção o bloco
+ * passa para a seção vizinha — no fim da anterior ao subir, no começo da
+ * seguinte ao descer —, como "mover linha" nos editores. Sai da pilha/linha de
+ * onde estava (quem vinha atrás assume) e mantém a largura; se a largura menor
+ * que 12 dividir linha com o vizinho da seção nova, o layout decide, como numa
+ * troca dentro da própria seção. Devolve a seção onde o bloco ficou, ou `null`
+ * se não houve movimento (já está no primeiro/último lugar do contêiner).
+ */
+export function moverUmPasso<T extends GridCell>(secs: { id: string; blocks: T[] }[], blockId: string, dir: -1 | 1): string | null {
+  const si = secs.findIndex((s) => s.blocks.some((b) => b.id === blockId));
+  if (si < 0) return null;
+  const s = secs[si]!;
+  const i = s.blocks.findIndex((b) => b.id === blockId);
+  const j = i + dir;
+  if (j >= 0 && j < s.blocks.length) {
+    unstackBlock(s.blocks, blockId); // quem se move sai da pilha sem desmontá-la
+    const [moved] = s.blocks.splice(i, 1);
+    s.blocks.splice(j, 0, moved!);
+    return s.id;
+  }
+  const vizinha = secs[si + dir];
+  if (!vizinha) return null;
+  const bloco = detachBlock(s.blocks, blockId)!;
+  if (dir === -1) vizinha.blocks.push(bloco);
+  else vizinha.blocks.unshift(bloco);
+  return vizinha.id;
+}
+
+/**
  * Insere `block` relativo ao alvo `targetId` segundo a zona. Muta `blocks`.
  * `keepSpan`: numa linha nova (topo/base), mantém a largura do bloco em vez de 12.
  */

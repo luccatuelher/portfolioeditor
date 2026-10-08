@@ -3,7 +3,7 @@ import { DEFAULT_HEADER, type Block, type BlogItem, type GalleryItem, type Heade
 import { reorderArray } from '../core/array';
 import { computeRowColumns, rowHeadId, type DropZone } from './gridOps';
 import { emptyI18n, isBlankI18n } from '../core/i18n';
-import { findBlock, findSection, type CollectionName, type Selection } from './paths';
+import { findBlock, findSection, getSections, type CollectionName, type Selection } from './paths';
 import type { DocApi } from './useDocument';
 import { useRemover } from './remover';
 import { chaveDaSelecao, FocoCampoContext, usePedidoFoco, type PedidoFoco } from './focoCampo';
@@ -975,6 +975,20 @@ function PosicaoNaGrade({ doc, refBlock }: { doc: DocApi; refBlock: import('./pa
   );
 }
 
+/** Subir/Descer: na borda da seção o elemento passa para a vizinha; só para no 1º e no último do contêiner. */
+function MoverBloco({ doc, refBlock }: { doc: DocApi; refBlock: import('./paths').BlockRef }): React.ReactElement {
+  const secs = getSections(doc.state, refBlock.container) ?? [];
+  const noPrimeiro = secs[0]?.blocks[0]?.id === refBlock.blockId;
+  const ultimaComBlocos = [...secs].reverse().find((s) => s.blocks.length > 0);
+  const noUltimo = ultimaComBlocos?.blocks[ultimaComBlocos.blocks.length - 1]?.id === refBlock.blockId;
+  return (
+    <div className="insp-move">
+      <button type="button" disabled={noPrimeiro} onClick={() => doc.moveBlock(refBlock, -1)}>↑ Subir</button>
+      <button type="button" disabled={noUltimo} onClick={() => doc.moveBlock(refBlock, 1)}>↓ Descer</button>
+    </div>
+  );
+}
+
 function LayoutTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlock: import('./paths').BlockRef }): React.ReactElement {
   return (
     <>
@@ -982,10 +996,7 @@ function LayoutTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlo
         <LarguraPorDispositivo doc={doc} block={block} refBlock={refBlock} />
         {['divider', 'spacer'].includes(block.type) ? null : <AlignRow doc={doc} block={block} refBlock={refBlock} />}
         <RowAlignRow doc={doc} refBlock={refBlock} />
-        <div className="insp-move">
-          <button type="button" onClick={() => doc.moveBlock(refBlock, -1)}>↑ Subir</button>
-          <button type="button" onClick={() => doc.moveBlock(refBlock, 1)}>↓ Descer</button>
-        </div>
+        <MoverBloco doc={doc} refBlock={refBlock} />
         <PosicaoNaGrade doc={doc} refBlock={refBlock} />
       </Group>
       <Group id="pad" title="Espaço deste elemento" defaultOpen={false}>

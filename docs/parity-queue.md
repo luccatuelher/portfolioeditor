@@ -22,14 +22,18 @@ Funções do site antigo (`portfolio.html` / legado) a trazer para o v4. Compara
 
 ## ✅ Também feitas (3ª rodada — fila de baixa prioridade)
 15. **Home-visible granular** — cada seção do projeto tem "Ocultar na prévia da Home" (inspector da seção); a prévia da Home respeita isso. Somado ao "destaque" que escolhe quais projetos entram na Home.
-16. **Galeria dedicada (masonry)** — a coleção de galeria agora usa layout em colunas (masonry) com lightbox.
+16. **Galeria** — grade de 12 colunas com largura por item e lightbox (o masonry em colunas foi descartado: ignoraria a largura por item e embaralharia a ordem de leitura/Tab).
 17. **NDA no nav com cadeado 🔒** — a página NDA aparece no menu (site e editor) com cadeado; navegável no editor pelo painel Páginas.
 18. **Badges de estado nos cards do editor** — Destaque / Rascunho / NDA nos cards de projeto, nota, galeria e sketch.
 19. **Arrastar galeria/sketches** — alça de arrastar no painel Dados (dnd-kit), além do drag de projetos/notas e seções.
 
+## ✅ Refinos fechados (round 87–89)
+- Drag-reorder of cards **on the Home canvas**: already worked (`itemDrag` in `blocks.tsx`); now guarded by `e2e/f12-home-reorder`.
+- Moving a block to **another section**: Alt+↑/↓ and the Inspector Subir/Descer now cross section edges (`moverUmPasso` in `gridOps.ts`); the selection follows the block (also on undo/redo); the undo label is "ordem dos elementos". Dragging on the canvas across sections already worked.
+- Masonry balancing: dropped. The gallery is the shared 12-column grid; the real content has 2 gallery items of equal width/aspect, so there is nothing to balance.
+
 ## ⏳ Refinos opcionais restantes
-- Reordenar por drag **na prévia da Home** direto no canvas (hoje via painéis/inspector).
-- Masonry com balanceamento de colunas mais fino.
+- Dragging blocks between sections in the **Layers panel** (needs one multi-container dnd context; Alt+↑/↓ already covers keyboard and Inspector).
 
 > ⚠️ Ao mudar renderer/schema, rode `npm run gen:shell` para o botão "Baixar site" seguir válido (o `build:editor` já faz via prebuild).
 

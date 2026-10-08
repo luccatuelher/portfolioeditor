@@ -6,7 +6,7 @@ import { bi, emptyI18n } from '../core/i18n';
 import { reorderArray } from '../core/array';
 import { newBlockId, newSectionId, renewSectionIds } from './blockFactory';
 import { rotuloDaMudanca } from './historyLabel';
-import { columnIds, computeRowColumns, detachBlock, placeBlock, rowHeadId, unstackBlock, type DropZone } from './gridOps';
+import { columnIds, computeRowColumns, detachBlock, moverUmPasso, placeBlock, rowHeadId, unstackBlock, type DropZone } from './gridOps';
 
 export interface DocApi {
   store: Store<PortfolioV4>;
@@ -131,15 +131,10 @@ export function useDocument(initial: PortfolioV4): DocApi {
       }, { semHistorico: true });
     },
     moveBlock(ref, dir) {
+      // Na borda da seção o bloco passa para a vizinha (gridOps.moverUmPasso).
       store.update((d) => {
-        const s = findSection(d, ref);
-        if (!s) return;
-        const i = s.blocks.findIndex((b) => b.id === ref.blockId);
-        const j = i + dir;
-        if (i < 0 || j < 0 || j >= s.blocks.length) return;
-        unstackBlock(s.blocks, ref.blockId); // quem se move sai da pilha sem desmontá-la
-        const [moved] = s.blocks.splice(i, 1);
-        s.blocks.splice(j, 0, moved!);
+        const secs = getSections(d, ref.container);
+        if (secs) moverUmPasso(secs, ref.blockId, dir);
       });
     },
     reorderBlocks(ref, from, to) {

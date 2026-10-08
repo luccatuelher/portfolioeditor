@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Lang, RenderContextValue } from '../renderer/context';
 import { RenderContext } from '../renderer/context';
 import { PageView } from '../renderer/Page';
@@ -35,7 +35,7 @@ import { LayersPanel } from './LayersPanel';
 import { PagesPanel } from './PagesPanel';
 import { ThemePanel } from './ThemePanel';
 import { DataPanel } from './DataPanel';
-import { findSection, getSections, locateBlock, parentOf, sameContainer, type CollectionName, type Container, type Selection } from './paths';
+import { findBlock, findSection, getSections, locateBlock, parentOf, sameContainer, type CollectionName, type Container, type Selection } from './paths';
 import type { DropZone } from './gridOps';
 import { reorderArray } from '../core/array';
 import { AddBlockPopup, ElementsPalette } from './ElementsPalette';
@@ -483,6 +483,14 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     const gone = container.on === 'page' ? !s.pages.some((p) => p.id === container.pageId) : !s.collections[container.collection].some((i) => i.id === container.itemId);
     if (gone) openContainer({ on: 'page', pageId: 'home' });
   }, [doc.state, container, openContainer]);
+
+  // O bloco trocou de seção (arrastar, Alt+↑/↓, desfazer, refazer): a seleção o segue em
+  // vez de apontar para a seção antiga ("Elemento não encontrado" no Inspector).
+  useLayoutEffect(() => {
+    if (selection?.kind !== 'block' || findBlock(doc.state, selection.ref)) return;
+    const nova = locateBlock(doc.state, selection.ref.container, selection.ref.blockId);
+    if (nova) setSelection({ kind: 'block', ref: nova });
+  }, [doc.state, selection]);
 
   useEffect(() => {
     if (selection?.kind !== 'block') return;
