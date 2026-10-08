@@ -144,4 +144,10 @@ describe('moverUmPasso — Alt+↑/↓ e Subir/Descer', () => {
     expect(s4[0]!.blocks[1]).toMatchObject({ id: 't', span: 6 });
     expect(s4[0]!.blocks[1]!.rowAlign).toBeUndefined();
   });
+
+  it('ao descer para uma linha que ele passa a encabeçar, o alinhamento da linha vai com ele', () => {
+    const secs = [sec('s1', blk('a', 6)), sec('s2', { ...blk('b', 6), rowAlign: 'center' as const }, blk('c'))];
+    expect(moverUmPasso(secs, 'a', 1)).toBe('s2');
+    expect(secs[1]!.blocks.map((b) => [b.id, b.rowAlign])).toEqual([['a', 'center'], ['b', undefined], ['c', undefined]]);
+  });
 });

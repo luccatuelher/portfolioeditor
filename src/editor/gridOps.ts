@@ -186,8 +186,18 @@ export function moverUmPasso<T extends GridCell>(secs: { id: string; blocks: T[]
   const vizinha = secs[si + dir];
   if (!vizinha) return null;
   const bloco = detachBlock(s.blocks, blockId)!;
-  if (dir === -1) vizinha.blocks.push(bloco);
-  else vizinha.blocks.unshift(bloco);
+  if (dir === -1) {
+    vizinha.blocks.push(bloco);
+  } else {
+    const antigo = vizinha.blocks[0];
+    vizinha.blocks.unshift(bloco);
+    // O alinhamento da linha mora no 1º bloco dela: se o recém-chegado passou a encabeçar a
+    // linha do antigo primeiro (largura < 12), o alinhamento vai junto.
+    if (antigo?.rowAlign && !antigo.stack && computeRows(vizinha.blocks)[0]?.includes(1)) {
+      bloco.rowAlign = antigo.rowAlign;
+      antigo.rowAlign = undefined;
+    }
+  }
   return vizinha.id;
 }
 

@@ -979,8 +979,9 @@ function PosicaoNaGrade({ doc, refBlock }: { doc: DocApi; refBlock: import('./pa
 function MoverBloco({ doc, refBlock }: { doc: DocApi; refBlock: import('./paths').BlockRef }): React.ReactElement {
   const secs = getSections(doc.state, refBlock.container) ?? [];
   const noPrimeiro = secs[0]?.blocks[0]?.id === refBlock.blockId;
-  const ultimaComBlocos = [...secs].reverse().find((s) => s.blocks.length > 0);
-  const noUltimo = ultimaComBlocos?.blocks[ultimaComBlocos.blocks.length - 1]?.id === refBlock.blockId;
+  // Mesma regra de gridOps.moverUmPasso: a seção vizinha pode estar vazia, e o bloco entra nela.
+  const ultima = secs[secs.length - 1];
+  const noUltimo = ultima?.blocks[ultima.blocks.length - 1]?.id === refBlock.blockId;
   return (
     <div className="insp-move">
       <button type="button" disabled={noPrimeiro} onClick={() => doc.moveBlock(refBlock, -1)}>↑ Subir</button>

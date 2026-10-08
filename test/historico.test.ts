@@ -32,14 +32,15 @@ describe('rótulo da mudança no histórico', () => {
   });
 
   it('um elemento que muda de seção é "ordem dos elementos", não "várias mudanças"', () => {
+    // Sai do fim de uma seção e entra no fim da anterior: um remove + um add, sem reposições
+    // (é o caso em que só a regra nova dá o nome certo).
     const doc = base();
-    const home0 = home(doc);
-    const i = home0.sections.findIndex((s, k) => s.blocks.length > 0 && k < home0.sections.length - 1);
-    expect(i).toBeGreaterThanOrEqual(0);
+    const i = home(doc).sections.findIndex((s, k) => k > 0 && s.blocks.length > 0);
+    expect(i).toBeGreaterThan(0);
     expect(ultimo(doc, (d) => {
       const secs = home(d).sections;
       const [b] = secs[i]!.blocks.splice(secs[i]!.blocks.length - 1, 1);
-      secs[i + 1]!.blocks.unshift(b!);
+      secs[i - 1]!.blocks.push(b!);
     })).toBe('ordem dos elementos');
   });
 
