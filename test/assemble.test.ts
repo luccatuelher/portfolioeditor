@@ -209,9 +209,21 @@ describe('assembleSiteHtml — compartilhamento do link', () => {
     });
     const bloco = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '';
     const dados = JSON.parse(bloco.replace(/\u003c/g, '<'));
-    expect(dados['@type']).toBe('Person');
-    expect(dados.name).toBe(migrate(loadFixture('template-v3.json')).data.site.name.pt);
-    expect(dados.url).toBe('https://luccatuelher.com/');
+    const nos = dados['@graph'] as Array<Record<string, unknown>>;
+    const pessoa = nos.find((n) => n['@type'] === 'Person')!;
+    expect(pessoa.name).toBe(migrate(loadFixture('template-v3.json')).data.site.name.pt);
+    expect(pessoa.url).toBe('https://luccatuelher.com/');
+    // O perfil aponta para a pessoa e o site para o endereço: é o que liga o nome ao link.
+    expect(nos.find((n) => n['@type'] === 'ProfilePage')?.mainEntity).toEqual({ '@id': pessoa['@id'] });
+    expect(nos.find((n) => n['@type'] === 'WebSite')?.url).toBe('https://luccatuelher.com/');
+  });
+
+  it('sem endereço, os dados estruturados trazem só a pessoa', async () => {
+    const html = await comSite(() => {});
+    const bloco = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)?.[1] ?? '';
+    const nos = JSON.parse(bloco.replace(/\u003c/g, '<'))['@graph'] as Array<Record<string, unknown>>;
+    expect(nos.map((n) => n['@type'])).toEqual(['Person']);
+    expect(nos[0]!['@id']).toBeUndefined();
   });
 
   it('nome com "</script>" não corta o bloco de dados', async () => {

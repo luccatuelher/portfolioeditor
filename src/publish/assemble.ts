@@ -62,15 +62,28 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
 
   // Dados estruturados: diz ao buscador que este site é o portfólio de UMA
   // pessoa, com nome, função e perfis — é o que alimenta o painel de resultado.
-  const jsonLd = {
-    '@context': 'https://schema.org',
+  const idPessoa = urlCanonica ? `${urlCanonica}#pessoa` : undefined;
+  const pessoa = {
     '@type': 'Person',
+    '@id': idPessoa,
     name,
     jobTitle: payload.publicData.site.role.pt || payload.publicData.site.role.en || undefined,
     description: role || undefined,
     url: urlCanonica || undefined,
     image: socialImg || undefined,
     sameAs: socials.length ? [...new Set(socials)] : undefined,
+  };
+  // WebSite + ProfilePage ligam o endereço ao nome da pessoa: é o par que o
+  // Google lê para saber que esta página é o perfil de "Lucca Tuelher".
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': urlCanonica
+      ? [
+          { '@type': 'WebSite', '@id': `${urlCanonica}#site`, name, url: urlCanonica, inLanguage: ['pt-BR', 'en'], publisher: { '@id': idPessoa } },
+          { '@type': 'ProfilePage', '@id': `${urlCanonica}#perfil`, url: urlCanonica, name: tituloHome, isPartOf: { '@id': `${urlCanonica}#site` }, mainEntity: { '@id': idPessoa } },
+          pessoa,
+        ]
+      : [pessoa],
   };
 
   const meta =

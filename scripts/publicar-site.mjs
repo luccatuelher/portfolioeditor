@@ -99,6 +99,17 @@ try {
     writeFileSync(indexAtual, r.html);
     if (r.jpgB64) writeFileSync(resolve(pastaDoSite, r.arquivoSocial), Buffer.from(r.jpgB64, 'base64'));
     console.log(`✓ ${indexAtual} · ${(r.html.length / 1048576).toFixed(2)} MB${r.jpgB64 ? ` + ${r.arquivoSocial}` : ''}`);
+    // sitemap.xml: entrega o endereço ao Google (Search Console → Sitemaps). O
+    // robots.txt não entra: só vale na raiz do domínio, e o GitHub Pages serve o
+    // portfólio numa subpasta (/portfolio/).
+    const canonico = r.html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
+    if (canonico) {
+      const urls = [canonico, ...(existsSync(resolve(pastaDoSite, 'cv.pdf')) ? [`${canonico}cv.pdf`] : [])];
+      const hoje = new Date().toISOString().slice(0, 10);
+      const xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map((u) => `  <url><loc>${u}</loc><lastmod>${hoje}</lastmod></url>`).join('\n')}\n</urlset>\n`;
+      writeFileSync(resolve(pastaDoSite, 'sitemap.xml'), xml);
+      console.log(`  sitemap.xml: ${urls.length} endereço(s)`);
+    }
     console.log(`  NDA: ${r.nda}`);
     for (const a of r.avisos) console.log(`  ! ${a}`);
   }
