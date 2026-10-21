@@ -73,7 +73,7 @@ export function Lightbox({ items, index, onIndex, onClose }: { items: LightItem[
     <div className="lightbox" role="dialog" aria-modal="true" aria-label={t('imagemAmpliada')} aria-describedby={current.caption ? 'lightbox-legenda' : undefined} ref={boxRef} tabIndex={-1} onClick={onClose} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <button type="button" className="lightbox-close" onClick={(e) => { stop(e); onClose(); }} aria-label={t('fechar')}>✕</button>
       {current.crop ? (
-        <span className="lightbox-img img-crop" style={{ aspectRatio: String(current.crop.ar), width: `min(92vw, calc(var(--lb-h, 88vh) * ${current.crop.ar}))` }} onClick={stop}>
+        <span className="lightbox-img img-crop" style={{ aspectRatio: String(current.crop.ar), width: `min(var(--lb-w, 88vw), calc(var(--lb-h, 84vh) * ${current.crop.ar}))` }} onClick={stop}>
           <img src={current.src} alt={current.alt || `${t('imagem')} ${clamped + 1}`} style={cropImgStyle(current.crop)} />
         </span>
       ) : (

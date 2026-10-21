@@ -122,6 +122,8 @@ export const ImageBlockSchema = z.strictObject({
   content: z.strictObject({
     image: ImageRefSchema,
     widthPct: z.number().min(25).max(100).optional(),
+    /** No site publicado, clicar na imagem abre o visualizador (lightbox). */
+    zoom: z.boolean().optional(),
     /** Legenda visível embaixo da imagem (a descrição/alt é para leitor de tela). */
     caption: I18nSchema.optional(),
   }),

@@ -835,7 +835,13 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
       const Caixa = legenda ? 'figure' : 'div';
       return wrap(
         <Caixa className="block-image-inner" style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
-          <Img image={block.content.image} className="block-image-img" eager={topo} />
+          {block.content.zoom && !editing && onOpenLightbox ? (
+            <button type="button" className="art-img-btn" onClick={() => onOpenLightbox([{ src: resolveAsset(block.content.image), alt: pick(block.content.image.alt, lang), crop: block.content.image.crop, caption: legenda }], 0)} aria-label={`${t('abrirImagem')}${pick(block.content.image.alt, lang) ? `: ${pick(block.content.image.alt, lang)}` : ''}`}>
+              <Img image={block.content.image} className="block-image-img" eager={topo} />
+            </button>
+          ) : (
+            <Img image={block.content.image} className="block-image-img" eager={topo} />
+          )}
           {editing && !block.content.image.assetId && !block.content.image.url ? (
             <button type="button" className="pe-img-placeholder" data-block-upload={block.id}>＋ Enviar imagem</button>
           ) : null}

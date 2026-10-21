@@ -209,9 +209,9 @@ figure.block-image-inner, figure.storyboard-cell { margin: 0; }
 .art-img-btn, .sketch-img-btn, .storyboard-frame-btn { display: block; width: 100%; padding: 0; border: none; background: none; cursor: zoom-in; }
 
 /* lightbox: overlay cinza sobre a página, imagem centralizada (fora do .site: cores fixas, sem tokens) */
-.lightbox { --lb-h: 88vh; position: fixed; inset: 0; z-index: 8000; display: flex; align-items: center; justify-content: center; padding: 4vh 4vw; background: rgba(24, 23, 21, 0.82); backdrop-filter: blur(6px); cursor: zoom-out; animation: lb-in 0.18s ease-out; }
-@supports (height: 1dvh) { .lightbox { --lb-h: 88dvh; } }
-.lightbox-img { max-width: 100%; max-height: 100%; object-fit: contain; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45); cursor: default; animation: lb-zoom 0.22s ease-out; }
+.lightbox { --lb-h: 84vh; --lb-w: 88vw; position: fixed; inset: 0; z-index: 8000; display: flex; align-items: center; justify-content: center; padding: 4vh 4vw; background: rgba(24, 23, 21, 0.82); backdrop-filter: blur(6px); cursor: zoom-out; animation: lb-in 0.18s ease-out; }
+@supports (height: 1dvh) { .lightbox { --lb-h: 84dvh; } }
+.lightbox-img { max-width: 100%; max-height: 100%; filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.45)); cursor: default; animation: lb-zoom 0.22s ease-out; }
 .lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); width: 48px; height: 48px; border-radius: 50%; border: none; background: rgba(250, 249, 247, 0.14); color: rgb(250, 249, 247); font-size: calc(1.8rem * var(--escala-texto, 1)); line-height: 1; cursor: pointer; display: grid; place-items: center; transition: background 0.15s; }
 .lightbox-nav:hover { background: rgba(250, 249, 247, 0.3); }
 .lightbox-nav.prev { left: 2vw; }
@@ -221,7 +221,8 @@ figure.block-image-inner, figure.storyboard-cell { margin: 0; }
 .lightbox-caption { margin: 0; color: rgba(250, 249, 247, 0.92); font-family: var(--font-body, sans-serif); font-size: calc(0.92rem * var(--escala-texto, 1)); line-height: 1.4; overflow-wrap: anywhere; }
 .lightbox-count { color: rgba(250, 249, 247, 0.7); font-family: 'DM Mono', monospace; font-size: calc(0.7rem * var(--escala-texto, 1)); letter-spacing: 0.1em; }
 /* Com legenda, a imagem sobe um pouco para não ficar por baixo dela. */
-.lightbox:has(.lightbox-caption) { --lb-h: 80vh; padding-bottom: 12vh; }
+.lightbox:has(.lightbox-caption) { --lb-h: 76vh; padding-bottom: 12vh; }
+.lightbox img.lightbox-img { width: var(--lb-w); height: var(--lb-h); object-fit: contain; }
 @keyframes lb-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lb-zoom { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: none; } }
 
