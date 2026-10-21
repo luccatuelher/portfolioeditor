@@ -18,19 +18,21 @@
   :root { --paper: #FBFAF7; --ink: #1C1B18; --ink-soft: #4A4740; --ink-pale: #7A766D; --rule: #D6D2C9; --accent: #C1440E; }
   * { box-sizing: border-box; }
   html, body { margin: 0; background: var(--paper); color: var(--ink); }
-  body { font-family: 'DM Sans', system-ui, sans-serif; font-weight: 300; font-size: 9.4pt; line-height: 1.45; }
-  .folha { width: 210mm; height: 297mm; padding: 16mm 15mm 14mm; display: grid; grid-template-rows: auto 1fr; gap: 9mm; }
-  header { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8mm; border-bottom: 1.5px solid var(--ink); padding-bottom: 5mm; }
+  body { font-family: 'DM Sans', system-ui, sans-serif; font-weight: 300; font-size: 9.2pt; line-height: 1.42; }
+  .folha { width: 210mm; height: 297mm; padding: 14mm 15mm 12mm; display: grid; grid-template-rows: auto auto auto; align-content: start; gap: 5mm; }
+  header { padding-bottom: 0; }
   h1 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 30pt; line-height: 1; margin: 0; letter-spacing: -0.01em; }
   .funcao { font-family: 'DM Mono', monospace; font-size: 7.6pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-soft); margin-top: 2.5mm; }
-  .contato { font-family: 'DM Mono', monospace; font-size: 7.4pt; line-height: 1.7; text-align: right; color: var(--ink-soft); }
+  .contato { font-family: 'DM Mono', monospace; font-size: 7.4pt; color: var(--ink-soft); display: flex; flex-wrap: wrap; gap: 0 3mm; margin-top: -4mm; padding-bottom: 4mm; border-bottom: 1.5px solid var(--ink); }
+  .contato i { font-style: normal; color: var(--ink-pale); }
   .contato a { color: inherit; text-decoration: none; }
   .corpo { display: grid; grid-template-columns: 1fr 58mm; gap: 10mm; min-height: 0; }
   h2 { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 7.4pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0 0 3mm; }
-  section + section { margin-top: 6.5mm; }
+  section + section { margin-top: 5mm; }
+  .resumo b { font-weight: 500; color: var(--ink); }
   .resumo { color: var(--ink-soft); font-size: 9.6pt; line-height: 1.55; margin: 0; }
   .cargo { break-inside: avoid; }
-  .cargo + .cargo { margin-top: 4.2mm; }
+  .cargo + .cargo { margin-top: 2.6mm; }
   .cargo-topo { display: flex; justify-content: space-between; gap: 4mm; align-items: baseline; }
   .cargo h3 { font-family: 'DM Serif Display', Georgia, serif; font-weight: 400; font-size: 12pt; margin: 0; }
   .cargo h3 span { font-family: 'DM Sans', sans-serif; font-weight: 400; font-size: 9pt; color: var(--ink-soft); }
@@ -52,90 +54,73 @@
       <h1>Lucca Tuelher</h1>
       <div class="funcao">Storyboard Artist &amp; Animatic Editor</div>
     </div>
-    <div class="contato">
-      <a href="mailto:luccatuelher@yahoo.com">luccatuelher@yahoo.com</a><br>
-      +55 (48) 98801-6920<br>
-      <a href="https://www.linkedin.com/in/lucca-tuelher-757a08253/">linkedin.com/in/lucca-tuelher-757a08253</a><br>
-      <a href="https://luccatuelher.github.io/portfolio">luccatuelher.github.io/portfolio</a><br>
-      Florianópolis, Brazil
-    </div>
   </header>
 
-  <div class="corpo">
-    <main>
-      <section>
-        <h2>Profile</h2>
-        <p class="resumo">Storyboard artist who turns scripts into visual storytelling across film, television and advertising. Most of my work is on children’s series and musicals, in team-oriented productions ranging from series to short films and games. I keep storyboard software and processes efficient under tight deadlines and budgets, and I work closely with creative teams to shape narratives and visual languages.</p>
-      </section>
-
-      <section>
-        <h2>Experience</h2>
-        <div class="cargo">
-          <div class="cargo-topo"><h3>Oinc Filmes <span>· Storyboard Artist</span></h3><span class="datas">06/2024 – present</span></div>
-          <p><span class="dt">10/2025 – present</span>Animatics for a new “3 Palavrinhas” project.</p>
-          <p><span class="dt">01/2025 – 06/2025</span>Animatics for the international adaptation of the hit Brazilian series “3 Palavrinhas”. Adapted 10 scripts into storyboards for ages 0–4, aiming for engaging, easy-to-read animation.</p>
-          <p><span class="dt">06/2024 – 09/2024</span>Storyboards for a highly viewed children’s animated series built on music and humor. On a tight budget and schedule, created a coherent, fun and efficient visual language that simplified the pipeline down the line, and refined the narrative with the director for ages 0–4.</p>
-        </div>
-        <div class="cargo">
-          <div class="cargo-topo"><h3>52 Animation Studio <span>· Storyboard Artist</span></h3><span class="datas">03/2025 – 11/2025</span></div>
-          <p><span class="dt">10/2025 – 11/2025</span>Storyboard and animatic for an animated series pitch.</p>
-          <p><span class="dt">03/2025 – 04/2025</span>Storyboard and animatic for a series teaser, animated in cutout.</p>
-          <p>Also an original animatic for a series made for the Kuwaiti market, following a local family on their adventures, and animatics for “Rocky &amp; Nutes”.</p>
-        </div>
-        <div class="cargo">
-          <div class="cargo-topo"><h3>Pinguim Content <span>· Storyboard Artist</span></h3><span class="datas">09/2025 – 11/2025</span></div>
-          <p>Storyboards and animatics for season 9 of “Show da Luna”.</p>
-        </div>
-        <div class="cargo">
-          <div class="cargo-topo"><h3>Vaca Amarela Filmes <span>· Storyboard Artist</span></h3><span class="datas">12/2024 – 04/2025</span></div>
-          <p>Storyboards and animatics for a vector-animated children’s series focused on Brazilian culture, adapting to the project’s established visual language together with directors and producers.</p>
-        </div>
-        <div class="cargo">
-          <div class="cargo-topo"><h3>G2E – The Rotfather <span>· Storyboard Apprentice</span></h3><span class="datas">03/2023 – 02/2025</span></div>
-          <p>Storyboards and animatics for an animated web series and a series teaser, animated frame by frame.</p>
-        </div>
-        <div class="cargo">
-          <div class="cargo-topo"><h3>Sunshine Cybernetics <span>· 2D/3D Generalist</span></h3><span class="datas">01/2020 – 12/2020</span></div>
-          <p>Concept art, character design and gameplay for new characters in an original IP, adapting existing characters to the art direction. 3D characters and animation, VFX and 2D/3D assets for two games, in step with the game director, programmers and designers.</p>
-        </div>
-      </section>
-    </main>
-
-    <aside>
-      <section>
-        <h2>Education</h2>
-        <p><b>Bachelor of Fine Arts in Animation</b><br>Universidade Federal de Santa Catarina (UFSC), Florianópolis</p>
-      </section>
-      <section>
-        <h2>Skills</h2>
-        <ul>
-          <li>Storyboards and animatics, from thumbnails to final polish</li>
-          <li>Visual language for children’s series</li>
-          <li>Collaborative narrative refinement</li>
-          <li>Storyboards integrated with 3D</li>
-          <li>Storyboards for advertising</li>
-        </ul>
-      </section>
-      <section>
-        <h2>Tools</h2>
-        <ul>
-          <li><b>Toon Boom</b> Storyboard Pro</li>
-          <li><b>Adobe</b> Premiere Pro and suite</li>
-          <li><b>Clip Studio</b> Paint</li>
-          <li><b>Blender</b></li>
-        </ul>
-      </section>
-      <section>
-        <h2>Personal projects</h2>
-        <ul>
-          <li class="projeto"><b>Deadlock Tales</b><span>2025</span><br>Animatic series set in Valve’s “Deadlock” universe</li>
-          <li class="projeto"><b>Rina &amp; Coelhão</b><span>2026</span></li>
-          <li class="projeto"><b>Dungeon Catty</b><span>2026</span></li>
-          <li class="projeto"><b>Rotfather</b><span>2026</span></li>
-        </ul>
-      </section>
-    </aside>
+  <div class="contato">
+    <a href="mailto:luccatuelher@yahoo.com">luccatuelher@yahoo.com</a>
+    <i>/</i><span>+55 48 98801-6920</span>
+    <i>/</i><a href="https://luccatuelher.github.io/portfolio">luccatuelher.github.io/portfolio</a>
+    <i>/</i><a href="https://www.linkedin.com/in/lucca-tuelher-757a08253/">linkedin.com/in/lucca-tuelher</a>
   </div>
+
+
+  <main>
+    <section>
+      <h2>Profile</h2>
+      <p class="resumo">Storyboard artist who turns scripts into visual storytelling for film, television and advertising. I work mostly on children’s series and musicals, where clarity, humor and rhythm matter as much as the drawing, and I’m happiest when a board makes the whole team’s next step easier.</p>
+      <p class="resumo" style="margin-top:2mm">I started in 2D/3D generalist work on games, then moved into storyboards and animatics, from rough thumbnails to a final timed animatic. I keep software and processes efficient under tight deadlines and budgets, and I enjoy working closely with directors to shape narrative and visual language. Outside client work I make my own animatic series.</p>
+    </section>
+
+    <section>
+      <h2>Education</h2>
+      <p class="resumo"><b>Bachelor of Fine Arts in Animation</b> · Universidade Federal de Santa Catarina (UFSC), Florianópolis</p>
+    </section>
+
+    <section>
+      <h2>Career experience</h2>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>Storyboard Artist <span>· Oinc Filmes</span></h3><span class="datas">10/2025 – present</span></div>
+        <p>Animatics for a new project in the “3 Palavrinhas” family, the largest Christian children’s channel on Brazilian YouTube.</p>
+      </div>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>Storyboard Artist <span>· 52 Animation Studio</span></h3><span class="datas">10/2025 – 11/2025</span></div>
+        <p>Storyboard and animatic for an animated series pitch, the first visual pass used to present the idea.</p>
+      </div>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>Storyboard Artist <span>· Pinguim Content</span></h3><span class="datas">09/2025 – 11/2025</span></div>
+        <p>Storyboards and animatics for season 9 of “Show da Luna”, working remotely and matching the series’ established look.</p>
+      </div>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>Storyboard Artist <span>· Oinc Filmes</span></h3><span class="datas">01/2025 – 06/2025</span></div>
+        <p>Animatics for the international adaptation of “3 Palavrinhas”, a hit Brazilian musical series, including the “Mini Exploradores” channel. Adapted 10 scripts into storyboards for ages 0–4, built for easy-to-read animation.</p>
+      </div>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>Storyboard Artist <span>· 52 Animation Studio</span></h3><span class="datas">03/2025 – 04/2025</span></div>
+        <p>Storyboard and animatic for a cutout-animated series teaser, an original animatic for a series for the Kuwaiti market following a local family, and animatics for “Rocky &amp; Nutes”, a series about a dog and a squirrel.</p>
+      </div>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>Storyboard Artist <span>· Vaca Amarela Filmes</span></h3><span class="datas">12/2024 – 04/2025</span></div>
+        <p>Storyboards and animatics for a vector-animated children’s series focused on Brazilian culture, adapting to its established visual language with directors and producers.</p>
+      </div>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>Storyboard Artist <span>· Oinc Filmes</span></h3><span class="datas">06/2024 – 09/2024</span></div>
+        <p>Storyboards for a highly viewed children’s musical series. On a tight budget, built a clear, funny visual language that simplified the pipeline, and refined the narrative with the director.</p>
+      </div>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>Storyboard Apprentice <span>· G2E – The Rotfather</span></h3><span class="datas">03/2023 – 02/2025</span></div>
+        <p>Apprenticeship in storyboarding: storyboards and animatics for an animated web series and a frame-by-frame series teaser.</p>
+      </div>
+      <div class="cargo">
+        <div class="cargo-topo"><h3>2D/3D Generalist <span>· Sunshine Cybernetics</span></h3><span class="datas">01/2020 – 12/2020</span></div>
+        <p>Concept art and character design for an original IP, plus 3D characters, animation, VFX and 2D/3D assets for two games, alongside the game director and programmers.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Skills</h2>
+      <p class="resumo">Storyboards and animatics, from thumbnails to final polish · Visual language for children’s series · Collaborative narrative refinement · Storyboards integrated with 3D and for advertising · Toon Boom Storyboard Pro, Adobe Premiere Pro and suite, Clip Studio Paint, Blender</p>
+    </section>
+  </main>
 </div>
 </body>
 </html>
