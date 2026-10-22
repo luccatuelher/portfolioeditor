@@ -126,6 +126,10 @@ export const ImageBlockSchema = z.strictObject({
     zoom: z.boolean().optional(),
     /** Legenda visível embaixo da imagem (a descrição/alt é para leitor de tela). */
     caption: I18nSchema.optional(),
+    /** Endereço aberto (nova aba) ao clicar na imagem, ex.: o site de um estúdio. */
+    href: z.string().optional(),
+    /** Texto que aparece ao passar o mouse sobre a imagem com `href` (ex.: o nome do estúdio). */
+    tooltip: I18nSchema.optional(),
   }),
 });
 

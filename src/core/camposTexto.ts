@@ -28,6 +28,7 @@ export type CampoId =
   | 'content.body'
   | 'content.image.alt'
   | 'content.caption'
+  | 'content.tooltip'
   | `frames.${number}.alt`
   | `frames.${number}.caption`;
 
@@ -48,6 +49,7 @@ export function camposDoBloco(b: Block): CampoDoBloco[] {
     case 'image': return [
       { campo: 'content.image.alt', rotulo: 'Descrição da imagem', valor: b.content.image.alt, imagem: { ref: b.content.image, nome: 'Imagem' } },
       ...(b.content.caption ? [{ campo: 'content.caption' as const, rotulo: 'Legenda da imagem', valor: b.content.caption }] : []),
+      ...(b.content.tooltip ? [{ campo: 'content.tooltip' as const, rotulo: 'Texto ao passar o mouse', valor: b.content.tooltip }] : []),
     ];
     // Nome da aba do vídeo no carrossel da prévia do projeto.
     case 'embed': return b.content.label ? [{ campo: 'content.label', rotulo: 'Nome do vídeo', valor: b.content.label }] : [];

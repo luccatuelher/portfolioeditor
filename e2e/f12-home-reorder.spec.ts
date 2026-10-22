@@ -30,10 +30,11 @@ test.describe('Preview na Home + reordenação', () => {
     await expect(page.locator('.editor-canvas .edit-badge.draft').first()).toBeVisible();
   });
 
-  test('NDA aparece no menu com cadeado (site público)', async ({ page }) => {
+  test('a aba NDA aparece no menu, sem emoji (site público)', async ({ page }) => {
     await page.route(/youtube|vimeo|speakerdeck/, (r) => r.abort());
     await page.goto('/preview.html', { waitUntil: 'load' });
-    await expect(page.locator('.site-header nav .nav-nda')).toContainText('🔒');
+    await expect(page.locator('.site-header nav .nav-nda')).toBeVisible();
+    await expect(page.locator('.site-header nav .nav-nda')).not.toContainText('🔒');
   });
 
   test('arrastar um card na Home reordena a coleção; um Ctrl+Z desfaz', async ({ page }) => {

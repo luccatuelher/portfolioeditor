@@ -119,7 +119,7 @@ export function SiteHeader({ data, lang, onLang, onNavigate, current }: { data: 
         ))}
         {ndaPages.map((p) => (
           <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={editing} className={`nav-link nav-nda${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined} {...(editing ? { 'data-nav-page': p.id } : {})}>
-            {pick(p.title, lang)} 🔒
+            {pick(p.title, lang)}
           </PageLink>
         ))}
       </nav>,
@@ -170,7 +170,7 @@ export function StickyNav({ data, lang, onLang, onNavigate, current }: { data: P
         ))}
         {ndaPages.map((p) => (
           <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={false} tabIndex={show ? 0 : -1} className={`nav-link nav-nda${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined}>
-            {pick(p.title, lang)} 🔒
+            {pick(p.title, lang)}
           </PageLink>
         ))}
       </nav>

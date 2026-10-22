@@ -790,6 +790,8 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
           ) : null}
           <Row label="Legenda (aparece embaixo da imagem)"><I18nInput campo="content.caption" value={block.content.caption ?? emptyI18n()} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.caption = isBlankI18n(v) ? undefined : v)), gk('cap'))} /></Row>
           <Row label="Descrição da imagem (alt)"><I18nInput campo="content.image.alt" value={block.content.image.alt} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.image.alt = v)), gk('alt'))} /></Row>
+          <Row label="Link ao clicar (ex.: site do estúdio)"><input className="insp-input" type="url" spellCheck={false} placeholder="https://…" value={block.content.href ?? ''} onChange={(e) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.href = e.target.value.trim() || undefined)), gk('href'))} /></Row>
+          <Row label="Texto ao passar o mouse (ex.: nome do estúdio)"><I18nInput campo="content.tooltip" value={block.content.tooltip ?? emptyI18n()} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.tooltip = isBlankI18n(v) ? undefined : v)), gk('tip'))} /></Row>
           <label className="insp-check"><input type="checkbox" checked={!!block.content.zoom} onChange={(e) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.zoom = e.target.checked ? true : undefined)), gk('zoom'))} /> Abrir ampliada ao clicar</label>
           <Row label="Largura (%)"><NumberInput value={block.content.widthPct ?? 100} min={25} max={100} onChange={(v) => upd(refBlock, (b) => void (b.type === 'image' && (b.content.widthPct = v)), gk('wpct'))} /></Row>
         </>

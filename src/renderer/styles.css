@@ -80,7 +80,8 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 .block.align-start .block-image-inner, .block.align-start .embed-area { margin-right: auto; }
 .block.align-center .block-image-inner, .block.align-center .embed-area { margin-inline: auto; }
 .block.align-end .block-image-inner, .block.align-end .embed-area { margin-left: auto; }
-.block.align-start .block-image-img { object-position: left center; }
+.block.align-start .block-image-link { display: block; }
+.block-image-img { object-position: left center; }
 .block.align-end .block-image-img { object-position: right center; }
 /* Espaço próprio de cada elemento dentro da célula (ajustável por elemento). */
 /* Acima/abaixo: espaço vertical. Esquerda/direita: deslocam o elemento (transform acima), sem encolher. */

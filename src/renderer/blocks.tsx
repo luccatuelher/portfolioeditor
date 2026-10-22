@@ -862,8 +862,12 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
       const legenda = pick(block.content.caption, lang);
       const Caixa = legenda ? 'figure' : 'div';
       return wrap(
-        <Caixa className="block-image-inner" style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
-          {block.content.zoom && !editing && onOpenLightbox ? (
+        <Caixa className="block-image-inner" title={!editing && !block.content.href ? pick(block.content.tooltip, lang) || undefined : undefined} style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
+          {block.content.href && !editing && /^https?:\/\//i.test(block.content.href) ? (
+            <a className="block-image-link" href={block.content.href} target="_blank" rel="noopener noreferrer" title={pick(block.content.tooltip, lang) || pick(block.content.image.alt, lang)} aria-label={pick(block.content.tooltip, lang) || pick(block.content.image.alt, lang)}>
+              <Img image={block.content.image} className="block-image-img" eager={topo} />
+            </a>
+          ) : block.content.zoom && !editing && onOpenLightbox ? (
             <button type="button" className="art-img-btn" onClick={() => onOpenLightbox([{ src: resolveAsset(block.content.image), alt: pick(block.content.image.alt, lang), crop: block.content.image.crop, caption: legenda }], 0)} aria-label={`${t('abrirImagem')}${pick(block.content.image.alt, lang) ? `: ${pick(block.content.image.alt, lang)}` : ''}`}>
               <Img image={block.content.image} className="block-image-img" eager={topo} />
             </button>
