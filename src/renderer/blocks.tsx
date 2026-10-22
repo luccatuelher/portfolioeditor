@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useUi } from './ui';
 import { camposDoBloco, faltaNoIdioma } from '../core/camposTexto';
 import { hrefPublico } from '../core/links';
@@ -543,10 +543,37 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
   const { collection, cols, filter, showFilter, preview } = block.content;
   const [uiFilter, setUiFilter] = useState<'all' | 'professional' | 'personal'>('all');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Índice (em `items`) do último card da linha do projeto aberto: a prévia entra
+  // logo depois dele, para os vizinhos da mesma linha não saltarem para baixo.
+  const [rowEnd, setRowEnd] = useState<number | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const previewId = `pv-${useId().replace(/:/g, '')}`;
   // Fechar a prévia devolve o foco ao card que a abriu: o ✕ some junto com o
   // painel e, sem isso, o teclado recomeçaria do topo da página.
+  /** Último card (índice entre os cards) na mesma linha visual do card `id`. */
+  const measureRowEnd = (id: string): number | null => {
+    const grid = gridRef.current;
+    if (!grid) return null;
+    const panelEl = grid.querySelector<HTMLElement>(':scope > .home-preview');
+    const prev = panelEl?.style.display;
+    if (panelEl) panelEl.style.display = 'none';
+    const cards = [...grid.querySelectorAll<HTMLElement>(':scope > [data-card]')];
+    const at = cards.findIndex((el) => el.dataset.card === id);
+    let end: number | null = null;
+    if (at >= 0) {
+      const top = cards[at]!.offsetTop;
+      end = at;
+      while (end + 1 < cards.length && cards[end + 1]!.offsetTop === top) end++;
+    }
+    if (panelEl) panelEl.style.display = prev ?? '';
+    return end;
+  };
+  useLayoutEffect(() => {
+    if (!expandedId) return;
+    const remeasure = (): void => setRowEnd(measureRowEnd(expandedId));
+    window.addEventListener('resize', remeasure);
+    return () => window.removeEventListener('resize', remeasure);
+  }, [expandedId]);
   const closePreview = (): void => {
     const id = expandedId;
     setExpandedId(null);
@@ -597,7 +624,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
         previewId={preview ? previewId : undefined}
         onEscape={closePreview}
         link={!preview && onNavigate && !editing ? linkInterno(`project/${p.id}`, onNavigate) : undefined}
-        onClick={preview ? () => setExpandedId((cur) => (cur === p.id ? null : p.id)) : onNavigate ? () => onNavigate(`project/${p.id}`) : undefined}
+        onClick={preview ? () => { const open = expandedId !== p.id; setRowEnd(open ? measureRowEnd(p.id) : null); setExpandedId(open ? p.id : null); } : onNavigate ? () => onNavigate(`project/${p.id}`) : undefined}
       />
     ));
     // A prévia entra DENTRO da grade, logo depois do card aberto: no celular
@@ -605,7 +632,8 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
     const at = previewPanel ? items.findIndex((p) => p.id === expandedId) : -1;
     if (at >= 0) {
       const cards = body as React.ReactNode[];
-      body = [...cards.slice(0, at + 1), previewPanel, ...cards.slice(at + 1)];
+      const after = Math.min(cards.length - 1, Math.max(at, rowEnd ?? at));
+      body = [...cards.slice(0, after + 1), previewPanel, ...cards.slice(after + 1)];
       previewPanel = null;
     }
   } else if (collection === 'blog') {

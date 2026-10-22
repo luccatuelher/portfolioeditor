@@ -125,15 +125,15 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 .project-card.is-open .card-title { color: var(--accent-texto, var(--accent)); }
 
 /* prévia inline do projeto na Home */
-.collection-grid > .home-preview, .home-preview { grid-column: 1 / -1; border: 1px solid var(--rule); border-top: 2px solid var(--accent); background: var(--surface); padding: clamp(16px, 2.2vw, 44px); margin-top: 8px; }
-.home-preview-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--rule); padding-bottom: 14px; margin-bottom: 18px; }
-.home-preview-title { font-family: var(--font-display); font-size: calc(1.8rem * var(--escala-texto, 1)); margin: 0; }
+.collection-grid > .home-preview, .home-preview { grid-column: 1 / -1; border: 1px solid var(--rule); border-top: 2px solid var(--accent); background: var(--surface); padding: clamp(10px, 1.4vw, 20px) clamp(12px, 1.8vw, 28px); margin-top: 8px; }
+.home-preview-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--rule); padding-bottom: 8px; margin-bottom: 10px; }
+.home-preview-title { font-family: var(--font-display); font-size: calc(1.4rem * var(--escala-texto, 1)); margin: 0; }
 .home-preview-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .home-preview-go { font-family: var(--font-mono); font-size: calc(0.62rem * var(--escala-texto, 1)); letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 14px; background: var(--ink); color: var(--bg); border: none; cursor: pointer; }
 .home-preview-go:hover { background: var(--accent); }
 .home-preview-close { background: none; border: 1px solid var(--rule); color: var(--ink-soft); width: 30px; height: 30px; cursor: pointer; font-size: calc(0.9rem * var(--escala-texto, 1)); }
 .home-preview-close:hover { color: var(--accent-texto, var(--accent)); border-color: var(--accent); }
-.home-preview-desc { font-style: italic; color: var(--ink-soft); line-height: 1.7; max-width: 65ch; margin: 0 0 18px; }
+.home-preview-desc { font-style: italic; color: var(--ink-soft); line-height: 1.5; max-width: 90ch; margin: 0 0 10px; font-size: calc(0.95rem * var(--escala-texto, 1)); }
 .home-preview .section { margin: 0 0 20px; }
 .card-thumb-wrap { width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: transparent; margin-bottom: 14px; }
 .card-thumb { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.5s ease; }
@@ -356,6 +356,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* prévia do projeto (popup da Home) em grade de 12 */
 .pv-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: var(--grid-gutter, 24px); align-items: start; }
 .pv-cell { grid-column: span var(--span, 12); min-width: 0; }
+/* Vídeo da prévia: altura limitada à janela, para caberem o vídeo e mais cards de uma vez. */
+.home-preview .embed-area { max-width: calc(56vh * 16 / 9); margin-inline: auto; }
 @media (max-width: 700px) { .pv-cell { grid-column: span 12; } }
 
 /* senha da área NDA (dentro da página NDA) */
