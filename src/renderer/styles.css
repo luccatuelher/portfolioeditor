@@ -5,6 +5,7 @@
 body { margin: 0; }
 
 .site {
+  --escala-texto: var(--escala-base, 1);
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-body);
@@ -68,6 +69,7 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
   min-width: 0;
   /* Sobra da linha em px; o espaço pedido entre elementos usa a sobra (sem encolher nada);
      "Distribuir" põe toda a sobra nos vãos; esquerda/centro/direita deslocam o grupo. */
+  --cfree: var(--cfree-d, 0);
   --free-px: calc(var(--cfree, 0) * (100cqw + var(--g0, 24px)) / 12);
   --free-per: calc(var(--free-px) / max(1, var(--cn, 1) - 1));
   --g-eff: calc(min(var(--g-extra, 0px), var(--free-per)) * (1 - var(--rb, 0)) + var(--free-per) * var(--rb, 0));
@@ -127,9 +129,9 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 
 /* prévia inline do projeto na Home */
 .collection-grid > .home-preview, .home-preview { grid-column: 1 / -1; border: 1px solid var(--rule); border-top: 2px solid var(--accent); background: var(--surface); padding: clamp(10px, 1.4vw, 20px) clamp(12px, 1.8vw, 28px); margin-top: 8px; }
-.home-preview-head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--rule); padding-bottom: 8px; margin-bottom: 10px; }
-.home-preview-title { font-family: var(--font-display); font-size: calc(1.4rem * var(--escala-texto, 1)); margin: 0; }
-.home-preview-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.home-preview-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 16px; border-bottom: 1px solid var(--rule); padding-bottom: 8px; margin-bottom: 10px; }
+.home-preview-title { min-width: 0; overflow-wrap: anywhere; font-family: var(--font-display); font-size: calc(1.4rem * var(--escala-texto, 1)); margin: 0; }
+.home-preview-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; }
 .home-preview-go { font-family: var(--font-mono); font-size: calc(0.62rem * var(--escala-texto, 1)); letter-spacing: 0.08em; text-transform: uppercase; padding: 8px 14px; background: var(--ink); color: var(--bg); border: none; cursor: pointer; }
 .home-preview-go:hover { background: var(--accent); }
 .home-preview-close { background: none; border: 1px solid var(--rule); color: var(--ink-soft); width: 30px; height: 30px; cursor: pointer; font-size: calc(0.9rem * var(--escala-texto, 1)); }
@@ -264,9 +266,11 @@ figure.block-image-inner, figure.storyboard-cell { margin: 0; }
   .contact-layout { grid-template-columns: 1fr; gap: 40px; }
   .storyboard-grid > * { grid-column: span 6; }
 }
-/* Texto com tamanho próprio (Tema › Escala tipográfica): menor no tablet e no celular. */
-@media (max-width: 819px) { .site { --escala-inline: var(--escala-inline-t, 0.9); } }
-@media (max-width: 600px) { .site { --escala-inline: var(--escala-inline-m, 0.85); } }
+/* Tamanho do texto por tela (Tema › Escala tipográfica): cada tela tem o seu, e mexer
+   num não muda o outro. Vale para todo o texto, inclusive o de tamanho próprio (px).
+   O tema entrega o tamanho do computador em --escala-base. */
+@media (max-width: 900px) { .site { --escala-texto: calc(var(--escala-base, 1) * var(--escala-inline-t, 0.94)) ; --escala-inline: var(--escala-inline-t, 0.94); } .section { margin-block: min(var(--sec-top, 3.25rem), 2.75rem) min(var(--sec-bottom, 3.25rem), 2.75rem); } }
+@media (max-width: 600px) { .site { --escala-texto: calc(var(--escala-base, 1) * var(--escala-inline-m, 0.88)) ; --escala-inline: var(--escala-inline-m, 0.88); } .section { margin-block: min(var(--sec-top, 3.25rem), 2rem) min(var(--sec-bottom, 3.25rem), 2rem); } }
 /* Tablet: cards de projeto seguem a grade escolhida (3 lado a lado); no celular, um embaixo do outro.
    Notas do blog, de texto mais longo, ficam em duas colunas entre o celular e o tablet cheio. */
 @media (min-width: 601px) and (max-width: 819px) {

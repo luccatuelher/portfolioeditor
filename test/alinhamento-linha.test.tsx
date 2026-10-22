@@ -60,6 +60,6 @@ describe('alinhamento da linha em cada tela', () => {
 
   it('a sobra do computador continua sendo a do computador', () => {
     const html = render([imagem('a', 3), imagem('b', 3)]);
-    expect(primeiroBloco(html).estilo).toContain('--cfree:6');
+    expect(primeiroBloco(html).estilo).toContain('--cfree-d:6');
   });
 });

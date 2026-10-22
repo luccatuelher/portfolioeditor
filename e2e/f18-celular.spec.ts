@@ -25,7 +25,8 @@ test('no celular a fila de imagens fica igual à do computador; texto vai à lar
       c.className += ' m-row'; // fila que continua igual no celular
       c.style.setProperty('--ck', String(i));
       c.style.setProperty('--cn', '5');
-      c.style.setProperty('--cfree', '2');
+      c.style.setProperty('--cfree-d', '2');
+      c.style.setProperty('--cfree-m', '2');
       c.style.setProperty('--rb', '1'); // distribuir, como no computador
       c.style.setProperty('--span', '2');
       grade.appendChild(c);

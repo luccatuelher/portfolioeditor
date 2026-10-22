@@ -26,10 +26,10 @@ describe('Tema: todo controle faz efeito no site', () => {
 
   it('padrão (16 px, 1,25) não muda nada; os valores viram escala', () => {
     const t = defaultTheme();
-    expect(themeToCssVars(t)['--escala-texto']).toBe('1');
+    expect(themeToCssVars(t)['--escala-base']).toBe('1');
     expect(themeToCssVars(t)['--escala-titulos']).toBe('1');
     const grande = { ...t, type: { base: 20, ratio: 1.5 } };
-    expect(themeToCssVars(grande)['--escala-texto']).toBe('1.25');
+    expect(themeToCssVars(grande)['--escala-base']).toBe('1.25');
     expect(themeToCssVars(grande)['--escala-titulos']).toBe('1.44');
   });
 });

@@ -821,7 +821,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
   const wrap = (children: React.ReactNode): React.ReactElement => (
     <div
       className={cls}
-      style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--cfree-t': sobra?.tablet ?? undefined, '--cfree-m': sobra?.mobile ?? undefined, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? `var(--${bgToken})` : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
+      style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--cfree-t': sobra?.tablet ?? undefined, '--cfree-m': sobra?.mobile ?? undefined, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree-d': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? `var(--${bgToken})` : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
       data-block-id={block.id}
     >
       {editing && faltaTraduzir(block, lang) ? (

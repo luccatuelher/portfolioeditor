@@ -20,7 +20,7 @@ test.describe('Painel Tema', () => {
     const px = (sel: string) => page.locator(`.editor-canvas ${sel}`).first().evaluate((el) => parseFloat(getComputedStyle(el).fontSize));
     const antes = { titulo: await px('.header-name'), nav: await px('.nav-link') };
 
-    await page.getByLabel('Tamanho do texto').selectOption('20'); // 16 → 20: tudo × 1,25
+    await page.getByLabel('Tamanho do texto', { exact: true }).selectOption('20'); // 16 → 20: tudo × 1,25
     await expect.poll(() => px('.nav-link')).toBeCloseTo(antes.nav * 1.25, 0);
     await expect.poll(() => px('.header-name')).toBeCloseTo(antes.titulo * 1.25, 0);
 

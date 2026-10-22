@@ -156,9 +156,9 @@ function BasePicker({ value, onChange }: { value: number; onChange: (v: number) 
   );
 }
 
-const ESCALAS = [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7];
+const ESCALAS = [1, 0.94, 0.9, 0.88, 0.85, 0.8, 0.75, 0.7];
 
-/** Tamanho dos textos dimensionados na mão (ex.: 18 px), no tablet e no celular: um ajuste só para o site todo. */
+/** Tamanho do texto no tablet e no celular, em % do tamanho base. Cada tela é independente. */
 function InlineScalePicker({ tablet, mobile, onTablet, onMobile }: { tablet: number; mobile: number; onTablet: (v: number) => void; onMobile: (v: number) => void }): React.ReactElement {
   const idT = useId();
   const idM = useId();
@@ -168,11 +168,11 @@ function InlineScalePicker({ tablet, mobile, onTablet, onMobile }: { tablet: num
   };
   return (
     <div className="theme-font">
-      <label className="insp-label" htmlFor={idT}>Texto de tamanho próprio no tablet</label>
+      <label className="insp-label" htmlFor={idT}>Tamanho do texto no tablet</label>
       <select id={idT} className="insp-input" value={String(tablet)} onChange={(e) => onTablet(Number(e.target.value))}>{opcoes(tablet)}</select>
-      <label className="insp-label" htmlFor={idM}>Texto de tamanho próprio no celular</label>
+      <label className="insp-label" htmlFor={idM}>Tamanho do texto no celular</label>
       <select id={idM} className="insp-input" value={String(mobile)} onChange={(e) => onMobile(Number(e.target.value))}>{opcoes(mobile)}</select>
-      <span className="theme-hint" style={{ margin: '4px 0 0', display: 'block' }}>Vale para textos em que você escolheu o tamanho (ex.: 18 px). Os demais já se ajustam sozinhos.</span>
+      <span className="theme-hint" style={{ margin: '4px 0 0', display: 'block' }}>Cada tela tem o seu: mexer num não muda o outro. Vale para todo o texto do site naquela tela.</span>
     </div>
   );
 }
