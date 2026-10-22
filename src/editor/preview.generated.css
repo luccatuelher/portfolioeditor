@@ -21,7 +21,7 @@
 .pv-tablet .site { --escala-inline: var(--escala-inline-t, 0.9); }
 /* de src/renderer/styles.css: @media (min-width: 601px) and (max-width: 819px) */
 
-.pv-tablet .collection-projects > *:not(.home-preview), .pv-tablet .collection-blog > *:not(.home-preview) { grid-column: span 6; }
+.pv-tablet .collection-blog > *:not(.home-preview) { grid-column: span 6; }
 /* de src/dev/site-entry.css: @media (min-width: 601px) and (max-width: 900px) */
 
 .pv-tablet .site { --edge: clamp(16px, calc(24px + (768px - 600px) * 0.219), var(--safe, 76.8px)); }

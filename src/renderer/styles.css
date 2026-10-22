@@ -264,14 +264,13 @@ figure.block-image-inner, figure.storyboard-cell { margin: 0; }
   .contact-layout { grid-template-columns: 1fr; gap: 40px; }
   .storyboard-grid > * { grid-column: span 6; }
 }
-/* Entre o celular e o tablet cheio: cards com TÍTULO em duas colunas. Três
-   colunas nessa faixa dão cards de ~160px, estreitos demais para o texto.
-   Imagens e galerias seguem a grade do computador, como no tablet. */
 /* Texto com tamanho próprio (Tema › Escala tipográfica): menor no tablet e no celular. */
 @media (max-width: 819px) { .site { --escala-inline: var(--escala-inline-t, 0.9); } }
 @media (max-width: 600px) { .site { --escala-inline: var(--escala-inline-m, 0.85); } }
+/* Tablet: cards de projeto seguem a grade escolhida (3 lado a lado); no celular, um embaixo do outro.
+   Notas do blog, de texto mais longo, ficam em duas colunas entre o celular e o tablet cheio. */
 @media (min-width: 601px) and (max-width: 819px) {
-  .collection-projects > *:not(.home-preview), .collection-blog > *:not(.home-preview) { grid-column: span 6; }
+  .collection-blog > *:not(.home-preview) { grid-column: span 6; }
 }
 @media (max-width: 600px) {
   /* Cards com texto (projetos, notas) empilham: título e descrição precisam de largura. */
