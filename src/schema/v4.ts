@@ -80,6 +80,8 @@ const breakpointSchema = z
   .strictObject({
     span: z.number().int().min(1).max(12).optional(),
     hidden: z.boolean().optional(),
+    /** Texto numa linha só nesta tela (encolhe até caber), ex.: LinkedIn · e-mail · telefone. */
+    oneLine: z.boolean().optional(),
   })
   .optional();
 

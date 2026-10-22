@@ -812,6 +812,8 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
     block.style?.textStyle ? `has-ts ts-${block.style.textStyle}` : '',
     rm?.hidden ? 'hide-mobile' : '',
     rt?.hidden ? 'hide-tablet' : '',
+    rt?.oneLine ? 'one-line-t' : '',
+    rm?.oneLine ? 'one-line-m' : '',
     // A linha só mantém o alinhamento na tela em que ela ainda cabe inteira.
     sobra && sobra.tablet !== null ? 't-row' : '',
     sobra && sobra.mobile !== null ? 'm-row' : '',
@@ -857,7 +859,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
       if (editing && onInlineText && selectedId === block.id) {
         return wrap(<InlineEditable key={`${block.id}:${lang}`} className="block-text-body" initial={pick(block.content.html, lang)} onCommit={(v) => onInlineText(block.id, v, 'text')} />);
       }
-      return wrap(<RichText className="block-text-body" html={pick(block.content.html, lang)} />);
+      return wrap(<RichText className="block-text-body" html={pick(block.content.html, lang)} fit={!!(rt?.oneLine || rm?.oneLine)} />);
     case 'image': {
       const legenda = pick(block.content.caption, lang);
       const Caixa = legenda ? 'figure' : 'div';

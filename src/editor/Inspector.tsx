@@ -339,7 +339,7 @@ function LarguraPorDispositivo({ doc, block, refBlock }: { doc: DocApi; block: B
       const r = b.responsive?.[tela];
       if (!r) return;
       delete r.span;
-      if (!r.hidden) delete b.responsive![tela];
+      if (!r.hidden && !r.oneLine) delete b.responsive![tela];
     }, `${refBlock.blockId}:${tela}span:clear`);
 
   return (
@@ -1018,6 +1018,18 @@ function LayoutTab({ doc, block, refBlock }: { doc: DocApi; block: Block; refBlo
           <input type="checkbox" checked={!!block.responsive?.mobile?.hidden} onChange={(e) => doc.updateBlock(refBlock, (b) => void ((b.responsive ??= {}).mobile = { ...(b.responsive.mobile ?? {}), hidden: e.target.checked }))} />
           Ocultar no celular
         </label>
+        {block.type === 'text' ? (
+          <>
+            <label className="insp-check">
+              <input type="checkbox" checked={!!block.responsive?.tablet?.oneLine} onChange={(e) => doc.updateBlock(refBlock, (b) => void ((b.responsive ??= {}).tablet = { ...(b.responsive.tablet ?? {}), oneLine: e.target.checked || undefined }))} />
+              Texto em uma linha só no tablet
+            </label>
+            <label className="insp-check">
+              <input type="checkbox" checked={!!block.responsive?.mobile?.oneLine} onChange={(e) => doc.updateBlock(refBlock, (b) => void ((b.responsive ??= {}).mobile = { ...(b.responsive.mobile ?? {}), oneLine: e.target.checked || undefined }))} />
+              Texto em uma linha só no celular
+            </label>
+          </>
+        ) : null}
       </Group>
     </>
   );

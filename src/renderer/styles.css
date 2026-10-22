@@ -270,6 +270,8 @@ figure.block-image-inner, figure.storyboard-cell { margin: 0; }
    num não muda o outro. Vale para todo o texto, inclusive o de tamanho próprio (px).
    O tema entrega o tamanho do computador em --escala-base. */
 @media (max-width: 900px) { .site { --escala-texto: calc(var(--escala-base, 1) * var(--escala-inline-t, 0.94)) ; --escala-inline: var(--escala-inline-t, 0.94); } .section { margin-block: min(var(--sec-top, 3.25rem), 2.75rem) min(var(--sec-bottom, 3.25rem), 2.75rem); } }
+@media (max-width: 900px) { .block.one-line-t .block-text-body { white-space: nowrap; } }
+@media (max-width: 600px) { .block.one-line-m .block-text-body { white-space: nowrap; } }
 @media (max-width: 600px) { .site { --escala-texto: calc(var(--escala-base, 1) * var(--escala-inline-m, 0.88)) ; --escala-inline: var(--escala-inline-m, 0.88); } .section { margin-block: min(var(--sec-top, 3.25rem), 2rem) min(var(--sec-bottom, 3.25rem), 2rem); } }
 /* Tablet: cards de projeto seguem a grade escolhida (3 lado a lado); no celular, um embaixo do outro.
    Notas do blog, de texto mais longo, ficam em duas colunas entre o celular e o tablet cheio. */
@@ -581,6 +583,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
    porque o tema as grava inline em `.site` e um filho vence a herança, sem
    !important. O escopo é só `print`: o gerador da prévia do editor ignora
    blocos que não são de largura. */
+/* Menu do topo numa linha só no celular: itens compactos, sem quebra. */
+@media (max-width: 600px) {
+  .site-header .hdr-el nav, .site-header > nav { flex-wrap: nowrap; }
+  .site-header .nav-link { padding: 6px 6px; font-size: 12px; letter-spacing: 0.04em; }
+}
+/* Link-botão ("Ver todos os projetos →") no celular: menor e sem o recuo largo do botão. */
+@media (max-width: 600px) { .btn.btn-link { padding: 12px 0 3px; font-size: calc(11px * var(--escala-texto, 1)); letter-spacing: 0.08em; } }
+
 @media print {
   @page { margin: 14mm; }
   .skip-link, .sticky-nav, .site .hdr-el.hdr-nav, .site .hdr-el.hdr-lang, .lang-icons, .lightbox, .project-filter, .detail-pager,
