@@ -273,7 +273,8 @@ export const ThemeSchema = z.strictObject({
     accent2: z.string(),
   }),
   fonts: z.strictObject({ display: z.string(), body: z.string(), mono: z.string() }),
-  type: z.strictObject({ base: z.number(), ratio: z.number() }),
+  // scaleTablet/scaleMobile: multiplicador dos textos com tamanho próprio (px/rem) nessas telas.
+  type: z.strictObject({ base: z.number(), ratio: z.number(), scaleTablet: z.number().optional(), scaleMobile: z.number().optional() }),
   textStyles: z.record(z.string(), TextStyleSchema),
   space: z.strictObject({ unit: z.number() }),
   radius: z.number(),

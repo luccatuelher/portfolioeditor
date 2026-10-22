@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { DEFAULT_LAYOUT, type Theme } from '../schema/v4';
 import type { AssetResolver } from '../renderer/context';
+import { DEFAULT_SCALE_MOBILE, DEFAULT_SCALE_TABLET } from '../renderer/theme';
 import { emptyI18n } from '../core/i18n';
 import type { DocApi } from './useDocument';
 import { contrastLevel, contrastRatio, legivel } from '../core/contrast';
@@ -151,6 +152,27 @@ function BasePicker({ value, onChange }: { value: number; onChange: (v: number) 
         <input className="insp-input" aria-label="Tamanho do texto (px)" type="number" step="1" min={12} max={24} value={value} onChange={(e) => { const n = Number(e.target.value); if (n >= 12 && n <= 24) onChange(n); }} />
       ) : null}
       <span className="theme-hint" style={{ margin: '4px 0 0', display: 'block' }}>Os títulos crescem a partir dele.</span>
+    </div>
+  );
+}
+
+const ESCALAS = [1, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7];
+
+/** Tamanho dos textos dimensionados na mão (ex.: 18 px), no tablet e no celular: um ajuste só para o site todo. */
+function InlineScalePicker({ tablet, mobile, onTablet, onMobile }: { tablet: number; mobile: number; onTablet: (v: number) => void; onMobile: (v: number) => void }): React.ReactElement {
+  const idT = useId();
+  const idM = useId();
+  const opcoes = (v: number): React.ReactElement[] => {
+    const lista = ESCALAS.includes(v) ? ESCALAS : [...ESCALAS, v].sort((a, b) => b - a);
+    return lista.map((e) => <option key={e} value={String(e)}>{Math.round(e * 100)}%{e === 1 ? ' — igual ao computador' : ''}</option>);
+  };
+  return (
+    <div className="theme-font">
+      <label className="insp-label" htmlFor={idT}>Texto de tamanho próprio no tablet</label>
+      <select id={idT} className="insp-input" value={String(tablet)} onChange={(e) => onTablet(Number(e.target.value))}>{opcoes(tablet)}</select>
+      <label className="insp-label" htmlFor={idM}>Texto de tamanho próprio no celular</label>
+      <select id={idM} className="insp-input" value={String(mobile)} onChange={(e) => onMobile(Number(e.target.value))}>{opcoes(mobile)}</select>
+      <span className="theme-hint" style={{ margin: '4px 0 0', display: 'block' }}>Vale para textos em que você escolheu o tamanho (ex.: 18 px). Os demais já se ajustam sozinhos.</span>
     </div>
   );
 }
@@ -317,6 +339,12 @@ export function ThemePanel({ doc, onUploadImage, onUploadFavicon, resolveAsset }
 
       <div className="panel-h">Escala tipográfica</div>
       <BasePicker value={theme.type.base} onChange={(b) => doc.updateTheme((t) => void (t.type.base = b), 'theme:base')} />
+      <InlineScalePicker
+        tablet={theme.type.scaleTablet ?? DEFAULT_SCALE_TABLET}
+        mobile={theme.type.scaleMobile ?? DEFAULT_SCALE_MOBILE}
+        onTablet={(v) => doc.updateTheme((t) => void (t.type.scaleTablet = v), 'theme:scale-tablet')}
+        onMobile={(v) => doc.updateTheme((t) => void (t.type.scaleMobile = v), 'theme:scale-mobile')}
+      />
       <RatioPicker value={theme.type.ratio} onChange={(r) => doc.updateTheme((t) => void (t.type.ratio = r), 'theme:ratio')} />
 
       {/* Opcionais: o site funciona sem nada disso. Ficam recolhidos para não pesar no painel. */}

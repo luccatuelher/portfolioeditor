@@ -10,7 +10,7 @@ import { blockLabel, effectivePreview, projectBlocks } from './preview';
 import type { BlogItem } from '../schema/v4';
 import { RenderContext, useRender, type Lang, type RenderContextValue } from './context';
 import { styleVars } from './css';
-import { pick, RichText } from './text';
+import { escalarTamanhos, pick, RichText } from './text';
 import { sanitizeRich } from '../core/sanitizeHtml';
 import { layoutGrid, type Placement } from './gridLayout';
 import { projectCategory } from '../core/category';
@@ -848,7 +848,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
         return wrap(<InlineEditable key={`${block.id}:${lang}`} className="block-heading-text" initial={pick(block.content.text, lang)} onCommit={(v) => onInlineText(block.id, v, 'heading')} />);
       }
       // Títulos aceitam a mesma formatação inline dos textos (cor, fonte, tamanho, link…).
-      const html = sanitizeRich(pick(block.content.text, lang));
+      const html = escalarTamanhos(sanitizeRich(pick(block.content.text, lang)));
       // Vazio no site: sem <h2> mudo para o leitor de tela (o lugar na grade fica).
       if (!editing && !html.replace(/<[^>]*>/g, '').trim()) return wrap(null);
       return wrap(<Tag className="block-heading-text" dangerouslySetInnerHTML={{ __html: html }} />);

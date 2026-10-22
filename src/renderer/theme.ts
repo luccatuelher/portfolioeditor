@@ -6,6 +6,9 @@ function legivelNosDois(fg: string, bg: string, surface: string, rumo: string): 
   return legivel(legivel(fg, bg, 4.5, rumo), surface, 4.5, rumo);
 }
 
+export const DEFAULT_SCALE_TABLET = 0.9;
+export const DEFAULT_SCALE_MOBILE = 0.85;
+
 /**
  * Converte os tokens do tema v4 em variáveis CSS. É a ÚNICA ponte entre dados e
  * estilo: nenhum bloco referencia cor/fonte diretamente — tudo vem daqui.
@@ -36,6 +39,10 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
     // Tema › Contraste entre tamanhos: os títulos crescem (ou encolhem) em
     // relação ao texto — 1,25 (terça maior) é o desenho original.
     '--escala-titulos': String(Math.round((theme.type.ratio / 1.25) ** 2 * 1000) / 1000),
+    // Tema › Texto de tamanho próprio: o que o autor dimensionou na mão (ex.: 18 px)
+    // encolhe no tablet e no celular, onde o mesmo tamanho fica grande demais.
+    '--escala-inline-t': String(theme.type.scaleTablet ?? DEFAULT_SCALE_TABLET),
+    '--escala-inline-m': String(theme.type.scaleMobile ?? DEFAULT_SCALE_MOBILE),
     '--space-unit': `${theme.space.unit}px`,
     '--radius': `${theme.radius}px`,
     '--grid-cols': String(theme.grid.cols),
