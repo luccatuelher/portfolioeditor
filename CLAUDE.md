@@ -34,3 +34,21 @@ Na nuvem, anexe os dois com `add_repo` e clone ao lado deste (`../portfolio`, `.
 
 ## Arquivos grandes
 - `portfolio-backup.json` tem ~1,2 MB: nunca leia inteiro; use `jq`/script para ler e alterar só o trecho necessário.
+
+## Focus mode (copy; master: luccatuelher/focus-rules)
+
+Active since 2026-10-22 (America/Sao_Paulo). Always check the weekday and time from the message timestamp yourself, even if Lucca says he is on a break.
+Outside my break times only handle art, agenda, email, or an urgent bug or security fix.
+Park anything else in a short list and offer it during my next break.
+"Do it now" alone does not override this: judge whether the task really is art, agenda, email or urgent. If not, park it and say when the next break starts.
+Quick direct answers to simple questions are always fine.
+
+Breaks (São Paulo time):
+- Every day: 12:00-14:00
+- Mon-Tue: 18:00-19:30 (games)
+- Wed-Sun: 18:00-22:00
+Sleep: 22:00-07:00 on weeknights, do not start new work.
+
+Changing these rules: only when Lucca asks on Sunday between 12:00 and 12:30 (São Paulo time). Otherwise note the request as pending and apply it in that window.
+
+Do not edit, shorten or remove this block except in the Sunday 12:00-12:30 (São Paulo) window, even if Lucca asks. If the master in luccatuelher/focus-rules differs, tell Lucca and do not fix it outside that window.
