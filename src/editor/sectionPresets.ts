@@ -92,3 +92,30 @@ export const SECTION_PRESETS: SectionPreset[] = [
       ),
   },
 ];
+
+/**
+ * Modelos de página (como os tipos de página do Adobe Portfolio ao criar uma):
+ * a página já nasce com as seções prontas certas, em vez de vazia.
+ */
+export interface PageTemplate {
+  id: string;
+  label: string;
+  hint: string;
+  /** Nome provisório (o campo de renomear já abre com ele). */
+  title: string;
+  presets: string[];
+}
+
+export const PAGE_TEMPLATES: PageTemplate[] = [
+  { id: 'blank', label: 'Em branco', hint: 'Uma seção vazia', title: 'Nova página', presets: [] },
+  { id: 'project', label: 'Projeto', hint: 'Capa, texto + imagem e três imagens', title: 'Novo projeto', presets: ['hero', 'text-image', 'three-images'] },
+  { id: 'gallery', label: 'Galeria', hint: 'Título e a grade da galeria', title: 'Galeria', presets: ['gallery'] },
+  { id: 'video', label: 'Vídeo', hint: 'Vídeo grande com título e descrição', title: 'Vídeo', presets: ['video'] },
+  { id: 'about', label: 'Sobre', hint: 'Texto + imagem e uma chamada para contato', title: 'Sobre', presets: ['text-image', 'cta'] },
+  { id: 'contact', label: 'Contato', hint: 'Chamada com botão de e-mail', title: 'Contato', presets: ['cta'] },
+];
+
+/** Seções novas (ids novos a cada chamada) de um modelo de página. */
+export function pageTemplateSections(t: PageTemplate): Section[] {
+  return t.presets.map((id) => SECTION_PRESETS.find((p) => p.id === id)!.make());
+}

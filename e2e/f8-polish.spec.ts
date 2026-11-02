@@ -17,6 +17,7 @@ test.describe('F8 — polimento', () => {
     await page.locator('.left-tabs button', { hasText: 'Páginas' }).click();
     page.once('dialog', (d) => d.accept('Vazia'));
     await page.locator('.newpage').click();
+    await page.locator('.page-templates button', { hasText: 'Em branco' }).click();
     await expect(page.locator('.editor-canvas .canvas-add-block').first()).toBeVisible();
   });
 

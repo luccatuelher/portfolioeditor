@@ -10,6 +10,7 @@ import type { BlogItem, Page, PortfolioV4, ProjectItem } from '../schema/v4';
 import type { Container, Selection } from './paths';
 import type { DocApi } from './useDocument';
 import { useRemover } from './remover';
+import { PAGE_TEMPLATES, pageTemplateSections } from './sectionPresets';
 
 type ListKind = 'featured' | 'projects' | 'nda' | 'blog';
 
@@ -95,6 +96,7 @@ function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc
 export function PagesPanel({ doc, container, lang, onOpen, onSelect }: { doc: DocApi; container: Container; lang: Lang; onOpen: (c: Container) => void; onSelect: (s: Selection) => void }): React.ReactElement {
   const sensors = useSensoresDaLista();
   const [recemCriada, setRecemCriada] = useState<string | null>(null);
+  const [escolhendoModelo, setEscolhendoModelo] = useState(false);
   const pages = doc.state.pages.filter((p) => p.kind === 'static');
 
   // Página "ativa": a aberta, ou — com um projeto/nota aberto — a página da lista dele.
@@ -172,19 +174,31 @@ export function PagesPanel({ doc, container, lang, onOpen, onSelect }: { doc: Do
           ))}
         </SortableContext>
       </DndContext>
-      <button
-        type="button"
-        className="add-block-btn newpage"
-        onClick={() => {
-          // Nasce com nome provisório e o campo já aberto — o mesmo gesto de
-          // renomear do resto da árvore, em vez de um prompt() do navegador.
-          const id = doc.addPage('Nova página');
-          setRecemCriada(id);
-          onOpen({ on: 'page', pageId: id });
-        }}
-      >
+      <button type="button" className="add-block-btn newpage" aria-expanded={escolhendoModelo} onClick={() => setEscolhendoModelo((v) => !v)}>
         ＋ Nova página
       </button>
+      {escolhendoModelo ? (
+        <div className="page-templates" role="group" aria-label="Modelo da página nova">
+          {PAGE_TEMPLATES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              className="preset-tile"
+              title={t.hint}
+              onClick={() => {
+                // Nasce com nome provisório e o campo já aberto — o mesmo gesto de
+                // renomear do resto da árvore, em vez de um prompt() do navegador.
+                const id = doc.addPage(t.title, pageTemplateSections(t));
+                setEscolhendoModelo(false);
+                setRecemCriada(id);
+                onOpen({ on: 'page', pageId: id });
+              }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -46,7 +46,8 @@ export interface DocApi {
   deleteSection(container: Container, sectionId: string): void;
   duplicateSection(container: Container, sectionId: string): void;
   updateItem<K extends CollectionName>(collection: K, id: string, recipe: (item: PortfolioV4['collections'][K][number]) => void, groupKey?: string): void;
-  addPage(title: string): string;
+  /** Página nova; `sections` vem de um modelo (sem ele, uma seção vazia). */
+  addPage(title: string, sections?: Section[]): string;
   /** Duplica uma página inteira (conteúdo, ajustes e SEO), com ids novos. */
   duplicatePage(pageId: string): string | null;
   deletePage(pageId: string): void;
@@ -322,7 +323,7 @@ export function useDocument(initial: PortfolioV4): DocApi {
         if (item) recipe(item as PortfolioV4['collections'][typeof collection][number]);
       }, groupKey ? { groupKey } : undefined);
     },
-    addPage(title) {
+    addPage(title, sections) {
       const slug = (title || 'pagina').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'pagina';
       const id = `page_${newBlockId().slice(2)}`;
       store.update((d) => {
@@ -335,7 +336,7 @@ export function useDocument(initial: PortfolioV4): DocApi {
           title: { pt: title || 'Nova página', en: title || 'New page' },
           kind: 'static',
           visibility: 'public',
-          sections: [{ id: newSectionId(), style: { width: 'normal' }, blocks: [] }],
+          sections: sections?.length ? sections : [{ id: newSectionId(), style: { width: 'normal' }, blocks: [] }],
         });
         d.site.nav.push(id);
       });

@@ -9,6 +9,7 @@ test.describe('Primeiro uso e estados vazios', () => {
 
     await page.locator('.left-tabs button', { hasText: 'Páginas' }).click();
     await page.locator('button', { hasText: 'Nova página' }).click();
+    await page.locator('.page-templates button', { hasText: 'Em branco' }).click();
 
     await expect(page.locator('.tree-rename')).toBeVisible();
     expect(prompts).toBe(0);
@@ -24,6 +25,7 @@ test.describe('Primeiro uso e estados vazios', () => {
     await page.goto('/editor.html?fresh=1', { waitUntil: 'load' });
     await page.locator('.left-tabs button', { hasText: 'Páginas' }).click();
     await page.locator('button', { hasText: 'Nova página' }).click();
+    await page.locator('.page-templates button', { hasText: 'Em branco' }).click();
     await page.locator('.tree-rename').press('Enter');
 
     await expect(page.locator('.editor-canvas')).toContainText('Adicionar o primeiro bloco');

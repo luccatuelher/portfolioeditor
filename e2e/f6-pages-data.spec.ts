@@ -16,6 +16,7 @@ test.describe('F6 — páginas e coleções', () => {
     await page.goto('/editor.html', { waitUntil: 'load' });
     await page.locator('.left-tabs button', { hasText: 'Páginas' }).click();
     await page.locator('.newpage').click();
+    await page.locator('.page-templates button', { hasText: 'Em branco' }).click();
     // O nome já nasce editável na própria linha (sem prompt do navegador).
     await page.locator('.tree-rename').fill('Serviços');
     await page.locator('.tree-rename').press('Enter');
