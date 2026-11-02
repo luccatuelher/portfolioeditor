@@ -364,7 +364,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const pendingPick = useRef<((assetId: string) => void) | null>(null);
   // Recortador aberto: imagem atual, trava de proporção e como gravar o resultado.
   // Popup de "＋ Adicionar bloco": seção de destino e posição na tela.
-  const [addMenu, setAddMenu] = useState<{ sectionId: string; x: number; y: number } | null>(null);
+  const [addMenu, setAddMenu] = useState<{ sectionId: string; x: number; y: number; at?: number } | null>(null);
   const [cropping, setCropping] = useState<{ image: ImageRef; lock?: number; apply: (c: ImageCrop | undefined) => void } | null>(null);
   // Guias de alinhamento: enquanto arrasta, o canvas mostra as 12 colunas da grade.
   const [dragging, setDragging] = useState(false);
@@ -935,6 +935,15 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       // Cards de projeto/nota, prévia e filtros: deixa o próprio componente agir (abrir prévia / página).
       if (el.closest('.project-card, .blog-item, .home-preview, .project-filter')) return;
 
+      // "＋" entre seções: a seção nova nasce no índice, junto com o bloco escolhido.
+      const insBtn = el.closest('[data-insert-section]');
+      if (insBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const r = insBtn.getBoundingClientRect();
+        setAddMenu({ sectionId: '', at: Number(insBtn.getAttribute('data-insert-section')), x: r.left + r.width / 2, y: r.bottom });
+        return;
+      }
       const addBtn = el.closest('[data-add-block]');
       if (addBtn) {
         e.preventDefault();
@@ -1343,7 +1352,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
             const block = makeDefaultBlock(t);
             // Página vazia: a seção nasce junto com o primeiro bloco (um passo de desfazer só).
             const sectionId = doc.transacao(() => {
-              const sid = addMenu.sectionId || doc.addSection(container);
+              const sid = addMenu.sectionId || doc.addSection(container, addMenu.at);
               if (sid) doc.insertBlock({ container, sectionId: sid }, block);
               return sid;
             });

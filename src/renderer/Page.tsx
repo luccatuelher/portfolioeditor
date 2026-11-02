@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { BlogItem, I18n, Page, PortfolioV4, ProjectItem } from '../schema/v4';
 import { useUi, type UiChave } from './ui';
 import { blocoNoSite, NdaUnlock, SectionView } from './blocks';
@@ -118,6 +119,19 @@ function DetailPager({ item, kind }: { item: ProjectItem | BlogItem; kind: 'proj
  * começar (o "＋ Adicionar bloco" mora dentro das seções). data-add-block
  * vazio = a seção é criada junto com o primeiro bloco.
  */
+/**
+ * No editor, entre duas seções (e no fim da página), uma linha fina com "＋"
+ * aparece ao passar o mouse — como no Adobe Portfolio: insere uma seção nova
+ * ali mesmo, já pedindo o primeiro bloco. data-insert-section = índice.
+ */
+function InserirSecao({ at }: { at: number }): React.ReactElement {
+  return (
+    <div className="canvas-insert-section">
+      <button type="button" data-insert-section={at} aria-label="Inserir seção aqui" title="Inserir seção aqui">＋</button>
+    </div>
+  );
+}
+
 function PrimeiroBloco(): React.ReactElement {
   return (
     <div className="section canvas-vazio">
@@ -157,9 +171,13 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
             </dl>
           ) : null}
         </header>
-        {item.sections.map((s) => (
-          <SectionView key={s.id} section={s} />
+        {item.sections.map((s, i) => (
+          <Fragment key={s.id}>
+            {editing ? <InserirSecao at={i} /> : null}
+            <SectionView section={s} />
+          </Fragment>
         ))}
+        {editing && item.sections.length ? <InserirSecao at={item.sections.length} /> : null}
         {editing && !item.sections.length ? <PrimeiroBloco /> : null}
         <DetailPager item={item} kind={isProject ? 'project' : 'blog'} />
       </article>
@@ -176,13 +194,14 @@ export function PageView({ page, item }: { page: Page; item?: ProjectItem | Blog
     <div data-page-id={page.id}>
       {temH1 ? null : <h1 className="sr-only">{h1}</h1>}
       {page.sections.map((s, i) => (
-        <ErrorBoundary
-          key={s.id}
-          fallback={() => <p className="secao-defeito">{t('secaoComDefeito')}</p>}
-        >
-          <SectionView section={s} primeira={i === 0} />
-        </ErrorBoundary>
+        <Fragment key={s.id}>
+          {editing ? <InserirSecao at={i} /> : null}
+          <ErrorBoundary fallback={() => <p className="secao-defeito">{t('secaoComDefeito')}</p>}>
+            <SectionView section={s} primeira={i === 0} />
+          </ErrorBoundary>
+        </Fragment>
       ))}
+      {editing && page.sections.length ? <InserirSecao at={page.sections.length} /> : null}
       {editing && !page.sections.length ? <PrimeiroBloco /> : null}
     </div>
   );

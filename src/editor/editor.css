@@ -159,6 +159,15 @@ textarea.insp-input { resize: vertical; line-height: 1.5; }
 .data-ord button:disabled { opacity: 0.3; cursor: default; }
 .editor-canvas .canvas-add-block { grid-column: span 12; margin-top: 4px; padding: 10px; border: 1.5px dashed #c8c4bb; border-radius: 4px; background: transparent; color: var(--ed-texto-2); cursor: pointer; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; }
 .editor-canvas .canvas-add-block:hover { border-color: var(--accent); color: var(--accent); }
+/* "＋" entre seções (como no Adobe Portfolio): só o botão redondo recebe o
+   clique (a faixa não pode cobrir o topo dos blocos nem as ações deles). Aparece
+   meio apagado ao passar sobre uma seção vizinha, inteiro sobre o próprio botão. */
+.editor-canvas .canvas-insert-section { position: relative; height: 0; z-index: 6; pointer-events: none; }
+.editor-canvas .canvas-insert-section::after { content: ''; position: absolute; left: 4%; right: 4%; top: 0; border-top: 1.5px dashed var(--accent); opacity: 0; transition: opacity 0.12s; }
+.editor-canvas .canvas-insert-section button { pointer-events: auto; position: absolute; left: 50%; top: 0; transform: translate(-50%, -50%); width: 24px; height: 24px; padding: 0; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 0.85rem; line-height: 1; cursor: pointer; opacity: 0; transition: opacity 0.12s; }
+.editor-canvas .canvas-insert-section:has(+ .section:hover) button, .editor-canvas .section:hover + .canvas-insert-section button { opacity: 0.55; }
+.editor-canvas .canvas-insert-section:has(button:hover) button, .editor-canvas .canvas-insert-section button:focus-visible { opacity: 1; }
+.editor-canvas .canvas-insert-section:has(button:hover)::after, .editor-canvas .canvas-insert-section:has(button:focus-visible)::after { opacity: 1; }
 /* badges de estado nos cards (editor) */
 .editor-canvas .card-thumb-wrap, .editor-canvas .art-item, .editor-canvas .sketch-item, .editor-canvas .blog-item { position: relative; }
 .edit-badges { position: absolute; top: 6px; left: 6px; display: flex; gap: 4px; flex-wrap: wrap; z-index: 5; pointer-events: none; }
@@ -735,5 +744,5 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .editor.is-preview .editor-main { grid-template-columns: 1fr; }
 .editor.is-preview .editor-left, .editor.is-preview .editor-right, .editor.is-preview .editor-gavetas, .editor.is-preview .editor-scrim { display: none; }
 .editor.is-preview .editor-canvas .block, .editor.is-preview .editor-canvas .block:hover { outline-color: transparent; }
-.editor.is-preview .editor-canvas :is(.pe-actions, .pe-drag-handle, .pe-span-handle, .canvas-add-block, .add-block) { display: none !important; }
+.editor.is-preview .editor-canvas :is(.pe-actions, .pe-drag-handle, .pe-span-handle, .canvas-add-block, .canvas-insert-section, .add-block) { display: none !important; }
 .editor.is-preview .editor-canvas { pointer-events: none; }
