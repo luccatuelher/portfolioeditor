@@ -60,6 +60,9 @@ function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc
   const nome = pick(page.title, lang);
   const renome = useTreeRename(nome, (v) => doc.updatePage(page.id, (pg) => void (pg.title[lang] = v), `rename:${page.id}`), novaAgora);
   const remover = useRemover(doc);
+  // Como no Adobe Portfolio: a página pode existir (e ter endereço) sem aparecer no menu.
+  const naMenu = doc.state.site.nav.includes(page.id);
+  const ndaPage = page.visibility === 'nda';
   return (
     <div ref={setNodeRef} style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 }}>
       <div className={`tree-row pagerow ${active ? 'sel' : ''}`}>
@@ -70,11 +73,15 @@ function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc
           <>
             <button type="button" className="tree-main" onClick={onOpen} onDoubleClick={renome.abrir}>
               <span className="tree-icon">▤</span>{nome || page.id}
-              {page.visibility === 'nda' ? <span className="badge">NDA</span> : null}
+              {ndaPage ? <span className="badge">NDA</span> : null}
+              {!ndaPage && !naMenu ? <span className="badge badge-fora-menu" title="Não aparece no menu do site; continua acessível pelo endereço">fora do menu</span> : null}
             </button>
             {renome.botao}
           </>
         )}
+        {!ndaPage ? (
+          <button type="button" className="tree-menu" aria-pressed={naMenu} title={naMenu ? 'Tirar do menu (a página continua no ar)' : 'Mostrar no menu'} aria-label={`${naMenu ? 'Tirar do menu' : 'Mostrar no menu'}: ${nome || page.id}`} onClick={() => doc.toggleNav(page.id)}>{naMenu ? '☰' : '⊘'}</button>
+        ) : null}
         <button type="button" className="tree-dup" title="Duplicar página" aria-label={`Duplicar página ${pick(page.title, lang)}`} onClick={() => doc.duplicatePage(page.id)}>⧉</button>
         {page.id !== 'home' ? (
           <button type="button" className="tree-del" title="Excluir página" aria-label={`Excluir página ${pick(page.title, lang)}`} onClick={() => remover({ kind: 'page', pageId: page.id })}>✕</button>

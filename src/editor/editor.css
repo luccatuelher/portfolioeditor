@@ -439,9 +439,9 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .insp-keys dt { align-self: start; }
 
 /* duplicar página (mesmo comportamento discreto do excluir) */
-.tree-row.pagerow .tree-dup { background: none; border: none; color: var(--ed-texto-2); cursor: pointer; padding: 4px 6px; font-size: 0.72rem; opacity: 0; transition: opacity 0.12s; border-radius: 4px; }
-.tree-row.pagerow:hover .tree-dup, .tree-row.pagerow .tree-dup:focus-visible { opacity: 1; }
-.tree-row.pagerow .tree-dup:hover { color: var(--accent); background: #efece5; }
+.tree-row.pagerow :is(.tree-dup, .tree-menu) { background: none; border: none; color: var(--ed-texto-2); cursor: pointer; padding: 4px 6px; font-size: 0.72rem; opacity: 0; transition: opacity 0.12s; border-radius: 4px; }
+.tree-row.pagerow:hover :is(.tree-dup, .tree-menu), .tree-row.pagerow :is(.tree-dup, .tree-menu):focus-visible { opacity: 1; }
+.tree-row.pagerow :is(.tree-dup, .tree-menu):hover { color: var(--accent); background: #efece5; }
 
 /* ---- seletor de largura (desktop / tablet / celular) ---- */
 .tb-devices { display: inline-flex; gap: 2px; margin-left: 10px; }
