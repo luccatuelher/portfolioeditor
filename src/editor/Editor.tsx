@@ -555,7 +555,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
 
   /** Adiciona um elemento da paleta: após o bloco selecionado, na seção selecionada ou na última seção. */
   const addElement = useCallback(
-    (type: Block['type']) => {
+    (type: Block['type'], file?: File) => {
       const d = docRef.current;
       const block = makeDefaultBlock(type);
       let sectionId = selection?.kind === 'block' || selection?.kind === 'section' ? selection.ref.sectionId : undefined;
@@ -571,9 +571,14 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       if (!secaoFinal) return;
       const bref = { container, sectionId: secaoFinal, blockId: block.id };
       setSelection({ kind: 'block', ref: bref });
-      if (type === 'image') pickImage((aid) => docRef.current.updateBlock(bref, (b) => { if (b.type === 'image') { b.content.image.assetId = aid; b.content.image.url = undefined; } }));
+      if (type === 'image') {
+        const apply = (aid: string): void => docRef.current.updateBlock(bref, (b) => { if (b.type === 'image') { b.content.image.assetId = aid; b.content.image.url = undefined; } });
+        // Imagem colada: já temos o arquivo, então não abre o seletor.
+        if (file) void uploadImage(file).then(apply);
+        else pickImage(apply);
+      }
     },
-    [selection, container, pickImage],
+    [selection, container, pickImage, uploadImage],
   );
 
   /** Insere uma seção pronta depois da seção selecionada (ou no fim da página). */
@@ -765,10 +770,26 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     }
     if (e.key === 'Escape' && !typing) setSelection((s) => parentOf(s));
   };
+  // Colar uma imagem (Ctrl+V com print/imagem copiada): vira um bloco de imagem perto da seleção.
+  const onPasteRef = useRef<(e: ClipboardEvent) => void>(() => {});
+  onPasteRef.current = (e: ClipboardEvent): void => {
+    const t = e.target as HTMLElement | null;
+    if (t?.closest?.('input, textarea, select, [contenteditable="true"]')) return; // colar dentro de um campo é do campo
+    if (addMenu || cropping) return;
+    const file = Array.from(e.clipboardData?.files ?? []).find((f) => f.type.startsWith('image/'));
+    if (!file) return;
+    e.preventDefault();
+    addElement('image', file);
+  };
   useEffect(() => {
     const onKey = (ev: KeyboardEvent): void => onKeyRef.current(ev);
+    const onPaste = (ev: ClipboardEvent): void => onPasteRef.current(ev);
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener('paste', onPaste);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('paste', onPaste);
+    };
   }, []);
 
   const onCanvasClick = useCallback(
