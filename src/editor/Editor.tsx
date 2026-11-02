@@ -35,7 +35,7 @@ import { LayersPanel } from './LayersPanel';
 import { PagesPanel } from './PagesPanel';
 import { ThemePanel } from './ThemePanel';
 import { DataPanel } from './DataPanel';
-import { findBlock, findSection, getSections, locateBlock, parentOf, sameContainer, type CollectionName, type Container, type Selection } from './paths';
+import { findBlock, findSection, getSections, locateBlock, parentOf, sameContainer, type BlockRef, type CollectionName, type Container, type Selection } from './paths';
 import type { DropZone } from './gridOps';
 import { reorderArray } from '../core/array';
 import { AddBlockPopup, ElementsPalette } from './ElementsPalette';
@@ -335,6 +335,14 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   );
   const [container, setContainer] = useState<Container>({ on: 'page', pageId: 'home' });
   const [selection, setSelection] = useState<Selection>(null);
+  // Seleção múltipla (Shift+clique, como no Adobe Portfolio): blocos extras do
+  // mesmo contêiner, além do bloco selecionado. Qualquer outra seleção zera.
+  const [extras, setExtras] = useState<string[]>([]);
+  const extrasDaProxima = useRef<string[] | null>(null); // grupo novo junto com a seleção (Duplicar)
+  useEffect(() => {
+    setExtras(extrasDaProxima.current ?? []);
+    extrasDaProxima.current = null;
+  }, [selection]);
   const [lang, setLang] = useState<Lang>('pt');
   const [leftTab, setLeftTab] = useState<'pages' | 'layers' | 'theme' | 'data'>('layers');
   // Peso estimado do index.html (runtime + dados + imagens que vão para o site).
@@ -426,6 +434,13 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     link.href = favSrc;
   }, [favSrc]);
   const selectedId = selection?.kind === 'block' ? selection.ref.blockId : undefined;
+  // Blocos do grupo (o selecionado primeiro), só os que ainda existem.
+  const multiRefs: BlockRef[] = selection?.kind === 'block' && extras.length
+    ? [selection.ref, ...extras.map((id) => locateBlock(doc.state, selection.ref.container, id)).filter((r): r is BlockRef => !!r)]
+    : [];
+  const multiSelectedIds = multiRefs.length > 1 ? multiRefs.slice(1).map((r) => r.blockId) : undefined;
+  const selRef = useRef(selection);
+  selRef.current = selection;
   const docRef = useRef(doc);
   docRef.current = doc;
 
@@ -648,6 +663,36 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     setExclusao({ aviso: id, depois });
   };
 
+  /** Exclui todos os blocos do grupo num passo só de desfazer. */
+  const removerGrupo = (): void => {
+    const d = docRef.current;
+    const refs = multiRefs;
+    if (refs.length < 2) return;
+    d.transacao(() => refs.forEach((r) => d.deleteBlock(r)));
+    const depois = d.store.getState();
+    setSelection(null);
+    const id = mostrarAviso(`Excluídos: ${refs.length} blocos`, {
+      duracaoMs: 10000,
+      acao: { rotulo: 'Desfazer', fazer: () => { if (docRef.current.store.getState() === depois) desfazer(); } },
+    });
+    setExclusao({ aviso: id, depois });
+  };
+  /** Duplica cada bloco do grupo (cópia logo abaixo de cada um); o grupo passa a ser as cópias. */
+  const duplicarGrupo = (): void => {
+    const d = docRef.current;
+    const refs = multiRefs;
+    if (refs.length < 2) return;
+    const novos = d.transacao(() => refs.map((r) => d.duplicateBlock(r)).filter((r): r is BlockRef => !!r));
+    if (!novos.length) return;
+    extrasDaProxima.current = novos.slice(1).map((r) => r.blockId);
+    setSelection({ kind: 'block', ref: novos[0]! });
+  };
+  /** Alinha todos os blocos do grupo (início, centro, fim) — um passo de desfazer. */
+  const alinharGrupo = (align: 'start' | 'center' | 'end'): void => {
+    const d = docRef.current;
+    d.transacao(() => multiRefs.forEach((r) => d.updateBlock(r, (b) => void (b.align = align === 'start' ? undefined : align))));
+  };
+
   /** Cola o conteúdo da área de transferência perto da seleção atual (sempre com ids novos). */
   const pasteClip = (clip: Clip): void => {
     const d = docRef.current;
@@ -736,6 +781,23 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         if (i >= 0 && i + dir >= 0 && i + dir < lista.length) doc.reorderItems(selection.collection, i, i + dir);
       }
       return;
+    }
+    // Grupo (Shift+clique): Delete, Ctrl+D e Esc valem para todos os blocos dele.
+    if (multiRefs.length > 1 && !typing) {
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        e.preventDefault();
+        removerGrupo();
+        return;
+      }
+      if (mod && key === 'd') {
+        e.preventDefault();
+        duplicarGrupo();
+        return;
+      }
+      if (e.key === 'Escape') {
+        setExtras([]);
+        return;
+      }
     }
     // Duplicar (Ctrl+D): igual para bloco, seção e item — a cópia entra logo abaixo/depois.
     if (mod && key === 'd' && !typing && selection) {
@@ -963,6 +1025,12 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         e.preventDefault();
         e.stopPropagation();
         const ref = locateBlock(doc.state, container, blockEl.getAttribute('data-block-id')!);
+        const atual = selRef.current;
+        // Shift+clique soma (ou tira) o bloco do grupo, sem trocar o principal.
+        if (ref && e.shiftKey && atual?.kind === 'block' && sameContainer(atual.ref.container, container)) {
+          if (ref.blockId !== atual.ref.blockId) setExtras((xs) => (xs.includes(ref.blockId) ? xs.filter((x) => x !== ref.blockId) : [...xs, ref.blockId]));
+          return;
+        }
         if (ref) setSelection({ kind: 'block', ref });
         return;
       }
@@ -1172,6 +1240,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       editing: true,
       posterEmbeds: true,
       selectedId,
+      multiSelectedIds,
       onNavigate: navigate,
       selectedItemId: selection?.kind === 'item' ? selection.itemId : undefined,
       onEditPreview: editPreview,
@@ -1223,7 +1292,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         );
       },
     }),
-    [doc.state, container, lang, resolveAsset, selectedId, navigate, selection, editPreview, device],
+    [doc.state, container, lang, resolveAsset, selectedId, multiSelectedIds?.join(','), navigate, selection, editPreview, device],
   );
 
   // Onde estou: com um projeto/nota aberto, a trilha mostra a página de origem
@@ -1342,6 +1411,19 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
         </aside>
       </div>
       <FloatingToolbar fonts={doc.state.theme.fonts} colors={doc.state.theme.colors} />
+      {multiRefs.length > 1 && !previa ? (
+        <div className="multi-bar" role="toolbar" aria-label="Blocos selecionados">
+          <span className="multi-n">{multiRefs.length} blocos</span>
+          <span className="multi-sep" />
+          <button type="button" onClick={() => alinharGrupo('start')} title="Alinhar no início">⇤</button>
+          <button type="button" onClick={() => alinharGrupo('center')} title="Centralizar">↔</button>
+          <button type="button" onClick={() => alinharGrupo('end')} title="Alinhar no fim">⇥</button>
+          <span className="multi-sep" />
+          <button type="button" onClick={duplicarGrupo} title="Duplicar (Ctrl+D)">Duplicar</button>
+          <button type="button" onClick={removerGrupo} title="Excluir (Delete)">Excluir</button>
+          <button type="button" onClick={() => setExtras([])} title="Desfazer a seleção múltipla (Esc)" aria-label="Fechar">✕</button>
+        </div>
+      ) : null}
       {avisos.ui}
       {addMenu ? (
         <AddBlockPopup

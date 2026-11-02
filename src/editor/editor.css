@@ -746,3 +746,10 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .editor.is-preview .editor-canvas .block, .editor.is-preview .editor-canvas .block:hover { outline-color: transparent; }
 .editor.is-preview .editor-canvas :is(.pe-actions, .pe-drag-handle, .pe-span-handle, .canvas-add-block, .canvas-insert-section, .add-block) { display: none !important; }
 .editor.is-preview .editor-canvas { pointer-events: none; }
+/* Seleção múltipla (Shift+clique): contorno tracejado nos extras e barra de ações do grupo. */
+.editor-canvas .block.is-multi { outline: 2px dashed var(--accent); outline-offset: 1px; }
+.multi-bar { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 4px; padding: 6px 8px; background: #1f1d1a; color: #fff; border-radius: 8px; box-shadow: 0 6px 24px rgba(0, 0, 0, 0.25); font-family: var(--font-mono, monospace); font-size: 0.7rem; }
+.multi-bar button { background: none; border: none; color: inherit; cursor: pointer; padding: 5px 8px; border-radius: 5px; font: inherit; }
+.multi-bar button:hover, .multi-bar button:focus-visible { background: rgba(255, 255, 255, 0.14); }
+.multi-bar .multi-n { padding: 0 6px; opacity: 0.8; }
+.multi-bar .multi-sep { width: 1px; align-self: stretch; background: rgba(255, 255, 255, 0.2); margin: 2px 2px; }

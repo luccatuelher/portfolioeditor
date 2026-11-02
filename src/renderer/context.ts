@@ -18,6 +18,8 @@ export interface RenderContextValue {
   editing: boolean;
   /** Id do bloco selecionado no editor (destaca no canvas). */
   selectedId?: string;
+  /** Outros blocos selecionados junto (Shift+clique): destacados, sem edição inline. */
+  multiSelectedIds?: string[];
   /** Navegação por slug (no editor/preview). */
   onNavigate?: (slug: string) => void;
   /** Abre o leitor/lightbox (storyboard, galeria, sketches). */

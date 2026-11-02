@@ -796,7 +796,7 @@ function faltaTraduzir(block: Block, lang: 'pt' | 'en'): boolean {
 
 export function BlockView({ block, place, sobra, topo }: { block: Block; place?: Placement; sobra?: { tablet: number | null; mobile: number | null }; topo?: boolean }): React.ReactElement | null {
   const t = useUi();
-  const { data, lang, editing, selectedId, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan, nda } = useRender();
+  const { data, lang, editing, selectedId, multiSelectedIds, resolveAsset, onOpenLightbox, onInlineText, onSetSpan, onSetItemSpan, nda } = useRender();
   if (!editing && !blocoNoSite(block, nda)) return null;
 
   const bgToken = block.style?.bg;
@@ -809,6 +809,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
     editing && block.visibility !== 'public' ? `vis-${block.visibility}` : '',
     bgToken ? 'has-bg' : '',
     editing && selectedId === block.id ? 'is-selected' : '',
+    editing && multiSelectedIds?.includes(block.id) ? 'is-multi' : '',
     block.style?.textStyle ? `has-ts ts-${block.style.textStyle}` : '',
     rm?.hidden ? 'hide-mobile' : '',
     rt?.hidden ? 'hide-tablet' : '',
