@@ -107,3 +107,33 @@ um arquivo único offline.
 Cobertura ao fim desta rodada: 128 testes unitários (novos: `contrast`,
 `versions`, analytics em `assemble`) e 50 e2e (novo
 `e2e/f16-guias-versoes-tema.spec.ts`).
+
+## Rodada Adobe Portfolio (2026-11-02)
+
+Lista completa de diferenças: `adobe-portfolio-gap-and-prompt.md` (pasta do projeto).
+Verificado contra o código antes de construir.
+
+- [x] Prévia (Editar/Prévia) e colar imagem com Ctrl+V — commits anteriores do mesmo dia.
+- [x] **"＋" entre seções.** Passar o mouse entre duas seções (ou depois da última)
+  mostra um "＋" que cria a seção ali, já com o bloco escolhido. Some na prévia e
+  nunca vai para o site. `e2e/f91-inserir-secao.spec.ts`.
+- [x] **Fora do menu no painel Páginas.** Já dava para tirar a página do menu no
+  Inspector; agora a linha da página tem o botão e o selo "fora do menu".
+  `e2e/f92-pagina-fora-do-menu.spec.ts`.
+- [x] **Seleção múltipla.** Shift+clique junta blocos; barra flutuante com alinhar
+  (início/centro/fim), Duplicar e Excluir; Delete e Ctrl+D valem para o grupo, cada
+  um um passo de desfazer; Esc desfaz o grupo. `e2e/f93-selecao-multipla.spec.ts`.
+- [x] **Modelos de página.** "＋ Nova página" pergunta o tipo: em branco, projeto,
+  galeria, vídeo, sobre, contato (montados com as seções prontas).
+  `e2e/f94-modelos-de-pagina.spec.ts`.
+
+Ficou para a próxima rodada (nesta ordem): modos de exibição da galeria
+(grade / slideshow / miniaturas / largura total), pastas no menu (submenu),
+aviso de "alterações não publicadas" (mexe na publicação: revisar com Opus),
+arrastar várias imagens de uma vez virando grade, estilos de texto nomeados,
+seletor de fontes com busca, CSS próprio, fundo e espaçamento por seção no canvas.
+Fora de escopo: domínio próprio e integrações (Behance, Lightroom).
+
+Testes que já falhavam antes desta rodada (não mexidos): `f18` (prévia de
+celular: alvos de toque), `f21` (card estreito em telas intermediárias), `f67`
+(todo campo do Inspector muda o canvas).
