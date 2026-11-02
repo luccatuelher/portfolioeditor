@@ -728,3 +728,12 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .sync-acoes { display: flex; gap: 6px; flex-wrap: wrap; }
 .sync-campo { display: flex; flex-direction: column; gap: 4px; margin: 12px 16px 0; font-size: 0.72rem; color: #5a574f; }
 .sync-campo input { padding: 9px 10px; border: 1px solid #d3cfc6; border-radius: 6px; background: #fff; font-family: var(--font-mono); font-size: 0.82rem; color: #1c1b18; }
+
+/* Modo Prévia: site limpo, sem painéis, contornos nem controles de edição. */
+.tb-previa { background: transparent; color: inherit; border: 1px solid rgba(250, 249, 247, 0.4); border-radius: 4px; padding: 3px 10px; font-size: 0.72rem; cursor: pointer; }
+.tb-previa.on { background: #faf9f7; color: #1c1b18; }
+.editor.is-preview .editor-main { grid-template-columns: 1fr; }
+.editor.is-preview .editor-left, .editor.is-preview .editor-right, .editor.is-preview .editor-gavetas, .editor.is-preview .editor-scrim { display: none; }
+.editor.is-preview .editor-canvas .block, .editor.is-preview .editor-canvas .block:hover { outline-color: transparent; }
+.editor.is-preview .editor-canvas :is(.pe-actions, .pe-drag-handle, .pe-span-handle, .canvas-add-block, .add-block) { display: none !important; }
+.editor.is-preview .editor-canvas { pointer-events: none; }

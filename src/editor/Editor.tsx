@@ -343,6 +343,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const semTraducao = useMemo(() => textosSemTraducao(doc.state), [doc.state]);
   // Largura do canvas: ver o site como no tablet/celular (usa o mesmo CSS responsivo do site).
   const [device, setDevice] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+  // Modo Prévia (como o Adobe Portfolio): esconde painéis e contornos para ver o site limpo.
+  const [previa, setPrevia] = useState(false);
   const backupRef = useRef<(() => void) | null>(null);
   // Rascunho protegido da limpeza automática do navegador (ver armazenamento.ts).
   const [protecao, setProtecao] = useState<string | null>(null);
@@ -1216,8 +1218,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   return (
     <AvisosContext.Provider value={avisos.api}>
     <RemoverContext.Provider value={removeSelection}>
-    <div className="editor" style={styleVars(themeToCssVars(doc.state.theme))}>
-      <TopBar doc={doc} peso={peso} onPeso={() => { setLeftTab('data'); setGaveta('esquerda'); }} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} onBackupRef={backupRef} onBackup={() => setProtecao(null)} onVersions={() => setShowVersions(true)} />
+    <div className={`editor${previa ? ' is-preview' : ''}`} style={styleVars(themeToCssVars(doc.state.theme))}>
+      <TopBar doc={doc} peso={peso} onPeso={() => { setLeftTab('data'); setGaveta('esquerda'); }} onUndo={desfazer} onRedo={refazer} avisoHistorico={avisoHistorico} lang={lang} onLang={setLang} pageTitle={pick(page.title, lang)} trilha={trilha} saveStatus={saveStatus} assets={assets} onImport={onImport} onPublished={setPublishNotice} device={device} onDevice={setDevice} previa={previa} onPrevia={(v) => { setPrevia(v); if (v) { setSelection(null); setGaveta(null); } }} onBackupRef={backupRef} onBackup={() => setProtecao(null)} onVersions={() => setShowVersions(true)} />
       {erroGravacao ? (
         <div className="editor-notice editor-alerta" role="alert">
           <span><b>Não estou conseguindo salvar neste navegador.</b> {erroGravacao} O que está aberto continua aqui — baixe um backup para não perder.</span>
@@ -1392,7 +1394,7 @@ const DEVICES = [
   { id: 'mobile', label: 'Celular (390px)', curto: 'Celular' },
 ] as const;
 
-function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, onBackupRef, onBackup, onVersions }: { doc: ReturnType<typeof useDocument>; peso: PesoDoSite; onPeso: () => void; onUndo: () => void; onRedo: () => void; avisoHistorico: string | null; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; onBackupRef?: { current: (() => void) | null }; onBackup?: () => void; onVersions?: () => void }): React.ReactElement {
+function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLang, pageTitle, trilha, saveStatus, assets, onImport, onPublished, device, onDevice, previa, onPrevia, onBackupRef, onBackup, onVersions }: { doc: ReturnType<typeof useDocument>; peso: PesoDoSite; onPeso: () => void; onUndo: () => void; onRedo: () => void; avisoHistorico: string | null; lang: Lang; onLang: (l: Lang) => void; pageTitle: string; trilha?: { pai: string; atual: string; voltar: () => void }; saveStatus: SaveStatus; assets: Record<string, string>; onImport?: (b: Backup) => void; onPublished?: (p: Publicado | null) => void; device: 'desktop' | 'tablet' | 'mobile'; onDevice: (d: 'desktop' | 'tablet' | 'mobile') => void; previa: boolean; onPrevia: (v: boolean) => void; onBackupRef?: { current: (() => void) | null }; onBackup?: () => void; onVersions?: () => void }): React.ReactElement {
   const fileRef = useRef<HTMLInputElement>(null);
   const [pedirSenha, setPedirSenha] = useState(false);
   const dialogos = useAvisos();
@@ -1566,6 +1568,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
             </button>
           ))}
         </span>
+        <button type="button" className={`tb-previa${previa ? ' on' : ''}`} aria-pressed={previa} onClick={() => onPrevia(!previa)} title={previa ? 'Voltar a editar' : 'Prévia: ver o site sem painéis nem contornos'}>{previa ? 'Editar' : 'Prévia'}</button>
         {device !== 'desktop' ? (
           <button type="button" className="tb-device-back" onClick={() => onDevice('desktop')} title="Voltar para a largura de computador">
             {DEVICES.find((d) => d.id === device)!.curto} ✕
