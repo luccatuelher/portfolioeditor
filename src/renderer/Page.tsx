@@ -92,8 +92,8 @@ export function proximosDaLista<T extends ProjectItem | BlogItem>(lista: T[], it
 
 /**
  * Fim da página de um projeto (ou nota): "Você também pode gostar" — os
- * próximos da lista em cards grandes, com a capa; ao passar o mouse, o título
- * e o ano aparecem e o vídeo do projeto toca mudo, em loop, por baixo. Junta o
+ * próximos da lista em cards grandes; o vídeo do projeto toca mudo, em loop,
+ * no lugar da capa quando o card entra na tela, e o mouse mostra título e ano. Junta o
  * antigo anterior · todos · próximo num lugar só (o "Todos os projetos" fica ao
  * lado do título da seção).
  */
@@ -142,47 +142,57 @@ export function videoDaPrevia(item: ProjectItem | BlogItem): { id: string; start
   return null;
 }
 
-/** Só quem tem mouse, sem "reduzir movimento" e sem economia de dados ganha o vídeo no hover. */
+/**
+ * A prévia toca sozinha (muda, em loop) quando o card entra na tela — como
+ * uma capa animada. Fica parada com "reduzir movimento", economia de dados ou
+ * o editor aberto de um arquivo local (o YouTube recusa tocar em file://).
+ */
 function podeTocarPrevia(): boolean {
-  if (typeof matchMedia !== 'function') return false;
-  if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return false;
+  if (typeof matchMedia !== 'function' || typeof IntersectionObserver === 'undefined') return false;
   if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  if (typeof location !== 'undefined' && location.protocol === 'file:') return false;
   const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
   return !conn?.saveData;
 }
 
 function CardSugerido({ item, Tag, props }: { item: ProjectItem | BlogItem; Tag: 'a' | 'button'; props: Record<string, unknown> }): React.ReactElement {
-  const { lang, editing, resolveAsset } = useRender();
+  const { lang, resolveAsset } = useRender();
   const titulo = pick(item.title, lang);
   const sub = 'meta' in item ? pick(item.meta['year'], lang) : pick(item.date, lang);
   const capa = resolveAsset(item.thumb, 'miniatura');
-  const video = editing ? null : videoDaPrevia(item);
-  // O player só nasce depois de um instante com o mouse em cima (passar por
-  // cima a caminho de outro lugar não baixa nada) e some quando o mouse sai.
+  const video = videoDaPrevia(item);
+  // O player nasce quando o card chega perto da tela e some quando sai dela
+  // (quem não rola até o fim não baixa nada).
   const [tocar, setTocar] = useState(false);
   const [pronto, setPronto] = useState(false);
-  const espera = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const caixa = useRef<HTMLElement | null>(null);
   const mostrar = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => () => {
-    clearTimeout(espera.current);
-    clearTimeout(mostrar.current);
-  }, []);
-  const entrar = (): void => {
-    if (!video || !podeTocarPrevia()) return;
-    clearTimeout(espera.current);
-    espera.current = setTimeout(() => setTocar(true), 250);
-  };
-  const sair = (): void => {
-    clearTimeout(espera.current);
-    clearTimeout(mostrar.current);
-    setTocar(false);
-    setPronto(false);
-  };
+  const id = video?.id;
+  useEffect(() => {
+    const el = caixa.current;
+    if (!id || !el || !podeTocarPrevia()) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        const visivel = !!e?.isIntersecting;
+        setTocar(visivel);
+        if (!visivel) {
+          clearTimeout(mostrar.current);
+          setPronto(false);
+        }
+      },
+      { rootMargin: '200px 0px' },
+    );
+    obs.observe(el);
+    return () => {
+      obs.disconnect();
+      clearTimeout(mostrar.current);
+    };
+  }, [id]);
   const src = video
     ? `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${video.id}&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0${video.start ? `&start=${video.start}` : ''}`
     : '';
   return (
-    <Tag className="pager-card" data-card={item.id} onMouseEnter={entrar} onMouseLeave={sair} onFocus={entrar} onBlur={sair} {...props}>
+    <Tag className="pager-card" data-card={item.id} ref={(el: HTMLElement | null) => { caixa.current = el; }} {...props}>
       <span className="pager-media">
         {capa ? <img className="pager-thumb" src={capa} alt="" loading="lazy" decoding="async" draggable={false} /> : null}
         {tocar ? (
