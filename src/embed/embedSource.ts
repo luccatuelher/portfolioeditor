@@ -162,3 +162,10 @@ export function linkDoEmbed(src: string): string {
   }
   return src.split('?')[0]!;
 }
+
+/** Mesmo endereço do player, já tocando (usado quando a pessoa clica na capa). */
+export function srcComAutoplay(src: string): string {
+  const [base, frag] = src.split('#') as [string, string | undefined];
+  const q = base.includes('?') ? '&' : '?';
+  return `${base}${q}autoplay=1${frag ? `#${frag}` : ''}`;
+}

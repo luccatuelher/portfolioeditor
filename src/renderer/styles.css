@@ -101,6 +101,11 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 .block-image-img { width: 100%; height: auto; display: block; background: transparent; }
 .embed-area { width: 100%; background: var(--ink); }
 .embed-area iframe { width: 100%; aspect-ratio: 16 / 9; display: block; border: none; }
+.embed-facade { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 16 / 9; padding: 0; border: none; background: var(--ink); cursor: pointer; overflow: hidden; }
+.embed-facade img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.9; }
+.embed-facade-play { position: relative; width: 68px; height: 48px; border-radius: 12px; background: rgba(0,0,0,.75); color: var(--paper, white); display: grid; place-items: center; font-size: calc(1.2rem * var(--escala-texto, 1)); transition: background .15s; }
+.embed-facade:hover .embed-facade-play, .embed-facade:focus-visible .embed-facade-play { background: var(--accent, var(--ink)); }
+.embed-facade:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .media-message { padding: 18px; border: 1px dashed var(--rule); color: var(--ink-soft); font-family: var(--font-mono); font-size: calc(0.7rem * var(--escala-texto, 1)); }
 .block-divider { border: none; border-top: 1.5px solid var(--rule); margin: 0; }
 .spacer { width: 100%; }
@@ -594,7 +599,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 @media print {
   @page { margin: 14mm; }
   .skip-link, .sticky-nav, .site .hdr-el.hdr-nav, .site .hdr-el.hdr-lang, .lang-icons, .lightbox, .project-filter, .detail-pager,
-  .home-preview-actions, .pv-carrossel-abas, .pv-carrossel-seta, .pv-carrossel-pontos, .embed-area iframe { display: none; }
+  .home-preview-actions, .pv-carrossel-abas, .pv-carrossel-seta, .pv-carrossel-pontos, .embed-area iframe, .embed-facade { display: none; }
   .site, .site.has-backdrop { background: rgb(255, 255, 255); background-image: none; min-height: 0; }
   .site > * {
     --bg: rgb(255, 255, 255); --surface: rgb(255, 255, 255); --ink: rgb(0, 0, 0); --ink-soft: rgb(34, 34, 34);

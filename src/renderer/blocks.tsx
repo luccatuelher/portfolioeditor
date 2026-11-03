@@ -2,7 +2,7 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useUi } from './ui';
 import { camposDoBloco, faltaNoIdioma } from '../core/camposTexto';
 import { hrefPublico } from '../core/links';
-import { embedProvider, embedSource, linkDoEmbed, motivoDoEmbedVazio } from '../embed/embedSource';
+import { embedProvider, embedSource, linkDoEmbed, motivoDoEmbedVazio, srcComAutoplay } from '../embed/embedSource';
 import { sobraDaLinha, spanVars } from './responsive';
 import { ErrorBoundary } from './ErrorBoundary';
 import type { Block, GalleryItem, HomePreview, ImageRef, ProjectItem, Section, SketchItem } from '../schema/v4';
@@ -78,16 +78,51 @@ function EmbedFrame({ provider, refValue, options, nome }: { provider: string; r
       </div>
     );
   }
+  return <EmbedFacade src={src} titulo={titulo} />;
+}
+
+/**
+ * Capa clicável: o player (pesado) só carrega no clique. YouTube tem capa fixa;
+ * o Vimeo informa a dele pelo oEmbed. Speaker Deck e capas que falham carregam direto.
+ */
+function EmbedFacade({ src, titulo }: { src: string; titulo: string }): React.ReactElement {
+  const t = useUi();
+  const [tocando, setTocando] = useState(false);
+  const yt = src.match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]{11})/)?.[1];
+  const vimeo = src.match(/player\.vimeo\.com\/video\/(\d+)/)?.[1];
+  const [capaVimeo, setCapaVimeo] = useState('');
+  useEffect(() => {
+    if (!vimeo || typeof fetch === 'undefined') return;
+    let vivo = true;
+    fetch(`https://vimeo.com/api/oembed.json?width=640&url=${encodeURIComponent(linkDoEmbed(src))}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j: { thumbnail_url?: string } | null) => {
+        if (vivo && j?.thumbnail_url && /^https:\/\//.test(j.thumbnail_url)) setCapaVimeo(j.thumbnail_url);
+      })
+      .catch(() => undefined);
+    return () => {
+      vivo = false;
+    };
+  }, [vimeo, src]);
+  const capa = yt ? `https://i.ytimg.com/vi/${yt}/hqdefault.jpg` : capaVimeo;
+  const comFachada = !!(yt || vimeo);
   return (
     <div className="embed-area" data-titulo={titulo} data-link={linkDoEmbed(src)}>
-      <iframe
-        loading="lazy"
-        title={titulo}
-        src={src}
-        allowFullScreen
-        allow="fullscreen; picture-in-picture"
-        referrerPolicy="strict-origin-when-cross-origin"
-      />
+      {comFachada && !tocando ? (
+        <button type="button" className="embed-facade" onClick={() => setTocando(true)} aria-label={`${t('reproduzir')}: ${titulo}`}>
+          {capa ? <img src={capa} alt="" loading="lazy" draggable={false} /> : null}
+          <span className="embed-facade-play" aria-hidden="true">▶</span>
+        </button>
+      ) : (
+        <iframe
+          loading="lazy"
+          title={titulo}
+          src={comFachada ? srcComAutoplay(src) : src}
+          allowFullScreen
+          allow="autoplay; fullscreen; picture-in-picture"
+          referrerPolicy="strict-origin-when-cross-origin"
+        />
+      )}
     </div>
   );
 }
@@ -347,7 +382,9 @@ function ProjectPreview({ item, onClose, id }: { item: ProjectItem; onClose: () 
   // Abriu: traz a prévia para a tela. Sem isso, no celular ela nasce abaixo do
   // que cabe na janela e o toque parece não ter feito nada.
   useEffect(() => {
-    panel.current?.scrollIntoView({ behavior: menosMovimento() ? 'auto' : 'smooth', block: 'nearest' });
+    // Centraliza o vídeo na janela (sem vídeo, o próprio painel; painel mais alto que a janela fica pelo topo).
+    const alvo = panel.current?.querySelector<HTMLElement>('.embed-area') ?? panel.current;
+    alvo?.scrollIntoView({ behavior: menosMovimento() ? 'auto' : 'smooth', block: alvo.offsetHeight > window.innerHeight ? 'start' : 'center' });
   }, [item.id]);
   const { lang, onNavigate, editing, onEditPreview } = ctx;
   const pv = effectivePreview(item);
