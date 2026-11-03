@@ -19,13 +19,15 @@ export function assembleSiteHtml(shell: string, payload: PublishPayload): string
   // Os dois idiomas; ESCOLHER_IDIOMA (no <head>) mostra um só, antes da pintura.
   const home = homePt && homeEn ? `<div data-prerender="pt">${homePt}</div><div data-prerender="en">${sufixarIds(homeEn, '-en')}</div>` : homePt;
   // Ordem do arquivo (o navegador roda cada <script> assim que o lê): dados →
-  // imagens da Home, uma a uma → runtime (começa já, sem esperar o resto) →
-  // as demais imagens, uma a uma → NDA cifrado (que pode ser grande).
+  // as primeiras imagens da Home (o topo, até ~300 KB) → runtime (começa já:
+  // menu, idioma e projetos funcionam sem esperar o resto) → as demais da Home
+  // → as demais imagens, uma a uma → NDA cifrado (que pode ser grande).
   const imagens = scriptsDasImagens(payload.assetMap, home);
   const dataScript =
     `<script>window.__PORTFOLIO_DATA__=${jsonSafe(payload.publicData)};${payload.ndaBlob ? 'window.__TEM_NDA__=true;' : ''}</script>` +
     imagens.daHome +
     MARCA_RUNTIME +
+    imagens.restoDaHome +
     imagens.resto +
     (payload.ndaBlob ? `<script>window.__NDA__=${jsonSafe(payload.ndaBlob)};</script>` : '');
 
@@ -136,14 +138,28 @@ const MARCA_RUNTIME = '<!--PORTFOLIO_RUNTIME-->';
  * pré-renderizadas que a esperam e avisa o runtime ('portfolio-imagem'), que
  * então troca a reserva de espaço pela foto. Cada imagem vai uma vez só.
  */
-export function scriptsDasImagens(assets: Record<string, string>, home: string): { daHome: string; resto: string } {
-  const daHome = [...new Set([...home.matchAll(/ data-asset="([\w-]+)"/g)].map((m) => m[1]!))].filter((id) => Object.hasOwn(assets, id));
-  const primeiro = new Set(daHome);
+/**
+ * Quanto de imagem da Home (em caracteres de data URL, ~3/4 disso em bytes)
+ * vai antes do runtime. Antes ia a Home inteira — 1,6 MB: numa rede lenta o
+ * menu e os links dos projetos levavam ~8 s para responder. O topo (o que a
+ * primeira tela mostra) cabe nisto; o resto da Home vem logo depois do runtime.
+ */
+export const ORCAMENTO_ANTES_DO_RUNTIME = 400_000;
+
+export function scriptsDasImagens(assets: Record<string, string>, home: string): { daHome: string; restoDaHome: string; resto: string } {
+  const todasDaHome = [...new Set([...home.matchAll(/ data-asset="([\w-]+)"/g)].map((m) => m[1]!))].filter((id) => Object.hasOwn(assets, id));
+  let soma = 0;
+  let corte = todasDaHome.findIndex((id) => (soma += assets[id]!.length) > ORCAMENTO_ANTES_DO_RUNTIME);
+  if (corte < 0) corte = todasDaHome.length;
+  // Pelo menos a primeira imagem (a do topo) vem antes, mesmo se for grande.
+  const daHome = todasDaHome.slice(0, Math.max(1, corte));
+  const restoDaHome = todasDaHome.slice(daHome.length);
+  const primeiro = new Set(todasDaHome);
   const resto = Object.keys(assets).filter((id) => !primeiro.has(id));
   const preencher =
     "<script>window.__ASSETS__={};function __IMG__(i,u){__ASSETS__[i]=u;var l=document.querySelectorAll('img[data-asset=\"'+i+'\"]');for(var k=0;k<l.length;k++)l[k].src=u;dispatchEvent(new Event('portfolio-imagem'))}</script>";
   const uma = (id: string): string => `<script>__IMG__(${jsonSafe(id)},${jsonSafe(assets[id])})</script>`;
-  return { daHome: preencher + daHome.map(uma).join(''), resto: resto.map(uma).join('') };
+  return { daHome: preencher + daHome.map(uma).join(''), restoDaHome: restoDaHome.map(uma).join(''), resto: resto.map(uma).join('') };
 }
 
 /**

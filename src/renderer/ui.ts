@@ -30,6 +30,7 @@ export const UI_PADRAO = {
   filtrarProjetos: bi('Filtrar projetos', 'Filter projects'),
   elementosDaPrevia: bi('Elementos do projeto nesta prévia', 'Project elements in this preview'),
   irParaProjeto: bi('Ir para o projeto →', 'Go to project →'),
+  vocePodeGostar: bi('Você também pode gostar', 'You may also like'),
   maisProjetos: bi('Mais projetos', 'More projects'),
   maisNotas: bi('Mais notas', 'More notes'),
   allProjects: bi('Todos os projetos', 'All projects'),

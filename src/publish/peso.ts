@@ -1,7 +1,7 @@
 import type { PortfolioV4 } from '../schema/v4';
 import { pick } from '../renderer/text';
 import { mergeNda, ndaCount, publicSnapshot } from './publicSnapshot';
-import { pesoEstimadoDasMiniaturas, soComoCapa, valeMiniatura } from '../core/miniaturas';
+import { dispensaveis, pesoEstimadoDasMiniaturas, valeMiniatura, versoesReduzidas } from '../core/miniaturas';
 import { completarDimensoes } from '../core/dimensoesImagem';
 
 /** O upload pelo navegador do GitHub não aceita arquivo acima disso. */
@@ -65,7 +65,11 @@ export function pesoDoSite(doc: PortfolioV4, assets: Record<string, string>, run
   // Com miniaturas, a inteira de quem só serve de capa nem vai no arquivo: não é peso a cortar.
   const vista = completarDimensoes(ndaCount(nda) ? mergeNda(data, nda) : data, assets);
   const dispensadas = new Set<string>();
-  if (opts.miniaturas) for (const id of soComoCapa(vista)) if (valeMiniatura(vista.assets[id])) dispensadas.add(id);
+  if (opts.miniaturas) {
+    // Estimativa: a versão sai quando a foto é bem maior que a largura pedida.
+    const versoes = versoesReduzidas(vista);
+    for (const id of dispensaveis(vista, (chave) => { const v = versoes.get(chave); return !!v && valeMiniatura(vista.assets[v[0]], v[1]); })) dispensadas.add(id);
+  }
   const imagens = [...onde.keys()]
     .filter((id) => assets[id] && !dispensadas.has(id))
     .map((id) => ({ id, bytes: assets[id]!.length, onde: onde.get(id)! }))

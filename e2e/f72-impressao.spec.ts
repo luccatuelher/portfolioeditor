@@ -56,6 +56,8 @@ test('imprimir: sem menu nem janelas, texto escuro no branco, vídeo vira endere
   for (const r of rotas) {
     await page.evaluate((x) => { location.hash = `#${x}`; }, r);
     await expect(page.locator(`main#conteudo[data-route="${r}"]`)).toBeVisible();
+    // O player só carrega no clique na capa (fachada): abre o primeiro.
+    if (await page.locator('.embed-facade').count()) await page.locator('.embed-facade').first().click();
     if (await page.locator('.embed-area iframe').count()) { rotaComVideo = r; break; }
   }
   expect(rotaComVideo, 'nenhum projeto da fixture tem vídeo').not.toBe('');

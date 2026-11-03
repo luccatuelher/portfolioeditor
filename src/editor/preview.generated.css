@@ -33,9 +33,8 @@
 /* ---------- pv-mobile (390px) ---------- */
 /* de src/renderer/styles.css: @media (max-width: 600px) */
 
-.pv-mobile .detail-pager { grid-template-columns: 1fr 1fr; grid-template-areas: "prev next" "all all"; margin-top: 3rem; }
-.pv-mobile .pager-all { justify-self: center; min-height: 44px; display: inline-flex; align-items: center; }
-.pv-mobile .pager-title { font-size: calc(1.1rem * var(--escala-texto, 1)); }
+.pv-mobile .detail-pager { margin-top: 3rem; }
+.pv-mobile .pager-cards { grid-template-columns: 1fr; }
 /* de src/renderer/styles.css: @media (max-width: 700px) */
 
 .pv-mobile .sticky-nav { gap: 8px; padding: 6px 10px; }

@@ -1,6 +1,6 @@
 import type { MigratedAsset } from '../migrate/migrate';
 import type { AssetResolver } from './context';
-import { miniId } from '../core/miniaturas';
+import { blocoVersaoId, miniId } from '../core/miniaturas';
 
 /**
  * Do mapa id → data URL: em grade, a miniatura (se houver); fora dela, a foto
@@ -10,6 +10,8 @@ export function resolverDoMapa(get: (id: string) => string | undefined): AssetRe
   return (ref, uso) => {
     if (!ref.assetId) return ref.url ?? '';
     const mini = get(miniId(ref.assetId));
+    // Bloco Imagem: a versão do tamanho dele; sem ela, a inteira (nunca a de grade, que pode ser pequena demais).
+    if (uso === 'bloco') return get(blocoVersaoId(ref.assetId)) ?? get(ref.assetId) ?? mini ?? '';
     return (uso === 'miniatura' ? mini ?? get(ref.assetId) : get(ref.assetId) ?? mini) ?? '';
   };
 }

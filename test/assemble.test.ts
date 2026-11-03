@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { migrate } from '../src/migrate/migrate';
 import { buildPublishPayload } from '../src/publish/buildPayload';
-import { assembleSiteHtml } from '../src/publish/assemble';
+import { assembleSiteHtml, ORCAMENTO_ANTES_DO_RUNTIME, scriptsDasImagens } from '../src/publish/assemble';
 import { loadFixture } from './helpers/fixtures';
 
 describe('assembleSiteHtml', () => {
@@ -105,6 +105,20 @@ describe('assembleSiteHtml', () => {
     expect(html.indexOf('window.__TEM_NDA__=true')).toBeLessThan(runtime);
     expect(html).not.toContain('<!--PORTFOLIO_RUNTIME-->');
     expect(html.match(/<script type="module"/g)?.length).toBe(1);
+  });
+
+  it('Home pesada: só o topo vem antes do runtime; o resto da Home logo depois dele, antes das outras', () => {
+    const grande = (n: number): string => `data:image/webp;base64,${'A'.repeat(n)}`;
+    const assets = { a: grande(250_000), b: grande(250_000), c: grande(250_000), fora: grande(10) };
+    const home = '<img data-asset="a"><img data-asset="b"><img data-asset="c">';
+    const r = scriptsDasImagens(assets, home);
+    expect(r.daHome).toContain('__IMG__("a"');
+    expect(r.daHome).not.toContain('__IMG__("b"');
+    expect(r.restoDaHome).toContain('__IMG__("b"');
+    expect(r.restoDaHome.indexOf('__IMG__("b"')).toBeLessThan(r.restoDaHome.indexOf('__IMG__("c"'));
+    expect(r.resto).toContain('__IMG__("fora"');
+    // Mesmo maior que o orçamento, a primeira (o topo) nunca fica para depois.
+    expect(scriptsDasImagens({ a: grande(ORCAMENTO_ANTES_DO_RUNTIME * 2) }, '<img data-asset="a">').daHome).toContain('__IMG__("a"');
   });
 
   it('dados com "$&" e "$\'" não corrompem o HTML', async () => {

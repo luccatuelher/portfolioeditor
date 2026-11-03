@@ -8,7 +8,7 @@ export type Lang = 'pt' | 'en';
  * Endereço de uma imagem. `uso: 'miniatura'` = a imagem aparece em grade
  * (card, galeria, quadro): vale a miniatura, se houver (ver core/miniaturas).
  */
-export type AssetResolver = (ref: ImageRef, uso?: 'miniatura') => string;
+export type AssetResolver = (ref: ImageRef, uso?: 'miniatura' | 'bloco') => string;
 
 export interface RenderContextValue {
   data: PortfolioV4;

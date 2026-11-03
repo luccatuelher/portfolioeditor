@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import type { BlogItem, I18n, Page, PortfolioV4, ProjectItem } from '../schema/v4';
 import { useUi, type UiChave } from './ui';
 import { blocoNoSite, NdaUnlock, SectionView } from './blocks';
@@ -7,6 +7,7 @@ import { useRender } from './context';
 import { pick } from './text';
 import { CATEGORY_LABEL, projectCategory } from '../core/category';
 import { linkInterno } from './links';
+import { embedSource } from '../embed/embedSource';
 
 const META_LABELS: Record<string, I18n> = {
   year: { pt: 'Ano', en: 'Year' },
@@ -67,50 +68,149 @@ export function NaoEncontrado({ tipo }: { tipo: 'project' | 'blog' | 'pagina' })
   );
 }
 
+/** Quantos cards o "Você também pode gostar" mostra. */
+export const MAIS_ITENS = 2;
+
 /**
- * Fim da página de um projeto (ou nota): anterior, a lista inteira e o
- * próximo, na ordem da lista. Sem isto, quem chegava ao fim tinha de rolar
- * de volta ao menu. Projeto NDA só anda entre os NDA (e vice-versa), como
- * as listas do site.
+ * Os próximos itens da lista depois deste (dando a volta no fim), sem ele.
+ * Projeto NDA só sugere NDA (e vice-versa), como as listas do site; rascunho
+ * só aparece no editor.
+ */
+export function proximosDaLista<T extends ProjectItem | BlogItem>(lista: T[], item: T, editing: boolean, n = MAIS_ITENS): T[] {
+  const mundoNda = item.visibility === 'nda';
+  const irmaos = lista.filter((it) => (mundoNda ? it.visibility === 'nda' : it.visibility === 'public' || (editing && it.visibility === 'draft')));
+  const i = irmaos.findIndex((it) => it.id === item.id);
+  const out: T[] = [];
+  // Começa no seguinte (ou no primeiro, se este não está na lista) e dá a volta.
+  const inicio = i + 1;
+  for (let k = 0; k < irmaos.length && out.length < n; k++) {
+    const it = irmaos[(inicio + k) % irmaos.length]!;
+    if (it.id !== item.id) out.push(it);
+  }
+  return out;
+}
+
+/**
+ * Fim da página de um projeto (ou nota): "Você também pode gostar" — os
+ * próximos da lista em cards grandes, com a capa; ao passar o mouse, o título
+ * e o ano aparecem e o vídeo do projeto toca mudo, em loop, por baixo. Junta o
+ * antigo anterior · todos · próximo num lugar só (o "Todos os projetos" fica ao
+ * lado do título da seção).
  */
 function DetailPager({ item, kind }: { item: ProjectItem | BlogItem; kind: 'project' | 'blog' }): React.ReactElement | null {
-  const { lang, data, editing, onNavigate } = useRender();
+  const { data, editing, onNavigate } = useRender();
   const t = useUi();
   if (!onNavigate) return null;
   const nome = kind === 'project' ? 'projects' : 'blog';
-  const mundoNda = item.visibility === 'nda';
-  const irmaos = (data.collections[nome] as (ProjectItem | BlogItem)[]).filter((it) =>
-    mundoNda ? it.visibility === 'nda' : it.visibility === 'public' || (editing && it.visibility === 'draft'),
-  );
-  const i = irmaos.findIndex((it) => it.id === item.id);
-  const prev = i > 0 ? irmaos[i - 1] : undefined;
-  const next = i >= 0 && i < irmaos.length - 1 ? irmaos[i + 1] : undefined;
-  const lista = paginaDaLista(data, nome, mundoNda);
-  if (!prev && !next && !lista) return null;
+  const proximos = proximosDaLista(data.collections[nome] as (ProjectItem | BlogItem)[], item, editing);
+  const lista = paginaDaLista(data, nome, item.visibility === 'nda');
+  if (!proximos.length && !lista) return null;
   const ir = (route: string): Record<string, unknown> =>
-    editing ? { onClick: () => onNavigate(route), role: 'link' } : linkInterno(route, onNavigate);
+    editing ? { onClick: () => onNavigate(route), role: 'link', type: 'button' } : linkInterno(route, onNavigate);
   const Tag = editing ? 'button' : 'a';
-  const rota = (it: ProjectItem | BlogItem): string => `${kind}/${it.id}`;
   return (
     <nav className="detail-pager" aria-label={t(kind === 'project' ? 'maisProjetos' : 'maisNotas')}>
-      {prev ? (
-        <Tag className="pager-link pager-prev" {...(editing ? { type: 'button' } : {})} {...ir(rota(prev))}>
-          <span className="pager-dir">← {t('anterior')}</span>
-          <span className="pager-title">{pick(prev.title, lang)}</span>
-        </Tag>
-      ) : <span />}
-      {lista ? (
-        <Tag className="pager-link pager-all" {...(editing ? { type: 'button' } : {})} {...ir(lista.slug || lista.id)}>
-          {t(kind === 'project' ? 'allProjects' : 'todasNotas')}
-        </Tag>
-      ) : <span />}
-      {next ? (
-        <Tag className="pager-link pager-next" {...(editing ? { type: 'button' } : {})} {...ir(rota(next))}>
-          <span className="pager-dir">{t(kind === 'project' ? 'proximo' : 'proxima')} →</span>
-          <span className="pager-title">{pick(next.title, lang)}</span>
-        </Tag>
-      ) : <span />}
+      <div className="pager-head">
+        <h2 className="pager-heading">{t('vocePodeGostar')}</h2>
+        {lista ? (
+          <Tag className="pager-link pager-all" {...ir(lista.slug || lista.id)}>
+            {t(kind === 'project' ? 'allProjects' : 'todasNotas')} →
+          </Tag>
+        ) : null}
+      </div>
+      {proximos.length ? (
+        <div className="pager-cards">
+          {proximos.map((it) => (
+            <CardSugerido key={it.id} item={it} Tag={Tag} props={ir(`${kind}/${it.id}`)} />
+          ))}
+        </div>
+      ) : null}
     </nav>
+  );
+}
+
+/** Id do primeiro vídeo do YouTube do projeto (e o início escolhido), para a prévia. */
+export function videoDaPrevia(item: ProjectItem | BlogItem): { id: string; start?: string } | null {
+  for (const s of item.sections) {
+    for (const b of s.blocks) {
+      if (b.type !== 'embed' || b.visibility !== 'public') continue;
+      const src = embedSource({ type: b.content.provider, id: b.content.ref, ...(b.content.options ?? {}) });
+      const id = src.match(/youtube(?:-nocookie)?\.com\/embed\/([\w-]{11})/)?.[1];
+      if (id) return { id, start: src.match(/[?&]start=(\d+)/)?.[1] };
+    }
+  }
+  return null;
+}
+
+/** Só quem tem mouse, sem "reduzir movimento" e sem economia de dados ganha o vídeo no hover. */
+function podeTocarPrevia(): boolean {
+  if (typeof matchMedia !== 'function') return false;
+  if (!matchMedia('(hover: hover) and (pointer: fine)').matches) return false;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+  const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection;
+  return !conn?.saveData;
+}
+
+function CardSugerido({ item, Tag, props }: { item: ProjectItem | BlogItem; Tag: 'a' | 'button'; props: Record<string, unknown> }): React.ReactElement {
+  const { lang, editing, resolveAsset } = useRender();
+  const titulo = pick(item.title, lang);
+  const sub = 'meta' in item ? pick(item.meta['year'], lang) : pick(item.date, lang);
+  const capa = resolveAsset(item.thumb, 'miniatura');
+  const video = editing ? null : videoDaPrevia(item);
+  // O player só nasce depois de um instante com o mouse em cima (passar por
+  // cima a caminho de outro lugar não baixa nada) e some quando o mouse sai.
+  const [tocar, setTocar] = useState(false);
+  const [pronto, setPronto] = useState(false);
+  const espera = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const mostrar = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => () => {
+    clearTimeout(espera.current);
+    clearTimeout(mostrar.current);
+  }, []);
+  const entrar = (): void => {
+    if (!video || !podeTocarPrevia()) return;
+    clearTimeout(espera.current);
+    espera.current = setTimeout(() => setTocar(true), 250);
+  };
+  const sair = (): void => {
+    clearTimeout(espera.current);
+    clearTimeout(mostrar.current);
+    setTocar(false);
+    setPronto(false);
+  };
+  const src = video
+    ? `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${video.id}&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0${video.start ? `&start=${video.start}` : ''}`
+    : '';
+  return (
+    <Tag className="pager-card" data-card={item.id} onMouseEnter={entrar} onMouseLeave={sair} onFocus={entrar} onBlur={sair} {...props}>
+      <span className="pager-media">
+        {capa ? <img className="pager-thumb" src={capa} alt="" loading="lazy" decoding="async" draggable={false} /> : null}
+        {tocar ? (
+          <iframe
+            className={`pager-video${pronto ? ' is-on' : ''}`}
+            src={src}
+            title=""
+            aria-hidden="true"
+            tabIndex={-1}
+            allow="autoplay; encrypted-media"
+            referrerPolicy="strict-origin-when-cross-origin"
+            // O YouTube pinta preto e o título antes do vídeo: só aparece depois de começar.
+            onLoad={() => {
+              clearTimeout(mostrar.current);
+              mostrar.current = setTimeout(() => setPronto(true), 900);
+            }}
+          />
+        ) : null}
+        <span className="pager-over" aria-hidden="true">
+          <span className="pager-over-title">{titulo}</span>
+          {sub ? <span className="pager-over-sub">{sub}</span> : null}
+        </span>
+      </span>
+      <span className="pager-caption">
+        <span className="pager-title">{titulo}</span>
+        {sub ? <span className="pager-sub">{sub}</span> : null}
+      </span>
+    </Tag>
   );
 }
 

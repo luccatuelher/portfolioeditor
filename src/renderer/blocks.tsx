@@ -20,10 +20,10 @@ import { linkInterno } from './links';
 /** A pessoa pediu menos movimento no sistema: nada de rolagem suave nem animação. */
 const menosMovimento = (): boolean => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-function Img({ image, className, eager, decorativa, miniatura }: { image: ImageRef; className?: string; eager?: boolean; decorativa?: boolean; miniatura?: boolean }): React.ReactElement | null {
+function Img({ image, className, eager, decorativa, miniatura, bloco }: { image: ImageRef; className?: string; eager?: boolean; decorativa?: boolean; miniatura?: boolean; /** Bloco Imagem: a versão do tamanho do bloco, se a publicação gerou uma. */ bloco?: boolean }): React.ReactElement | null {
   const { resolveAsset, lang, data } = useRender();
   // Em grade (card, galeria, quadro): a miniatura, se a publicação gerou uma.
-  const src = resolveAsset(image, miniatura ? 'miniatura' : undefined);
+  const src = resolveAsset(image, miniatura ? 'miniatura' : bloco ? 'bloco' : undefined);
   if (!src) return null;
   const meta = image.assetId ? data.assets[image.assetId] : undefined;
   const dims = meta && meta.w > 0 && meta.h > 0 ? { width: meta.w, height: meta.h } : {};
@@ -946,14 +946,14 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
         <Caixa className="block-image-inner" title={!editing && !block.content.href ? pick(block.content.tooltip, lang) || undefined : undefined} style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
           {block.content.href && !editing && /^https?:\/\//i.test(block.content.href) ? (
             <a className="block-image-link" href={block.content.href} target="_blank" rel="noopener noreferrer" title={pick(block.content.tooltip, lang) || pick(block.content.image.alt, lang)} aria-label={pick(block.content.tooltip, lang) || pick(block.content.image.alt, lang)}>
-              <Img image={block.content.image} className="block-image-img" eager={topo} />
+              <Img image={block.content.image} className="block-image-img" eager={topo} bloco />
             </a>
           ) : block.content.zoom && !editing && onOpenLightbox ? (
             <button type="button" className="art-img-btn" onClick={() => onOpenLightbox([{ src: resolveAsset(block.content.image), alt: pick(block.content.image.alt, lang), crop: block.content.image.crop, caption: legenda }], 0)} aria-label={`${t('abrirImagem')}${pick(block.content.image.alt, lang) ? `: ${pick(block.content.image.alt, lang)}` : ''}`}>
-              <Img image={block.content.image} className="block-image-img" eager={topo} />
+              <Img image={block.content.image} className="block-image-img" eager={topo} bloco />
             </button>
           ) : (
-            <Img image={block.content.image} className="block-image-img" eager={topo} />
+            <Img image={block.content.image} className="block-image-img" eager={topo} bloco />
           )}
           {editing && !block.content.image.assetId && !block.content.image.url ? (
             <button type="button" className="pe-img-placeholder" data-block-upload={block.id}>＋ Enviar imagem</button>

@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { PortfolioV4 } from '../schema/v4';
 import { Site } from '../renderer/Site';
-import { miniId } from '../core/miniaturas';
+import { blocoVersaoId, miniId } from '../core/miniaturas';
 
 /**
  * HTML estático da Home para ir dentro do #root do site publicado: o site
@@ -47,7 +47,8 @@ export function sufixarIds(html: string, sufixo: string): string {
 
 export function prerenderHome(data: PortfolioV4, noMapa: ReadonlySet<string> = new Set(), lang: 'pt' | 'en' = 'pt'): string {
   // Em grade, marca a miniatura quando a publicação gerou uma (é ela que vem primeiro).
-  const marcar = (id: string, uso?: 'miniatura'): string => MARCA + (uso === 'miniatura' && noMapa.has(miniId(id)) ? miniId(id) : id);
+  const marcar = (id: string, uso?: 'miniatura' | 'bloco'): string =>
+    MARCA + (uso === 'miniatura' && noMapa.has(miniId(id)) ? miniId(id) : uso === 'bloco' && noMapa.has(blocoVersaoId(id)) ? blocoVersaoId(id) : id);
   try {
     const html = renderToStaticMarkup(<Site data={data} initialLang={lang} resolveAsset={(ref, uso) => (ref.assetId ? marcar(ref.assetId, uso) : ref.url ?? '')} />);
     return html

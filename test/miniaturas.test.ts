@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { imagensEmGrade, miniId, soComoCapa, valeMiniatura, type GerarMiniatura } from '../src/core/miniaturas';
+import { blocoVersaoId, imagensEmGrade, larguraDoBloco, largurasDosBlocos, miniId, pxPorColuna, soComoCapa, valeMiniatura, type GerarMiniatura } from '../src/core/miniaturas';
 import { migrate } from '../src/migrate/migrate';
 import { buildPublishPayload } from '../src/publish/buildPayload';
 import { abrirPacoteNda } from '../src/publish/nda';
@@ -37,6 +37,12 @@ function comFotosGrandes(): { data: PortfolioV4; assets: { id: string; dataUrl: 
   return { data, assets, capa, bloco };
 }
 
+function blocoDe(data: PortfolioV4, id: string): Extract<Block, { type: 'image' }> {
+  return [...data.pages.flatMap((pg) => pg.sections), ...data.collections.projects.flatMap((pr) => pr.sections)]
+    .flatMap((sec) => sec.blocks)
+    .find((b): b is Extract<Block, { type: 'image' }> => b.type === 'image' && b.content.image.assetId === id)!;
+}
+
 /** Gerador de mentira: devolve um data URL curto e conta as chamadas. */
 function geradorFalso(): { gerar: GerarMiniatura; pedidos: number[] } {
   const pedidos: number[] = [];
@@ -61,17 +67,55 @@ describe('quais imagens ganham miniatura', () => {
 });
 
 describe('publicação com miniaturas', () => {
-  it('a capa grande ganha miniatura; o bloco Imagem e os SVG, não', async () => {
+  it('a capa grande ganha miniatura de 960 px; o bloco Imagem, a da largura dele', async () => {
     const { data, assets, capa, bloco } = comFotosGrandes();
+    const img = blocoDe(data, bloco);
+    img.span = 4;
+    img.responsive = undefined;
     const g = geradorFalso();
     const p = await buildPublishPayload({ data, assets }, undefined, { miniatura: g.gerar });
     expect(p.assetMap[miniId(capa)]).toMatch(/^data:image\/webp/);
     // A capa só serve de card: com a miniatura pronta, a inteira não vai no arquivo.
     expect(p.assetMap[capa]).toBeUndefined();
     expect(p.assetSizes[capa]).toBeUndefined();
-    expect(p.assetMap[miniId(bloco)]).toBeUndefined();
-    expect(g.pedidos.every((l) => l === 960)).toBe(true);
-    expect(Object.keys(p.assetMap).filter((k) => k.endsWith('-mini'))).toEqual([miniId(capa)]);
+    // Bloco em 4 de 12 colunas, sem ampliar: a versão do tamanho dele basta, a inteira sai.
+    expect(p.assetMap[blocoVersaoId(bloco)]).toBeDefined();
+    expect(p.assetMap[miniId(bloco)]).toBeUndefined(); // a de grade é outra chave: nunca serve ao bloco por engano
+    expect(p.assetMap[bloco]).toBeUndefined();
+    expect([...g.pedidos].sort((a, b) => a - b)).toEqual([larguraDoBloco(img), 960].sort((a, b) => a - b));
+    expect(larguraDoBloco(img)).toBe(928);
+  });
+
+  it('bloco Imagem que amplia (visualizador) mantém a inteira; bloco largo nem ganha versão menor', async () => {
+    const { data, assets, bloco } = comFotosGrandes();
+    const img = blocoDe(data, bloco);
+    img.span = 4;
+    img.content.zoom = true;
+    const p = await buildPublishPayload({ data, assets }, undefined, { miniatura: geradorFalso().gerar });
+    expect(p.assetMap[blocoVersaoId(bloco)]).toBeDefined();
+    expect(p.assetMap[bloco]).toBeDefined();
+    img.span = 12;
+    img.content.zoom = false;
+    expect(largurasDosBlocos(data).get(bloco)).toBe(2768);
+    expect(valeMiniatura(data.assets[bloco] && { ...data.assets[bloco]!, w: 2400 }, 2768)).toBe(false);
+    // Tema sem margem: a página é mais larga, o bloco pede mais.
+    data.site.layout = { margin: 0, maxWidth: 4000 };
+    expect(pxPorColuna(data).desktop).toBe(288);
+    expect(largurasDosBlocos(data).get(bloco)).toBe(3456);
+  });
+
+  it('a largura pedida cresce com o recorte e com a seção larga; o celular pode pedir mais que o computador', () => {
+    const { data, bloco } = comFotosGrandes();
+    const img = blocoDe(data, bloco);
+    img.span = 2;
+    img.responsive = undefined;
+    expect(larguraDoBloco(img)).toBe(464); // 2 × 230,4, arredondado a 16
+    expect(larguraDoBloco(img, 'full')).toBe(576);
+    img.responsive = { mobile: { span: 12 } };
+    expect(larguraDoBloco(img)).toBe(1088); // 12 × 90 no celular
+    img.responsive = undefined;
+    img.content.image.crop = { x: 0, y: 0, w: 0.5, h: 0.5, ar: 1 };
+    expect(larguraDoBloco(img)).toBe(928);
   });
 
   it('miniatura que não sai menor, ou que falha, fica de fora — as outras seguem', async () => {
@@ -123,12 +167,15 @@ describe('publicação com miniaturas', () => {
   });
 
   it('peso mostrado no editor conta as miniaturas (só com a opção do editor)', () => {
-    const { data, assets, capa } = comFotosGrandes();
+    const { data, assets, capa, bloco } = comFotosGrandes();
     const mapa = Object.fromEntries(assets.map((a) => [a.id, a.dataUrl]));
+    blocoDe(data, bloco).content.zoom = true; // o bloco amplia: a inteira dele fica
+    const larguraBloco = largurasDosBlocos(data).get(bloco)!;
     const sem = pesoDoSite(data, mapa, 1000).total;
     const com = pesoDoSite(data, mapa, 1000, { miniaturas: true }).total;
-    // A miniatura entra e a inteira (só capa) sai.
-    const esperado = Math.round(mapa[capa]!.length * (960 / 2400) ** 2) - mapa[capa]!.length;
+    // A miniatura entra e a inteira (só capa) sai; o bloco ganha a versão dele (se couber).
+    const doBloco = larguraBloco * 1.25 < 2400 ? Math.round(mapa[bloco]!.length * (larguraBloco / 2400) ** 2) : 0;
+    const esperado = Math.round(mapa[capa]!.length * (960 / 2400) ** 2) - mapa[capa]!.length + doBloco;
     expect(com - sem).toBe(esperado);
   });
 });
@@ -149,12 +196,13 @@ describe('miniaturas no conteúdo NDA', () => {
     expect(html).not.toContain(capa);
   });
 
-  it('a capa NDA que também é bloco Imagem do projeto mantém a inteira no pacote', async () => {
+  it('a capa NDA que também é bloco Imagem (que amplia) do projeto mantém a inteira no pacote', async () => {
     const { data, assets, capa } = comFotosGrandes();
     const proj = data.collections.projects[0]!;
     proj.visibility = 'nda';
     const img = proj.sections.flatMap((s) => s.blocks).find((b): b is Extract<Block, { type: 'image' }> => b.type === 'image')!;
     img.content.image = { assetId: capa, alt };
+    img.content.zoom = true;
     const p = await buildPublishPayload({ data, assets }, SENHA, { miniatura: geradorFalso().gerar });
     const aberto = await abrirPacoteNda<NdaBundle>(p.ndaBlob!, SENHA);
     expect(aberto.assets[miniId(capa)]).toBeDefined();
@@ -171,6 +219,13 @@ describe('miniaturas no conteúdo NDA', () => {
     expect(p.assetMap[miniId(capa)]).toBeDefined();
     const aberto = await abrirPacoteNda<NdaBundle>(p.ndaBlob!, SENHA);
     expect(aberto.assets[miniId(capa)], 'sem miniatura no pacote o card NDA fica vazio').toBeDefined();
+  });
+
+  it('bloco Imagem nunca usa a miniatura de grade: sem a versão dele, vai a inteira (pacote NDA antigo)', () => {
+    const r = mapResolver({ a: 'INTEIRA', [miniId('a')]: 'GRADE' });
+    expect(r({ assetId: 'a', alt }, 'bloco')).toBe('INTEIRA');
+    expect(r({ assetId: 'a', alt }, 'miniatura')).toBe('GRADE');
+    expect(mapResolver({ a: 'INTEIRA', [blocoVersaoId('a')]: 'BLOCO' })({ assetId: 'a', alt }, 'bloco')).toBe('BLOCO');
   });
 
   it('capa que também é favicon do site mantém a inteira', async () => {
