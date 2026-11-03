@@ -209,7 +209,7 @@ textarea.insp-input { resize: vertical; line-height: 1.5; }
 .editor-canvas [data-drop='right']::after { top: 0; bottom: 0; right: -8px; width: 4px; }
 .editor-canvas [data-drop='top']::after { left: 0; right: 0; top: -8px; height: 4px; }
 .editor-canvas [data-drop='bottom']::after { left: 0; right: 0; bottom: -8px; height: 4px; }
-.editor-canvas [data-drop='swap']::after, .editor-canvas [data-drop='end']::after { inset: 0; background: rgba(45, 90, 142, 0.18); border: 2px dashed var(--accent2); }
+.editor-canvas [data-drop='files']::after, .editor-canvas [data-drop='swap']::after, .editor-canvas [data-drop='end']::after { inset: 0; background: rgba(45, 90, 142, 0.18); border: 2px dashed var(--accent2); }
 
 /* ---- tiles de adicionar / placeholders de imagem ---- */
 .editor-canvas .pe-add-tile { min-height: 120px; width: 100%; border: 1.5px dashed #c8c4bb; background: transparent; color: var(--ed-texto-2); cursor: pointer; font-family: var(--font-mono); font-size: 0.62rem; letter-spacing: 0.06em; text-transform: uppercase; border-radius: 4px; break-inside: avoid; margin-bottom: 20px; }
@@ -754,3 +754,5 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 .multi-bar .multi-n { padding: 0 6px; opacity: 0.8; }
 .multi-bar .multi-sep { width: 1px; align-self: stretch; background: rgba(255, 255, 255, 0.2); margin: 2px 2px; }
 .page-templates { margin: 4px 0 10px; }
+
+.tb-nao-publicado { font-family: var(--font-mono); font-size: 0.6rem; color: #f0c969; margin-left: 8px; white-space: nowrap; }

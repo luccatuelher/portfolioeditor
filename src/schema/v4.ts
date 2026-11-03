@@ -165,6 +165,13 @@ export const CollectionBlockSchema = z.strictObject({
     preview: z.boolean().optional(),
     /** Espaço entre os itens (px de referência). */
     gap: z.number().min(0).max(200).optional(),
+    /**
+     * Modo de exibição de galeria/sketches (como no Adobe Portfolio): grade
+     * (padrão), pilha (uma por linha, largura total), faixa (rola de lado) ou
+     * apresentação (uma grande + miniaturas). No editor a apresentação aparece
+     * como grade, para os itens continuarem editáveis.
+     */
+    display: z.enum(['grid', 'stack', 'strip', 'slideshow']).optional(),
   }),
 });
 
@@ -255,6 +262,11 @@ export const PageSchema = z.strictObject({
   collection: z.enum(['projects', 'blog', 'gallery', 'sketches']).optional(),
   visibility: VisibilitySchema,
   seo: PageSeoSchema.optional(),
+  /**
+   * Pasta do menu: páginas com o mesmo nome de pasta aparecem juntas num menu
+   * suspenso (a pasta fica onde está a primeira delas no menu).
+   */
+  menuFolder: I18nSchema.optional(),
   sections: z.array(SectionSchema),
 });
 

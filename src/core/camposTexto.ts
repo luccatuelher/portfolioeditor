@@ -20,6 +20,7 @@ export type CampoId =
   | 'caption'
   | 'image.alt'
   | 'seo.description'
+  | 'menuFolder'
   | `meta.${string}`
   | 'content.text'
   | 'content.html'
@@ -112,6 +113,7 @@ export function camposDeTexto(doc: PortfolioV4): CampoTexto[] {
     const dono: Dono = { tipo: 'pagina', pageId: p.id };
     if (p.kind === 'static') out.push({ campo: 'title', rotulo: 'nome', valor: p.title, dono, lugar, publicado });
     if (p.seo?.description) out.push({ campo: 'seo.description', rotulo: 'descrição de SEO', valor: p.seo.description, dono, lugar, publicado });
+    if (p.menuFolder && (p.menuFolder.pt || p.menuFolder.en)) out.push({ campo: 'menuFolder', rotulo: 'pasta do menu', valor: p.menuFolder, dono, lugar, publicado });
     blocos(p.sections, { on: 'page', pageId: p.id }, lugar, publicado);
   }
   for (const it of doc.collections.projects as ProjectItem[]) {

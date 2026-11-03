@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { DEFAULT_HEADER, headerSpan } from '../schema/defaults';
 import type { HeaderElement, Page, PortfolioV4 } from '../schema/v4';
 import type { Lang } from './context';
@@ -38,6 +38,53 @@ function PageLink({ route, onNavigate, editing, className, children, ...rest }: 
     <a {...linkInterno(route, onNavigate)} className={className} {...rest}>
       {children}
     </a>
+  );
+}
+
+type NavEntry = { page: Page } | { folder: string; label: Page['title']; pages: Page[] };
+
+/** Agrupa as páginas de uma mesma pasta do menu; a pasta fica onde está a 1ª página dela. */
+export function navEntries(pages: Page[]): NavEntry[] {
+  const out: NavEntry[] = [];
+  const byKey = new Map<string, Extract<NavEntry, { folder: string }>>();
+  for (const p of pages) {
+    const f = p.menuFolder;
+    const key = f ? `${(f.pt ?? '').trim()}|${(f.en ?? '').trim()}` : '';
+    if (!f || key === '|') {
+      out.push({ page: p });
+      continue;
+    }
+    let e = byKey.get(key);
+    if (!e) {
+      e = { folder: key, label: f, pages: [] };
+      byKey.set(key, e);
+      out.push(e);
+    }
+    e.pages.push(p);
+  }
+  // Uma pasta com uma página só vale como link comum? Não: o nome da pasta é uma escolha do autor.
+  return out;
+}
+
+/** Pasta do menu: botão que abre uma lista suspensa (hover, foco ou clique). */
+function NavFolder({ label, current, tabIndex, children }: { label: string; current: boolean; tabIndex?: number; children: React.ReactNode }): React.ReactElement {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const fora = (e: Event): void => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
+    const esc = (e: KeyboardEvent): void => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('pointerdown', fora);
+    document.addEventListener('keydown', esc);
+    return () => { document.removeEventListener('pointerdown', fora); document.removeEventListener('keydown', esc); };
+  }, [open]);
+  return (
+    <div ref={ref} className={`nav-folder${open ? ' is-open' : ''}`}>
+      <button type="button" className={`nav-link nav-folder-btn${current ? ' is-current' : ''}`} aria-haspopup="true" aria-expanded={open} tabIndex={tabIndex} onClick={() => setOpen((v) => !v)}>
+        {label} <span aria-hidden="true">▾</span>
+      </button>
+      <div className="nav-folder-menu" onClick={() => setOpen(false)}>{children}</div>
+    </div>
   );
 }
 
@@ -104,19 +151,26 @@ export function SiteHeader({ data, lang, onLang, onNavigate, current }: { data: 
     return wrap(
       'nav',
       <nav>
-        {navPages.map((p) => (
-          <PageLink
-            key={p.id}
-            route={p.slug || p.id}
-            onNavigate={onNavigate}
-            editing={editing}
-            className={`nav-link${isCur(p) ? ' is-current' : ''}`}
-            aria-current={isCur(p) ? 'page' : undefined}
-            {...(editing ? { 'data-nav-page': p.id, 'data-nav-drag': p.id, draggable: true, title: 'Clique para abrir · arraste para reordenar' } : {})}
-          >
-            {pick(p.title, lang)}
-          </PageLink>
-        ))}
+        {navEntries(navPages).map((e) => {
+          const link = (p: Page): React.ReactElement => (
+            <PageLink
+              key={p.id}
+              route={p.slug || p.id}
+              onNavigate={onNavigate}
+              editing={editing}
+              className={`nav-link${isCur(p) ? ' is-current' : ''}`}
+              aria-current={isCur(p) ? 'page' : undefined}
+              {...(editing ? { 'data-nav-page': p.id, 'data-nav-drag': p.id, draggable: true, title: 'Clique para abrir · arraste para reordenar' } : {})}
+            >
+              {pick(p.title, lang)}
+            </PageLink>
+          );
+          return 'page' in e ? link(e.page) : (
+            <NavFolder key={e.folder} label={pick(e.label, lang)} current={e.pages.some(isCur)}>
+              {e.pages.map(link)}
+            </NavFolder>
+          );
+        })}
         {ndaPages.map((p) => (
           <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={editing} className={`nav-link nav-nda${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined} {...(editing ? { 'data-nav-page': p.id } : {})}>
             {pick(p.title, lang)}
@@ -163,11 +217,18 @@ export function StickyNav({ data, lang, onLang, onNavigate, current }: { data: P
   return (
     <div className={`sticky-nav${show ? ' is-on' : ''}`} aria-hidden={!show}>
       <nav>
-        {navPages.map((p) => (
-          <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={false} tabIndex={show ? 0 : -1} className={`nav-link${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined}>
-            {pick(p.title, lang)}
-          </PageLink>
-        ))}
+        {navEntries(navPages).map((e) => {
+          const link = (p: Page): React.ReactElement => (
+            <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={false} tabIndex={show ? 0 : -1} className={`nav-link${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined}>
+              {pick(p.title, lang)}
+            </PageLink>
+          );
+          return 'page' in e ? link(e.page) : (
+            <NavFolder key={e.folder} label={pick(e.label, lang)} current={e.pages.some(isCur)} tabIndex={show ? 0 : -1}>
+              {e.pages.map(link)}
+            </NavFolder>
+          );
+        })}
         {ndaPages.map((p) => (
           <PageLink key={p.id} route={p.slug || p.id} onNavigate={onNavigate} editing={false} tabIndex={show ? 0 : -1} className={`nav-link nav-nda${isCur(p) ? ' is-current' : ''}`} aria-current={isCur(p) ? 'page' : undefined}>
             {pick(p.title, lang)}

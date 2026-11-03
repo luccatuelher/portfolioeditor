@@ -137,3 +137,25 @@ Fora de escopo: domínio próprio e integrações (Behance, Lightroom).
 Testes que já falhavam antes desta rodada (não mexidos): `f18` (prévia de
 celular: alvos de toque), `f21` (card estreito em telas intermediárias), `f67`
 (todo campo do Inspector muda o canvas).
+
+## Rodada Adobe Portfolio, parte 2 (2026-11-03)
+
+- [x] **Modos de exibição da galeria.** Bloco de coleção (galeria/sketches) ganha
+  "Exibição": grade, pilha (largura total), faixa (rola de lado) ou apresentação
+  (imagem grande, setas, teclado e miniaturas). No editor a apresentação aparece
+  como grade para os itens seguirem editáveis. `test/adobe-round2.test.tsx`.
+- [x] **Pastas no menu.** "Pasta do menu" no Inspector da página; páginas com o
+  mesmo nome viram um menu suspenso (hover, foco ou clique; Esc fecha), no
+  cabeçalho e na barra fixa. Selo 📁 no painel Páginas. O texto entra na lista de
+  textos bilíngues.
+- [x] **"Alterações não publicadas".** A barra mostra "● Alterações não
+  publicadas" quando o documento difere do último "Baixar site"/"Enviar ao
+  portfólio" feito neste navegador (impressão digital em `localStorage`). Nada é
+  mostrado antes da primeira publicação por aqui. Publicar com `publicar:site`
+  (script) não atualiza esse marcador. Não toca o código de publicação.
+- [x] **Soltar várias imagens.** Arrastar arquivos do computador sobre uma
+  galeria, sketches ou storyboard cria um item/quadro por imagem (ordem natural
+  do nome). `e2e/f95-arrastar-varias-imagens.spec.ts`.
+
+Segue pendente: estilos de texto nomeados, seletor de fontes, CSS próprio, fundo
+e espaçamento por seção no canvas, arrastar página para dentro de pasta.

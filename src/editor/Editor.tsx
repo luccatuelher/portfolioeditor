@@ -20,6 +20,7 @@ import { arquivosAoLado, runPreflight } from '../publish/preflight';
 import { ndaCount, publicSnapshot } from '../publish/publicSnapshot';
 import { formatarPeso, LIMITE_GITHUB_BYTES, pesoDoSite, type PesoDoSite } from '../publish/peso';
 import type { MigratedAsset } from '../migrate/migrate';
+import { usePendenteDePublicar } from './publicado';
 import { blobToDataUrl, imagemDeCompartilhar, importImage, miniaturaDeDataUrl } from '../assets/importImage';
 import { ARQUIVO_SOCIAL, imagemSocialEmbutida } from '../publish/imagemSocial';
 import { makeFavicon } from '../assets/favicon';
@@ -298,15 +299,15 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     };
   }, [syncConfig, onImport]);
 
-  const uploadImage = useCallback(
-    async (file: File): Promise<string> => {
+  /** Importa a imagem; em caso de erro avisa e devolve null (quem solta vários arquivos segue com os outros). */
+  const uploadImageOuNull = useCallback(
+    async (file: File): Promise<string | null> => {
       let r: Awaited<ReturnType<typeof importImage>>;
       try {
         r = await importImage(file, { maxSide: 2400 });
       } catch (err) {
-        // Um único aviso para todo envio de imagem (canvas, inspector, tema…); quem chamou simplesmente não segue.
         mostrarAviso(`Não consegui usar essa imagem: ${err instanceof Error ? err.message : String(err)}`, { tipo: 'erro' });
-        return new Promise<string>(() => {});
+        return null;
       }
       const dataUrl = await blobToDataUrl(r.blob);
       const id = assetIdFromContent(dataUrl);
@@ -316,6 +317,14 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       return id;
     },
     [doc, onAddAsset, mostrarAviso],
+  );
+  const uploadImage = useCallback(
+    async (file: File): Promise<string> => {
+      const id = await uploadImageOuNull(file);
+      // Um único aviso para todo envio de imagem (canvas, inspector, tema…); quem chamou simplesmente não segue.
+      return id ?? new Promise<string>(() => {});
+    },
+    [uploadImageOuNull],
   );
   const uploadFavicon = useCallback(
     async (file: File): Promise<void> => {
@@ -1149,8 +1158,47 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
     autoScroll.current.raf = requestAnimationFrame(passo);
   }, [pararAutoScroll]);
 
+  // Arquivos de imagem soltos do computador: várias de uma vez viram itens de
+  // galeria/sketches ou quadros de storyboard (como no Adobe Portfolio).
+  const alvoDeArquivos = (e: React.DragEvent): HTMLElement | null => {
+    if (drag.current || !Array.from(e.dataTransfer.types).includes('Files')) return null;
+    const el = (e.target as HTMLElement).closest<HTMLElement>('[data-block-id]');
+    const id = el?.getAttribute('data-block-id');
+    const ref = id ? locateBlock(docRef.current.state, container, id) : null;
+    const b = ref ? findBlock(docRef.current.state, ref) : null;
+    if (!el || !b) return null;
+    if (b.type === 'storyboard' || (b.type === 'collection' && (b.content.collection === 'gallery' || b.content.collection === 'sketches'))) return el;
+    return null;
+  };
+  const soltarArquivos = async (e: React.DragEvent, el: HTMLElement): Promise<void> => {
+    const files = Array.from(e.dataTransfer.files)
+      .filter((f) => f.type.startsWith('image/'))
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+    const ref = locateBlock(docRef.current.state, container, el.getAttribute('data-block-id')!);
+    const b = ref ? findBlock(docRef.current.state, ref) : null;
+    if (!ref || !b || !files.length) return;
+    const ids = (await Promise.all(files.map((f) => uploadImageOuNull(f)))).filter((x): x is string => !!x);
+    if (!ids.length) return;
+    const d = docRef.current;
+    if (b.type === 'storyboard') {
+      d.updateBlock(ref, (bb) => void (bb.type === 'storyboard' && bb.content.frames.push(...ids.map((assetId) => ({ assetId, alt: emptyI18n() })))));
+    } else if (b.type === 'collection' && (b.content.collection === 'gallery' || b.content.collection === 'sketches')) {
+      const coll = b.content.collection;
+      for (const aid of ids) {
+        const nid = d.addItem(coll);
+        d.updateItem(coll, nid, (it) => { it.image.assetId = aid; it.image.url = undefined; });
+      }
+    }
+    mostrarAviso(`${ids.length} ${ids.length === 1 ? 'imagem adicionada' : 'imagens adicionadas'}.`);
+  };
   const onCanvasDragOver = (e: React.DragEvent): void => {
     ajustarAutoScroll(e.clientY);
+    const alvo = alvoDeArquivos(e);
+    if (alvo) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'copy';
+      return mark(alvo, 'files');
+    }
     const hit = dropTarget(e);
     if (!hit) return mark(null);
     e.preventDefault();
@@ -1159,6 +1207,13 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   };
   const onCanvasDrop = (e: React.DragEvent): void => {
     pararAutoScroll();
+    const alvo = alvoDeArquivos(e);
+    if (alvo) {
+      e.preventDefault();
+      mark(null);
+      void soltarArquivos(e, alvo);
+      return;
+    }
     const hit = dropTarget(e);
     const src = drag.current;
     drag.current = null;
@@ -1510,6 +1565,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
   const fileRef = useRef<HTMLInputElement>(null);
   const [pedirSenha, setPedirSenha] = useState(false);
   const dialogos = useAvisos();
+  const { pendente: naoPublicado, marcar: marcarPublicado } = usePendenteDePublicar(doc.state);
 
   if (onBackupRef) onBackupRef.current = () => download();
   const download = (): void => {
@@ -1615,6 +1671,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
     // index.html: é o arquivo que o GitHub Pages (e qualquer hospedagem) abre sozinho no endereço do site.
     baixarArquivo(blob, 'index.html');
     if (jpg) baixarArquivo(jpg, ARQUIVO_SOCIAL);
+    marcarPublicado(doc0);
   };
 
   /** Último passo do "Enviar ao portfólio": grava o site gerado no repositório do GitHub Pages. */
@@ -1634,6 +1691,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
       const arquivos: ArquivoSite[] = [{ path: 'index.html', bytes }];
       if (jpg) arquivos.push({ path: ARQUIVO_SOCIAL, bytes: new Uint8Array(await jpg.arrayBuffer()) });
       const r = await enviarSite(c, arquivos, `Site publicado pelo editor em ${new Date().toISOString()}`);
+      marcarPublicado(doc.state);
       // O que o site espera ao lado (cv.pdf…) tem de estar no repositório: só os que faltam merecem aviso.
       const faltam = await quaisFaltam(c, aoLado.filter((a) => a !== ARQUIVO_SOCIAL)).catch(() => [] as string[]);
       const presentes = [...aoLado.filter((a) => !faltam.includes(a)), ...(jpg ? [ARQUIVO_SOCIAL] : [])];
@@ -1686,6 +1744,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
             {DEVICES.find((d) => d.id === device)!.curto} ✕
           </button>
         ) : null}
+        {naoPublicado ? <span className="tb-nao-publicado" role="status" title="O site no ar (baixado ou enviado daqui) está diferente do que você vê. Use Baixar site ou Enviar ao portfólio para publicar.">● Alterações não publicadas</span> : null}
         <span className={`tb-status status-${saveStatus}`} title={saveStatus === 'error' ? 'Veja o aviso logo abaixo da barra' : undefined}>{STATUS_LABEL[saveStatus]}</span>
         <span className="tb-historico" role="status" aria-live="polite">{avisoHistorico ?? ''}</span>
       </div>

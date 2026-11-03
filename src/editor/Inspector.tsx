@@ -643,6 +643,12 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
                 Mostrar no menu
               </label>
             )}
+            {page.visibility !== 'nda' && doc.state.site.nav.includes(page.id) ? (
+              <Row label="Pasta do menu (opcional)">
+                <I18nInput campo="menuFolder" value={page.menuFolder ?? emptyI18n()} onChange={(v) => doc.updatePage(page.id, (p) => void (p.menuFolder = v.pt.trim() || v.en.trim() ? v : undefined), `${page.id}:menufolder`)} />
+                <div className="insp-note">Páginas com o mesmo nome de pasta aparecem juntas num menu suspenso. Deixe vazio para o link ficar solto.</div>
+              </Row>
+            ) : null}
             {page.visibility === 'nda' && doc.state.site.ndaNoMenu === false ? <div className="insp-note">Fora do menu, a área NDA continua no ar: quem tem o endereço (e a senha) entra.</div> : null}
             <Group id="seo" title="SEO e compartilhamento" defaultOpen={false}>
               <Row label="Descrição (Google e redes sociais)">
@@ -831,6 +837,12 @@ function ContentTab({ doc, block, refBlock, onUploadImage, foco }: { doc: DocApi
           <Row label="Coleção"><SelectInput value={block.content.collection} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.collection = v)))} options={[{ value: 'projects', label: 'Projetos' }, { value: 'blog', label: 'Notas' }, { value: 'gallery', label: 'Galeria' }, { value: 'sketches', label: 'Sketches' }]} /></Row>
           <Row label="Colunas"><RangeInput min={1} max={6} value={block.content.cols} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.cols = v)), gk('cols'))} /></Row>
           <Row label={`Espaço entre os itens · ${block.content.gap ?? 'padrão (24)'}${block.content.gap !== undefined ? 'px' : ''}`}><RangeInput min={0} max={120} value={block.content.gap ?? 24} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.gap = v)), gk('gap'))} /></Row>
+          {block.content.collection === 'gallery' || block.content.collection === 'sketches' ? (
+            <Row label="Exibição">
+              <SelectInput value={block.content.display ?? 'grid'} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.display = v === 'grid' ? undefined : v)))} options={[{ value: 'grid', label: 'Grade' }, { value: 'stack', label: 'Pilha (largura total)' }, { value: 'strip', label: 'Faixa (rola de lado)' }, { value: 'slideshow', label: 'Apresentação com miniaturas' }]} />
+              {block.content.display === 'slideshow' ? <div className="insp-note">Aqui no editor aparece como grade, para você editar os itens; a apresentação vale no site.</div> : null}
+            </Row>
+          ) : null}
           <Row label="Filtro fixo"><SelectInput value={block.content.filter ?? 'all'} onChange={(v) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.filter = v)))} options={[{ value: 'all', label: 'Todos' }, { value: 'featured', label: 'Destaques' }, { value: 'professional', label: 'Profissional' }, { value: 'personal', label: 'Pessoal' }, { value: 'nda', label: 'Só NDA (confidencial)' }]} /></Row>
           <label className="insp-check">
             <input type="checkbox" checked={!!block.content.showFilter} onChange={(e) => upd(refBlock, (b) => void (b.type === 'collection' && (b.content.showFilter = e.target.checked || undefined)))} />

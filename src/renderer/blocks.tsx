@@ -534,6 +534,34 @@ function BlogCard({ item, cols }: { item: BlogItem; cols: number }): React.React
   );
 }
 
+/** Apresentação de galeria: uma imagem grande com setas e uma fileira de miniaturas. */
+function Slideshow({ items, onOpen }: { items: { id: string; image: ImageRef; caption?: string }[]; onOpen?: (i: number) => void }): React.ReactElement {
+  const [at, setAt] = useState(0);
+  const n = items.length;
+  const i = Math.min(at, n - 1);
+  const go = (d: number): void => setAt((i + d + n) % n);
+  const cur = items[i]!;
+  return (
+    <div className="slideshow" role="group" aria-roledescription="carousel" aria-label="Galeria" tabIndex={0} onKeyDown={(e) => { if (e.key === 'ArrowLeft') go(-1); else if (e.key === 'ArrowRight') go(1); }}>
+      <div className="slideshow-stage">
+        <button type="button" className="slideshow-nav prev" aria-label="Anterior" onClick={() => go(-1)}>‹</button>
+        <button type="button" className="slideshow-main" onClick={() => onOpen?.(i)} aria-label="Ampliar imagem">
+          <Img image={cur.image} className="slideshow-img" eager />
+        </button>
+        <button type="button" className="slideshow-nav next" aria-label="Próxima" onClick={() => go(1)}>›</button>
+      </div>
+      {cur.caption ? <p className="art-caption slideshow-caption">{cur.caption}</p> : null}
+      <div className="slideshow-thumbs">
+        {items.map((it, k) => (
+          <button key={it.id} type="button" className={`slideshow-thumb${k === i ? ' is-on' : ''}`} aria-label={`Imagem ${k + 1} de ${n}`} aria-current={k === i} onClick={() => setAt(k)}>
+            <Img image={it.image} className="slideshow-thumb-img" miniatura decorativa />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function GalleryCard({ item, cols, onOpen }: { item: GalleryItem; cols: number; onOpen?: () => void }): React.ReactElement {
   const { lang, editing } = useRender();
   const span = itemWidth(item, cols);
@@ -628,6 +656,7 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
   let filterBar: React.ReactNode = null;
   let previewPanel: React.ReactNode = null;
   let body: React.ReactNode;
+  let lightAll: { src: string; alt: string; crop?: ImageRef['crop']; caption?: string }[] = [];
   if (collection === 'projects') {
     let items = visible(data.collections.projects);
     // O filtro fixo vale sempre; os botões do visitante filtram DENTRO dele.
@@ -678,16 +707,26 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
   } else if (collection === 'gallery') {
     const items = visible(data.collections.gallery);
     const light = items.map((g) => ({ src: resolveAsset(g.image), alt: pick(g.image.alt, lang), crop: g.image.crop, caption: pick(g.caption, lang) }));
+    lightAll = light;
     body = items.map((g, i) => <GalleryCard key={g.id} item={g} cols={cols} onOpen={() => onOpenLightbox?.(light, i)} />);
   } else {
     const items = visible(data.collections.sketches);
     const light = items.map((s) => ({ src: resolveAsset(s.image), alt: pick(s.image.alt, lang), crop: s.image.crop }));
+    lightAll = light;
     body = items.map((s, i) => <SketchCard key={s.id} item={s} cols={cols} onOpen={() => onOpenLightbox?.(light, i)} />);
   }
   if (editing && (collection === 'gallery' || collection === 'sketches') && Array.isArray(body)) {
     body = [...body, <button key="__add" type="button" className="pe-add-tile" style={styleVars(spanVars({ desktop: Math.max(1, Math.round(12 / cols)) }, 'media'))} data-item-add={collection}>＋ Adicionar imagem</button>];
   }
   const empty = Array.isArray(body) && body.length === 0;
+  const display = collection === 'gallery' || collection === 'sketches' ? block.content.display ?? 'grid' : 'grid';
+  // Apresentação só no site: no editor os itens continuam em grade para poder editar.
+  const slides = !editing && display === 'slideshow' && !empty && (collection === 'gallery' || collection === 'sketches');
+  const slideItems = slides
+    ? collection === 'gallery'
+      ? visible(data.collections.gallery).map((g) => ({ id: g.id, image: g.image, caption: pick(g.caption, lang) }))
+      : visible(data.collections.sketches).map((g) => ({ id: g.id, image: g.image }))
+    : [];
   return (
     <>
       {filterBar}
@@ -708,8 +747,10 @@ function CollectionView({ block }: { block: Extract<Block, { type: 'collection' 
             </p>
           )
         )
+      ) : slides ? (
+        <Slideshow items={slideItems} onOpen={(i) => onOpenLightbox?.(lightAll, i)} />
       ) : (
-        <div ref={gridRef} className={`collection-grid collection-${collection}`} style={styleVars({ '--cols': cols, '--coll-gap': rem(block.content.gap) })}>
+        <div ref={gridRef} className={`collection-grid collection-${collection}${display !== 'grid' && !(editing && display === 'slideshow') ? ` disp-${display}` : ''}`} style={styleVars({ '--cols': cols, '--coll-gap': rem(block.content.gap) })}>
           {body}
         </div>
       )}

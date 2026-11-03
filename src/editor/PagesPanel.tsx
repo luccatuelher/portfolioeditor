@@ -75,6 +75,7 @@ function PageRow({ doc, page, lang, active, onOpen, children, novaAgora }: { doc
             <button type="button" className="tree-main" onClick={onOpen} onDoubleClick={renome.abrir}>
               <span className="tree-icon">▤</span>{nome || page.id}
               {ndaPage ? <span className="badge">NDA</span> : null}
+              {!ndaPage && naMenu && page.menuFolder && (page.menuFolder.pt || page.menuFolder.en) ? <span className="badge badge-pasta" title="Pasta do menu">📁 {pick(page.menuFolder, lang)}</span> : null}
               {!ndaPage && !naMenu ? <span className="badge badge-fora-menu" title="Não aparece no menu do site; continua acessível pelo endereço">fora do menu</span> : null}
             </button>
             {renome.botao}
