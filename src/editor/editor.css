@@ -741,6 +741,10 @@ body.pe-resizing, body.pe-resizing * { cursor: ew-resize !important; user-select
 /* Modo Prévia: site limpo, sem painéis, contornos nem controles de edição. */
 .tb-previa { background: transparent; color: inherit; border: 1px solid rgba(250, 249, 247, 0.4); border-radius: 4px; padding: 3px 10px; font-size: 0.72rem; cursor: pointer; }
 .tb-previa.on { background: #faf9f7; color: #1c1b18; }
+/* `.tb-center button` fixa 30x28 (botões de ícone) e vencia `.tb-previa`: o texto vazava por cima do status. */
+.tb-center button.tb-previa { width: auto; min-width: 30px; height: 28px; padding: 0 10px; flex: none; white-space: nowrap; }
+.tb-center .tb-status { white-space: nowrap; }
+.tb-center { flex-wrap: wrap; }
 .editor.is-preview .editor-main { grid-template-columns: 1fr; }
 .editor.is-preview .editor-left, .editor.is-preview .editor-right, .editor.is-preview .editor-gavetas, .editor.is-preview .editor-scrim { display: none; }
 .editor.is-preview .editor-canvas .block, .editor.is-preview .editor-canvas .block:hover { outline-color: transparent; }
