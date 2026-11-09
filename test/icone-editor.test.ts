@@ -27,4 +27,9 @@ describe('ícone da aba do editor', () => {
     expect(bytes.readUInt32BE(16)).toBe(64);
     expect(bytes.readUInt32BE(20)).toBe(64);
   });
+
+  it('o editor não troca o ícone da aba pelo do portfólio', () => {
+    const src = readFileSync(join(__dirname, '..', 'src', 'editor', 'Editor.tsx'), 'utf8');
+    expect(src).not.toMatch(/link\[rel="icon"\]/);
+  });
 });

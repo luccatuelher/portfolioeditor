@@ -428,20 +428,8 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
   const [quadroEmFoco, setQuadroEmFoco] = useState<{ blockId: string; idx: number } | null>(null);
 
   const { page, item } = resolveView(doc.state, container);
-  const favSrc = doc.state.site.favicon ? resolveAsset(doc.state.site.favicon) : '';
-  useEffect(() => {
-    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (!favSrc) {
-      link?.remove();
-      return;
-    }
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.head.appendChild(link);
-    }
-    link.href = favSrc;
-  }, [favSrc]);
+  // O ícone da aba do editor é o de editor.html (quadros de storyboard); o ícone do
+  // portfólio do site.favicon só vai para o site publicado, nunca para a aba do editor.
   const selectedId = selection?.kind === 'block' ? selection.ref.blockId : undefined;
   // Blocos do grupo (o selecionado primeiro), só os que ainda existem.
   const multiRefs: BlockRef[] = selection?.kind === 'block' && extras.length
