@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { hora } from '../core/datas';
 import type { PortfolioV4 } from '../schema/v4';
 import { buildBackup } from './backup';
 
@@ -240,7 +241,7 @@ export function useGithubSync(doc: PortfolioV4, assets: Record<string, string>, 
       const sha = await enviarArquivo(c, JSON.stringify(b, null, 2), conhecido);
       ultimo.current = { texto, sha, repo: alvo };
       gravarShaConhecido(alvo, sha, hash);
-      setStatus({ tipo: 'ok', em: new Date().toLocaleTimeString() });
+      setStatus({ tipo: 'ok', em: hora() });
     } catch (e) {
       if (e instanceof MudouNoGitHub && atual.current.aoMudarNoGitHub) {
         setStatus({ tipo: 'verificando' });

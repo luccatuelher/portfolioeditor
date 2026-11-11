@@ -1,11 +1,11 @@
 import { useEffect, useId, useState } from 'react';
+import { dataHora } from '../core/datas';
 import { useDialog } from './useDialog';
 import { useAvisos } from './avisos';
 import type { PortfolioV4 } from '../schema/v4';
 import { deleteVersion, guardarAntesDeTrocar, listVersions, loadVersion, MAX_VERSIONS, saveVersion, type VersionEntry } from './versions';
 
-const fmt = (t: number): string =>
-  new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+const fmt = (t: number): string => dataHora(t, { ano: true });
 
 /**
  * Histórico de versões: pontos de retorno nomeados, guardados neste navegador.

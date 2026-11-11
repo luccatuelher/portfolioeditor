@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 /**
  * Junções entre as faixas de largura. Um site não pode ter degraus: passar de
  * 900 para 901 pixels não pode ENCOLHER a página, e um card com título não
- * pode cair para ~160px só porque a tela passou de 600.
+ * pode ficar com mais de três por fila (abaixo de ~140px) só porque a tela passou de 600.
  */
 const medir = async (page: import('@playwright/test').Page, largura: number) => {
   await page.setViewportSize({ width: largura, height: 900 });
@@ -42,6 +42,9 @@ test('card com título nunca fica estreito demais nas telas intermediárias', as
   for (const w of [601, 700, 768, 820, 900]) {
     const m = await medir(page, w);
     expect(m.renderou, `a página nem renderizou em ${w}px — teste vazio`).toBe(true);
-    expect(m.larguraCard, `card de ${m.larguraCard}px em ${w}px de tela`).toBeGreaterThan(180);
+    // No tablet os cards seguem a grade escolhida, três lado a lado (pedido do
+    // Lucca, 6816336): o piso é o card de 3 colunas na menor tela da faixa.
+    expect(m.porFila, `${m.porFila} cards por fila em ${w}px`).toBeLessThanOrEqual(3);
+    expect(m.larguraCard, `card de ${m.larguraCard}px em ${w}px de tela`).toBeGreaterThanOrEqual(140);
   }
 });
