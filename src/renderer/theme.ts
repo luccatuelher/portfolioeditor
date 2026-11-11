@@ -1,5 +1,5 @@
 import type { Theme } from '../schema/v4';
-import { legivel } from '../core/contrast';
+import { contrastRatio, legivel } from '../core/contrast';
 
 /** 4,5:1 sobre as duas bases em que o texto aparece: o fundo e a superfície. */
 function legivelNosDois(fg: string, bg: string, surface: string, rumo: string): string {
@@ -8,6 +8,29 @@ function legivelNosDois(fg: string, bg: string, surface: string, rumo: string): 
 
 export const DEFAULT_SCALE_TABLET = 0.94;
 export const DEFAULT_SCALE_MOBILE = 0.88;
+
+/**
+ * Cor do tema (nome do token: `bg`, `inkSoft`, `accent2`…) como valor CSS. As
+ * variáveis usam hífen (`--ink-soft`); com o nome cru, "Tinta suave" e "Tinta
+ * clara" como fundo de bloco apontavam para uma variável que não existe.
+ */
+export function corDoTema(token: string): string {
+  return `var(--${token.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)})`;
+}
+
+/**
+ * O texto precisa trocar de cor sobre este fundo? Sim quando a cor do texto
+ * (Tinta) fica difícil de ler ali e a cor de fundo da página lê melhor — o caso
+ * de uma faixa escura num tema claro. Cor fora do formato #rrggbb: não mexe.
+ */
+export function fundoInverteTexto(theme: Theme, token: string): boolean {
+  const cores = theme.colors as Record<string, string>;
+  const fundo = cores[token];
+  if (!fundo) return false;
+  const comTinta = contrastRatio(cores.ink ?? '', fundo);
+  const comPagina = contrastRatio(cores.bg ?? '', fundo);
+  return comTinta !== null && comPagina !== null && comTinta < 4.5 && comPagina > comTinta;
+}
 
 /**
  * Converte os tokens do tema v4 em variáveis CSS. É a ÚNICA ponte entre dados e
