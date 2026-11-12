@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { dataHora } from '../core/datas';
 import type { Lang, RenderContextValue } from '../renderer/context';
 import { RenderContext } from '../renderer/context';
 import { PageView } from '../renderer/Page';
@@ -260,7 +261,7 @@ export function Editor({ initial, assets, onImport, onAddAsset, persist = true, 
       if (!(await guardarAntesDeTrocar('Antes de carregar do GitHub', docAtual.current, avisos.api.confirmar))) return;
       // Impressão digital do que veio: o editor que abre com ela não reenvia o mesmo conteúdo.
       gravarShaConhecido(alvo, oferta.sha, hashTexto(JSON.stringify({ ...buildBackup(backup.doc, backup.assets), savedAt: '' })));
-      const quando = oferta.savedAt ? new Date(oferta.savedAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+      const quando = oferta.savedAt ? dataHora(oferta.savedAt) : '';
       onImport(backup, `Carreguei a versão mais nova do GitHub${quando ? ` (salva em ${quando})` : ''}. O que estava aberto ficou em Versões.`);
     } catch (err) {
       console.warn('[github] não consegui conferir o backup do GitHub', err);
@@ -1640,7 +1641,7 @@ function TopBar({ doc, peso, onPeso, onUndo, onRedo, avisoHistorico, lang, onLan
       perigo: true,
     }))) return;
     // Toda publicação vira um ponto de retorno (automático) no histórico.
-    void saveVersion(`Publicado em ${new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })}`, doc0, true).catch(() => {});
+    void saveVersion(`Publicado em ${dataHora(Date.now(), { ano: true })}`, doc0, true).catch(() => {});
 
     // Imagem de compartilhamento: vira um arquivo no tamanho do cartão das
     // redes, ao lado do index.html (com o endereço do site, dá para apontá-la).

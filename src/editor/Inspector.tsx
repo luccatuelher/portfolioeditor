@@ -691,6 +691,13 @@ function InspectorBody({ doc, selection, onUploadImage, onSelect , quadroEmFoco 
                 ]}
               />
             </Row>
+            <Row label="Cor de fundo da seção">
+              <SelectInput
+                value={section.style.bg ?? ''}
+                onChange={(v) => doc.updateSection(selection.ref, (s) => void (v ? (s.style.bg = v) : delete s.style.bg))}
+                options={[{ value: '', label: '— nenhuma —' }, ...Object.keys(doc.state.theme.colors).map((t) => ({ value: t, label: COLOR_LABEL[t] ?? t }))]}
+              />
+            </Row>
             {selection.ref.container.on === 'item' && selection.ref.container.collection === 'projects' ? (
               <label className="insp-check">
                 <input type="checkbox" checked={!!section.homeHidden} onChange={(e) => doc.updateSection(selection.ref, (s) => void (s.homeHidden = e.target.checked || undefined))} />

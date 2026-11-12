@@ -10,6 +10,7 @@ import { blockLabel, effectivePreview, projectBlocks } from './preview';
 import type { BlogItem } from '../schema/v4';
 import { RenderContext, useRender, type Lang, type RenderContextValue } from './context';
 import { styleVars } from './css';
+import { corDeFundo, fundoInverteTexto } from './theme';
 import { escalarTamanhos, pick, RichText } from './text';
 import { sanitizeRich } from '../core/sanitizeHtml';
 import { layoutGrid, type Placement } from './gridLayout';
@@ -886,6 +887,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
     `align-${block.align ?? 'start'}`,
     editing && block.visibility !== 'public' ? `vis-${block.visibility}` : '',
     bgToken ? 'has-bg' : '',
+    bgToken && fundoInverteTexto(data.theme, bgToken) ? 'bg-contraste' : '',
     editing && selectedId === block.id ? 'is-selected' : '',
     editing && multiSelectedIds?.includes(block.id) ? 'is-multi' : '',
     block.style?.textStyle ? `has-ts ts-${block.style.textStyle}` : '',
@@ -902,7 +904,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
   const wrap = (children: React.ReactNode): React.ReactElement => (
     <div
       className={cls}
-      style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--cfree-t': sobra?.tablet ?? undefined, '--cfree-m': sobra?.mobile ?? undefined, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree-d': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? `var(--${bgToken})` : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
+      style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--cfree-t': sobra?.tablet ?? undefined, '--cfree-m': sobra?.mobile ?? undefined, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree-d': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? corDeFundo(data.theme, bgToken) : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
       data-block-id={block.id}
     >
       {editing && faltaTraduzir(block, lang) ? (
@@ -942,8 +944,11 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
     case 'image': {
       const legenda = pick(block.content.caption, lang);
       const Caixa = legenda ? 'figure' : 'div';
+      // No editor o clique seleciona a imagem (não segue o link nem amplia): um
+      // selo no canto diz o que ela faz no site. O link vence a ampliação, como lá.
+      const acaoImg = !editing ? undefined : block.content.href ? (/^https?:\/\//i.test(block.content.href) ? `↗ ${block.content.href.replace(/^https?:\/\//i, '').slice(0, 40)}` : '⚠ link sem https:// (não funciona no site)') : block.content.zoom ? '⤢ amplia ao clicar' : undefined;
       return wrap(
-        <Caixa className="block-image-inner" title={!editing && !block.content.href ? pick(block.content.tooltip, lang) || undefined : undefined} style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
+        <Caixa className="block-image-inner" title={editing || !block.content.href ? pick(block.content.tooltip, lang) || undefined : undefined} data-pe-acao={acaoImg} style={styleVars({ '--w': block.content.widthPct ? `${block.content.widthPct}%` : undefined })}>
           {block.content.href && !editing && /^https?:\/\//i.test(block.content.href) ? (
             <a className="block-image-link" href={block.content.href} target="_blank" rel="noopener noreferrer" title={pick(block.content.tooltip, lang) || pick(block.content.image.alt, lang)} aria-label={pick(block.content.tooltip, lang) || pick(block.content.image.alt, lang)}>
               <Img image={block.content.image} className="block-image-img" eager={topo} bloco />
@@ -1076,8 +1081,9 @@ export function botaoSemLink(b: Block): boolean {
 
 // ------------------------------------------------------------------- seção
 export function SectionView({ section, primeira }: { section: Section; primeira?: boolean }): React.ReactElement | null {
-  const { editing, nda } = useRender();
+  const { editing, nda, data } = useRender();
   const width = section.style.width ?? 'normal';
+  const fundo = section.style.bg;
   // Posição de cada bloco (linhas × colunas, com pilhas) — só dos que aparecem.
   // (Fora do editor, um botão sem link também não aparece: não ocupa lugar na linha.)
   const shown = section.blocks.filter((b) => editing || (blocoNoSite(b, nda) && !botaoSemLink(b)));
@@ -1095,7 +1101,7 @@ export function SectionView({ section, primeira }: { section: Section; primeira?
     sobraPorLinha.set(r, { tablet: sobraDaLinha(naLinha, 'tablet'), mobile: sobraDaLinha(naLinha, 'mobile') });
   }
   return (
-    <section className={`section width-${width}`} data-section-id={section.id} style={styleVars({ '--sec-gap': rem(section.style.gap), '--sec-rowgap': rem(section.style.rowGap), '--sec-top': rem(section.style.spaceTop), '--sec-bottom': rem(section.style.spaceBottom) })}>
+    <section className={`section width-${width}${fundo ? ' has-bg' : ''}${fundo && fundoInverteTexto(data.theme, fundo) ? ' bg-contraste' : ''}`} data-section-id={section.id} style={styleVars({ '--sec-bg': fundo ? corDeFundo(data.theme, fundo) : undefined, '--sec-gap': rem(section.style.gap), '--sec-rowgap': rem(section.style.rowGap), '--sec-top': rem(section.style.spaceTop), '--sec-bottom': rem(section.style.spaceBottom) })}>
       <div className="section-grid">
         {shown.map((b, i) => (
           <ErrorBoundary

@@ -177,6 +177,9 @@ textarea.insp-input { resize: vertical; line-height: 1.5; }
 .edit-badge.nda { background: var(--accent); }
 /* alça de redimensionar imagem no canvas */
 .editor-canvas .block-image-inner { position: relative; }
+/* Selo do que a imagem faz no site (link ou ampliar): no editor o clique só seleciona. */
+.editor-canvas .block-image-inner[data-pe-acao]::after { content: attr(data-pe-acao); position: absolute; left: 6px; bottom: 6px; max-width: calc(100% - 12px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 7px; border-radius: 3px; background: rgba(20, 20, 20, 0.78); color: #fff; font: 500 11px/1.5 var(--font-mono), monospace; letter-spacing: 0.02em; pointer-events: none; }
+.editor.is-preview .editor-canvas .block-image-inner[data-pe-acao]::after { display: none; }
 .editor-canvas .pe-resize-handle { position: absolute; top: 50%; right: -6px; width: 12px; height: 44px; transform: translateY(-50%); background: var(--accent); border: 2px solid #fff; border-radius: 6px; cursor: ew-resize; box-shadow: 0 1px 4px rgba(0,0,0,.3); z-index: 6; }
 /* arrastar blocos no canvas */
 .editor-canvas .pe-drag-handle { position: absolute; top: 4px; left: -2px; z-index: 6; cursor: grab; color: #fff; background: var(--accent2); border-radius: 4px; padding: 0 4px; font-size: 0.8rem; line-height: 1.4; opacity: 0; transition: opacity 0.12s; user-select: none; }

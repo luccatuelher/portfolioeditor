@@ -54,6 +54,12 @@ nav { display: flex; gap: 0; flex-wrap: wrap; }
 
 /* ------------------------------------------------------------------ grid */
 .section { margin: var(--sec-top, 3.25rem) 0 var(--sec-bottom, 3.25rem); }
+/* Fundo da seção (Inspector › Seção): a faixa ganha respiro por dentro; o espaço acima/abaixo segue por fora. */
+.section.has-bg { background: var(--sec-bg); padding: calc(var(--space-unit) * 3); }
+/* Fundo em que a Tinta não lê (faixa escura num tema claro): o texto usa a cor de fundo da página. */
+.has-bg.bg-contraste > * { --ink: var(--bg); --ink-soft: var(--bg); --ink-pale-texto: var(--bg); --accent-texto: var(--bg); color: var(--ink); }
+/* Um bloco de fundo claro dentro de uma faixa escura volta às cores do tema. */
+.bg-contraste .has-bg:not(.bg-contraste) > * { --ink: var(--ink-0); --ink-soft: var(--ink-soft-0); --ink-pale-texto: var(--ink-pale-texto-0); --accent-texto: var(--accent-texto-0); color: var(--ink); }
 .section.width-narrow .section-grid { max-width: 78ch; margin-inline: auto; }
 .section.width-wide .section-grid { }
 /* A grade usa sempre o espaçamento padrão para calcular o TAMANHO dos elementos.
@@ -645,6 +651,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     color: var(--ink);
   }
   /* O navegador não imprime fundos: texto sobre fundo cheio sairia branco no branco. */
+  .site .section.has-bg { background: none; padding: 0; }
+  .site .has-bg.has-bg > * { --ink: rgb(0, 0, 0); --ink-soft: rgb(34, 34, 34); --ink-pale-texto: rgb(68, 68, 68); --accent-texto: rgb(0, 0, 0); }
   .site .block.has-bg, .btn-solid, .btn-cv, .home-preview-go, .filter-btn.active, .pv-carrossel-aba.on, .nda-unlock button, .site .embed-area {
     background: none; color: var(--ink); border: 1px solid var(--rule);
   }

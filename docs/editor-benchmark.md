@@ -159,3 +159,21 @@ celular: alvos de toque), `f21` (card estreito em telas intermediárias), `f67`
 
 Segue pendente: estilos de texto nomeados, seletor de fontes, CSS próprio, fundo
 e espaçamento por seção no canvas, arrastar página para dentro de pasta.
+
+## Round 2026-11-11 (self-directed: plan, build, self-audit)
+
+- [x] **All e2e green again (217/217).** `f67`: image link / enlarge / hover text had no
+  trace on the canvas; now a corner badge says what the image does on the site
+  (and warns when the link lacks `https://`, which the site ignores). `f18`/`f21`
+  now follow the decided phone menu size (12 px) and three-across tablet cards.
+- [x] **Brazilian dates in one place** (`src/core/datas.ts`): dd/mm[/aa] HH:mm, 24 h.
+  The GitHub sync time used the browser language.
+- [x] **Section background colour** (Inspector › Seção). `section.style.bg` was in the
+  schema but never drawn. Text flips to the page colour on a background the ink
+  cannot be read on (blocks too); print keeps dark text.
+- [x] **Fix:** "Tinta suave" / "Tinta clara" as a block background pointed at CSS
+  variables that do not exist.
+- [x] **Font field autocomplete**: "Outra" suggests ~100 exact Google Fonts names.
+
+Still pending: named text styles, custom CSS, dragging a page into a menu
+folder, dragging blocks across sections in the Layers panel.

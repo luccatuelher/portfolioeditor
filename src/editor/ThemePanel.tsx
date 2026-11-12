@@ -46,6 +46,19 @@ export const FONT_OPTIONS: Record<FontRole, string[]> = {
   body: ['DM Sans', 'Inter', 'Manrope', 'Work Sans', 'IBM Plex Sans', 'Source Sans 3', 'Nunito Sans', 'Plus Jakarta Sans', 'Outfit', 'Karla', 'Rubik', 'Lato', 'Open Sans', 'Roboto', 'Lora', 'Source Serif 4', 'Literata', 'Merriweather'],
   mono: ['DM Mono', 'JetBrains Mono', 'IBM Plex Mono', 'Space Mono', 'Fira Code', 'Roboto Mono', 'Source Code Pro', 'Inconsolata', 'Courier Prime'],
 };
+/**
+ * Mais nomes do Google Fonts para o campo "Outra": ao digitar, o navegador
+ * completa com o nome exato (um nome com erro de digitação não carrega nada e
+ * o site cai na fonte reserva, sem aviso).
+ */
+export const MAIS_FONTES: string[] = [
+  'Alegreya', 'Alegreya Sans', 'Archivo', 'Archivo Narrow', 'Arvo', 'Barlow', 'Barlow Condensed', 'Bitter', 'Bodoni Moda', 'Bricolage Grotesque',
+  'Cabin', 'Caveat', 'Chivo', 'Cinzel', 'Comfortaa', 'Cormorant', 'Crimson Pro', 'Crimson Text', 'DM Serif Text', 'Domine',
+  'Dosis', 'Exo 2', 'Figtree', 'Fira Sans', 'Fjalla One', 'Gloock', 'Hanken Grotesk', 'Heebo', 'Josefin Sans', 'Jost',
+  'Kanit', 'Lexend', 'Libre Franklin', 'Montserrat', 'Mulish', 'Newsreader', 'Noto Sans', 'Noto Serif', 'Nunito', 'Onest',
+  'Overpass', 'Permanent Marker', 'Playfair', 'Poppins', 'PT Sans', 'PT Serif', 'Quicksand', 'Raleway', 'Red Hat Display', 'Roboto Condensed',
+  'Roboto Slab', 'Schibsted Grotesk', 'Sora', 'Spectral', 'Titillium Web', 'Ubuntu', 'Ubuntu Mono', 'Urbanist', 'Yeseva One', 'Zilla Slab',
+];
 const FONT_ROLE_LABEL: Record<FontRole, string> = { display: 'Títulos (display)', body: 'Texto corrido (body)', mono: 'Detalhes e menus (mono)' };
 const FONT_FALLBACK: Record<FontRole, string> = { display: 'serif', body: 'sans-serif', mono: 'monospace' };
 const OUTRA_FONTE = '__outra';
@@ -101,7 +114,12 @@ function FontPicker({ role, value, onChange }: { role: FontRole; value: string; 
         <option value={OUTRA_FONTE}>{outra && value ? `Outra: ${value}` : 'Outra do Google Fonts…'}</option>
       </select>
       {outra ? (
-        <input className="insp-input" aria-label={`Nome da fonte (${FONT_ROLE_LABEL[role]})`} value={value} placeholder="Nome exato no Google Fonts, ex.: Poppins" spellCheck={false} onChange={(e) => onChange(e.target.value)} />
+        <input className="insp-input" aria-label={`Nome da fonte (${FONT_ROLE_LABEL[role]})`} value={value} list={`${id}-mais`} placeholder="Digite para buscar, ex.: Poppins" spellCheck={false} autoComplete="off" onChange={(e) => onChange(e.target.value)} />
+      ) : null}
+      {outra ? (
+        <datalist id={`${id}-mais`}>
+          {[...new Set([...Object.values(FONT_OPTIONS).flat(), ...MAIS_FONTES])].sort().map((f) => <option key={f} value={f} />)}
+        </datalist>
       ) : null}
       <span className="theme-font-sample" style={{ fontFamily: familia(value) }} aria-hidden="true">
         {role === 'mono' ? 'PROJETOS · 2026 · 01/12' : role === 'display' ? 'Storyboard & animação' : 'O rato roeu a roupa do rei de Roma.'}

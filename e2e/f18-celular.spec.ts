@@ -95,7 +95,8 @@ test('prévia de celular do editor: alvos de toque e campos no tamanho do celula
 
   expect(medidas.navLink).toBeGreaterThanOrEqual(44);
   expect(medidas.bandeira).toBeGreaterThanOrEqual(44);
-  expect(medidas.fonteNav).toBeGreaterThanOrEqual(13);
+  // Menu numa linha só no celular (pedido do Lucca, db84b60): 12px, não menos.
+  expect(medidas.fonteNav).toBeGreaterThanOrEqual(12);
   expect(medidas.fontePapel).toBeGreaterThanOrEqual(13);
 });
 

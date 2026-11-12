@@ -1,5 +1,5 @@
 import type { Theme } from '../schema/v4';
-import { legivel } from '../core/contrast';
+import { contrastRatio, legivel } from '../core/contrast';
 
 /** 4,5:1 sobre as duas bases em que o texto aparece: o fundo e a superfície. */
 function legivelNosDois(fg: string, bg: string, surface: string, rumo: string): string {
@@ -8,6 +8,31 @@ function legivelNosDois(fg: string, bg: string, surface: string, rumo: string): 
 
 export const DEFAULT_SCALE_TABLET = 0.94;
 export const DEFAULT_SCALE_MOBILE = 0.88;
+
+/**
+ * Cor de fundo escolhida (nome do token: `bg`, `inkSoft`, `accent2`…) como valor
+ * CSS. Vai a cor em si, não `var(--token)`: as variáveis usam hífen
+ * (`--ink-soft`), então "Tinta suave" e "Tinta clara" apontavam para uma
+ * variável que não existe; e dentro de uma faixa que troca a cor do texto,
+ * `var(--ink)` já seria a cor trocada.
+ */
+export function corDeFundo(theme: Theme, token: string): string | undefined {
+  return (theme.colors as Record<string, string>)[token] || undefined;
+}
+
+/**
+ * O texto precisa trocar de cor sobre este fundo? Sim quando a cor do texto
+ * (Tinta) fica difícil de ler ali e a cor de fundo da página lê melhor — o caso
+ * de uma faixa escura num tema claro. Cor fora do formato #rrggbb: não mexe.
+ */
+export function fundoInverteTexto(theme: Theme, token: string): boolean {
+  const cores = theme.colors as Record<string, string>;
+  const fundo = cores[token];
+  if (!fundo) return false;
+  const comTinta = contrastRatio(cores.ink ?? '', fundo);
+  const comPagina = contrastRatio(cores.bg ?? '', fundo);
+  return comTinta !== null && comPagina !== null && comTinta < 4.5 && comPagina > comTinta;
+}
 
 /**
  * Converte os tokens do tema v4 em variáveis CSS. É a ÚNICA ponte entre dados e
@@ -31,6 +56,12 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
     // Botões, bordas e sublinhados seguem com a cor da marca.
     '--accent-texto': legivelNosDois(c.accent, c.bg, c.surface, c.ink),
     '--accent2': c.accent2,
+    // As cores de texto do tema, intactas: um bloco de fundo claro dentro de uma
+    // faixa escura (que troca a cor do texto) volta a elas.
+    '--ink-0': c.ink,
+    '--ink-soft-0': c.inkSoft,
+    '--ink-pale-texto-0': legivelNosDois(c.inkPale, c.bg, c.surface, c.ink),
+    '--accent-texto-0': legivelNosDois(c.accent, c.bg, c.surface, c.ink),
     '--font-display': `'${theme.fonts.display}', Georgia, serif`,
     '--font-body': `'${theme.fonts.body}', Helvetica, sans-serif`,
     '--font-mono': `'${theme.fonts.mono}', 'Courier New', monospace`,

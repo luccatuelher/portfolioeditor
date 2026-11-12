@@ -1,4 +1,5 @@
 import { openDb, STORE_DRAFTS } from '../assets/assetStore';
+import { dataHora } from '../core/datas';
 import type { PortfolioV4 } from '../schema/v4';
 
 /**
@@ -126,6 +127,6 @@ export async function guardarAoAbrir(doc: PortfolioV4, agora = Date.now()): Prom
   const ultima = all.reduce<StoredVersion | undefined>((m, v) => (!m || v.savedAt > m.savedAt ? v : m), undefined);
   if (ultima && agora - ultima.savedAt < INTERVALO_AO_ABRIR_MS) return null;
   if (ultima && JSON.stringify(ultima.doc) === JSON.stringify(doc)) return null;
-  const quando = new Date(agora).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+  const quando = dataHora(agora);
   return saveVersion(`Ao abrir o editor (${quando})`, doc, true);
 }

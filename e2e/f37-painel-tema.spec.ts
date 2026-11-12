@@ -53,7 +53,8 @@ test.describe('Painel Tema', () => {
     // Outra: abre um campo para digitar; o que se digita vale no site.
     const texto = page.getByLabel('Texto corrido (body)');
     await texto.selectOption('__outra');
-    const campo = page.getByRole('textbox', { name: /Nome da fonte \(Texto corrido/ });
+    // Com a lista de nomes para completar, o campo é uma caixa de combinação.
+    const campo = page.getByRole('combobox', { name: /Nome da fonte \(Texto corrido/ });
     await campo.fill('Poppins');
     await expect(texto.locator('option').last()).toHaveText('Outra: Poppins');
     await expect.poll(() => page.locator('.editor-canvas .site').first().evaluate((el) => getComputedStyle(el).getPropertyValue('--font-body'))).toContain('Poppins');
