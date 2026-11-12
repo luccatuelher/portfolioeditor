@@ -10,12 +10,14 @@ export const DEFAULT_SCALE_TABLET = 0.94;
 export const DEFAULT_SCALE_MOBILE = 0.88;
 
 /**
- * Cor do tema (nome do token: `bg`, `inkSoft`, `accent2`…) como valor CSS. As
- * variáveis usam hífen (`--ink-soft`); com o nome cru, "Tinta suave" e "Tinta
- * clara" como fundo de bloco apontavam para uma variável que não existe.
+ * Cor de fundo escolhida (nome do token: `bg`, `inkSoft`, `accent2`…) como valor
+ * CSS. Vai a cor em si, não `var(--token)`: as variáveis usam hífen
+ * (`--ink-soft`), então "Tinta suave" e "Tinta clara" apontavam para uma
+ * variável que não existe; e dentro de uma faixa que troca a cor do texto,
+ * `var(--ink)` já seria a cor trocada.
  */
-export function corDoTema(token: string): string {
-  return `var(--${token.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`)})`;
+export function corDeFundo(theme: Theme, token: string): string | undefined {
+  return (theme.colors as Record<string, string>)[token] || undefined;
 }
 
 /**
@@ -54,6 +56,12 @@ export function themeToCssVars(theme: Theme): Record<string, string> {
     // Botões, bordas e sublinhados seguem com a cor da marca.
     '--accent-texto': legivelNosDois(c.accent, c.bg, c.surface, c.ink),
     '--accent2': c.accent2,
+    // As cores de texto do tema, intactas: um bloco de fundo claro dentro de uma
+    // faixa escura (que troca a cor do texto) volta a elas.
+    '--ink-0': c.ink,
+    '--ink-soft-0': c.inkSoft,
+    '--ink-pale-texto-0': legivelNosDois(c.inkPale, c.bg, c.surface, c.ink),
+    '--accent-texto-0': legivelNosDois(c.accent, c.bg, c.surface, c.ink),
     '--font-display': `'${theme.fonts.display}', Georgia, serif`,
     '--font-body': `'${theme.fonts.body}', Helvetica, sans-serif`,
     '--font-mono': `'${theme.fonts.mono}', 'Courier New', monospace`,

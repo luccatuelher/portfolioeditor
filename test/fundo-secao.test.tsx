@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { corDoTema, fundoInverteTexto, themeToCssVars } from '../src/renderer/theme';
+import { corDeFundo, fundoInverteTexto } from '../src/renderer/theme';
 import { defaultTheme } from '../src/schema/v4';
 import { migrate } from '../src/migrate/migrate';
 import { dataUrlResolver } from '../src/renderer/dataUrlResolver';
@@ -10,13 +10,10 @@ import { loadFixture } from './helpers/fixtures';
 // Fundo de bloco e de seção: a cor escolhida precisa apontar para uma variável
 // que o Tema realmente define ("Tinta suave" apontava para --inkSoft, que não existe).
 describe('cor de fundo (bloco e seção)', () => {
-  it('toda cor do tema vira uma variável que o tema define', () => {
+  it('toda cor do tema vira uma cor de verdade (não uma variável que pode não existir)', () => {
     const tema = defaultTheme();
-    const definidas = Object.keys(themeToCssVars(tema));
-    for (const token of Object.keys(tema.colors)) {
-      const nome = corDoTema(token).replace(/^var\(|\)$/g, '');
-      expect(definidas, `cor "${token}"`).toContain(nome);
-    }
+    for (const token of Object.keys(tema.colors)) expect(corDeFundo(tema, token), `cor "${token}"`).toMatch(/^#[0-9a-f]{3,8}$/i);
+    expect(corDeFundo(tema, 'naoExiste')).toBeUndefined();
   });
 
   it('seção com fundo sai com a classe e a cor; sem fundo, nada muda', () => {
@@ -25,7 +22,7 @@ describe('cor de fundo (bloco e seção)', () => {
     expect(html()).not.toContain('has-bg');
     data.pages.find((p) => p.id === 'home')!.sections[0]!.style.bg = 'inkSoft';
     expect(html()).toMatch(/class="section [^"]*has-bg/);
-    expect(html()).toContain('--sec-bg:var(--ink-soft)');
+    expect(html()).toContain(`--sec-bg:${data.theme.colors.inkSoft}`);
   });
 
   it('fundo escuro num tema claro troca a cor do texto; fundo claro não', () => {

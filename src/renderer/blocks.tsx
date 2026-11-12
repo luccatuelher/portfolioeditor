@@ -10,7 +10,7 @@ import { blockLabel, effectivePreview, projectBlocks } from './preview';
 import type { BlogItem } from '../schema/v4';
 import { RenderContext, useRender, type Lang, type RenderContextValue } from './context';
 import { styleVars } from './css';
-import { corDoTema, fundoInverteTexto } from './theme';
+import { corDeFundo, fundoInverteTexto } from './theme';
 import { escalarTamanhos, pick, RichText } from './text';
 import { sanitizeRich } from '../core/sanitizeHtml';
 import { layoutGrid, type Placement } from './gridLayout';
@@ -904,7 +904,7 @@ export function BlockView({ block, place, sobra, topo }: { block: Block; place?:
   const wrap = (children: React.ReactNode): React.ReactElement => (
     <div
       className={cls}
-      style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--cfree-t': sobra?.tablet ?? undefined, '--cfree-m': sobra?.mobile ?? undefined, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree-d': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? corDoTema(bgToken) : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
+      style={styleVars({ ...spanVars({ desktop: block.span, tablet: rt?.span, mobile: rm?.span }, 'block'), '--span-m': rm?.span, '--gc': place?.col, '--cfree-t': sobra?.tablet ?? undefined, '--cfree-m': sobra?.mobile ?? undefined, '--gr': place?.row, '--ck': place?.k, '--cn': place?.n, '--cfree-d': place?.free, '--ra': place ? { start: 0, center: 0.5, end: 1, between: 0 }[place.align] : undefined, '--rb': place?.align === 'between' ? 1 : undefined, '--block-bg': bgToken ? corDeFundo(data.theme, bgToken) : undefined, ...textStyleVars(block.style?.textStyle), '--pad-t': rem(block.pad?.t), '--pad-r': rem(block.pad?.r), '--pad-b': rem(block.pad?.b), '--pad-l': rem(block.pad?.l) })}
       data-block-id={block.id}
     >
       {editing && faltaTraduzir(block, lang) ? (
@@ -1101,7 +1101,7 @@ export function SectionView({ section, primeira }: { section: Section; primeira?
     sobraPorLinha.set(r, { tablet: sobraDaLinha(naLinha, 'tablet'), mobile: sobraDaLinha(naLinha, 'mobile') });
   }
   return (
-    <section className={`section width-${width}${fundo ? ' has-bg' : ''}${fundo && fundoInverteTexto(data.theme, fundo) ? ' bg-contraste' : ''}`} data-section-id={section.id} style={styleVars({ '--sec-bg': fundo ? corDoTema(fundo) : undefined, '--sec-gap': rem(section.style.gap), '--sec-rowgap': rem(section.style.rowGap), '--sec-top': rem(section.style.spaceTop), '--sec-bottom': rem(section.style.spaceBottom) })}>
+    <section className={`section width-${width}${fundo ? ' has-bg' : ''}${fundo && fundoInverteTexto(data.theme, fundo) ? ' bg-contraste' : ''}`} data-section-id={section.id} style={styleVars({ '--sec-bg': fundo ? corDeFundo(data.theme, fundo) : undefined, '--sec-gap': rem(section.style.gap), '--sec-rowgap': rem(section.style.rowGap), '--sec-top': rem(section.style.spaceTop), '--sec-bottom': rem(section.style.spaceBottom) })}>
       <div className="section-grid">
         {shown.map((b, i) => (
           <ErrorBoundary
